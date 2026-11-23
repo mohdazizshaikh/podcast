@@ -99,7 +99,7 @@ def test_plain_ascii_commandline_workspace_is_forwarded(windows_stage,tmp_path):
     env.pop("PODCAST_WORKSPACE",None)
     result=subprocess.run(["cmd.exe","/d","/c",
                            f'CONTINUE_FULL_HINDI_NEURAL.bat "{base}"'],
-                          cwd=windows_stage,env=env,input="INIT\\n",text=True,
+                          cwd=windows_stage,env=env,input="INIT\n",text=True,
                           encoding="utf-8",errors="replace",capture_output=True,
                           check=False,timeout=60)
     assert result.returncode==0,result.stdout+result.stderr
