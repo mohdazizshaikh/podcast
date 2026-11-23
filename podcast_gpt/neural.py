@@ -181,6 +181,9 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
         raise ValueError("CPU time budget is outside safe finite bounds")
     root=workspace_path(root)
     source,done=verified_previews(root,allow_short=allow_short)
+    lock=root/"source"/LOCK
+    if lock.is_symlink() or lock.exists():
+        raise ValueError("Another/orphan CPU session lock exists; manual inspection")
     if model_runner is None:
         # Production CLI always preflights user-installed pretrained model
         # assets BEFORE taking a lock or initiating an expensive model run.
@@ -193,8 +196,9 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
         raise ValueError("At least 6 GiB free on the private CPU model output drive is required")
     if shutil.disk_usage(root/"voices").free < 3*1024**3:
         raise ValueError("At least 3 GiB free on the original Hindi source drive is required")
-    lock=root/"source"/LOCK
-    if lock.is_symlink() or lock.exists():raise ValueError("Another/orphan CPU session lock exists; manual inspection")
+    # Recheck after potentially slow read-only interpreter/model preflight.
+    if lock.is_symlink() or lock.exists():
+        raise ValueError("Another/orphan CPU session lock exists; manual inspection")
     clock=clock or time.monotonic
     before=len(done);completed=[];stopped=False
     lock_marker="LOCAL_CPU_SESSION="+uuid.uuid4().hex+"\n"
