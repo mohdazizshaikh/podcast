@@ -130,10 +130,27 @@ def _model_call(root:Path,row:dict,*,sadtalker_root:Path,sadtalker_python:Path,
               "--source_image",str(root/"portraits"/(row["speaker"]+".png")),
               "--result_dir",str(scratch),"--still","--preprocess","full","--cpu"]
         env=os.environ.copy();env["CUDA_VISIBLE_DEVICES"]=""
-        result=subprocess.run(args,cwd=str(sadtalker_root),env=env,
-                              capture_output=True,text=True,errors="replace",timeout=timeout)
+        # Large CPU models can produce substantial diagnostics. Stream to
+        # PRIVATE chunk scratch instead of buffering unbounded stdout/stderr
+        # in memory; leave logs intact on failures for the Windows owner.
+        stdout_path=scratch/"model-stdout.log"
+        stderr_path=scratch/"model-stderr.log"
+        with stdout_path.open("xb") as stdout,stderr_path.open("xb") as stderr:
+            try:
+                result=subprocess.run(args,cwd=str(sadtalker_root),env=env,
+                                      stdout=stdout,stderr=stderr,timeout=timeout,
+                                      check=False)
+            except subprocess.TimeoutExpired as exc:
+                raise RuntimeError(
+                    "SadTalker CPU timed out; private model-stdout.log and "
+                    "model-stderr.log preserved in scratch/model-"+cid
+                ) from exc
         if result.returncode:
-            raise RuntimeError("SadTalker CPU model failed; inspect scratch and local Python/checkpoints")
+            raise RuntimeError(
+                "SadTalker CPU exited with error code "+str(result.returncode)
+                +"; inspect PRIVATE scratch/model-"+cid+"/model-stderr.log "
+                "and model-stdout.log. No completed face preview was recorded."
+            )
         output=list(scratch.rglob("*.mp4"))
         if len(output)!=1:raise ValueError("Expected ONE fresh pretrained face MP4 output")
         model_video=output[0]
