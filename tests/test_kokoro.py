@@ -32,14 +32,21 @@ def fake_factory(model,voices):
 
 
 @pytest.mark.skipif(not shutil.which("ffmpeg"),reason="FFmpeg for exact original 16k PCM conversion")
-def test_three_distinct_original_hindi_voice_presets_offline_no_overwrite(private_studio,offline_assets):
+def test_three_distinct_original_hindi_voice_presets_offline_no_overwrite(private_studio,offline_assets,monkeypatch):
     root=private_studio
+    original_temp=kokoro.tempfile.TemporaryDirectory
+    scratch_locations=[]
+    def recording_temp(*args,**kwargs):
+        scratch_locations.append(kwargs.get("dir"))
+        return original_temp(*args,**kwargs)
+    monkeypatch.setattr(kokoro.tempfile,"TemporaryDirectory",recording_temp)
     for i in range(1,4):(root/"voices"/f"{i:03}.wav").unlink()
     original_other=(root/"voices"/"009.wav").read_bytes()
     result=kokoro.generate(root,model=offline_assets[0],voices=offline_assets[1],
                            run_local=True,next_missing=True,max_new=3,
                            engine_factory=fake_factory)
     assert result["model_inference_calls"]==3
+    assert scratch_locations==[root/"scratch"]*3
     assert result["new_original_hindi_wav_turns"]==["001","002","003"]
     assert result["distinct_voice_presets_chosen"] is True
     assert result["three_natural_voice_identities_human_verified"] is False
