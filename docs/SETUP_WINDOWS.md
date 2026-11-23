@@ -14,3 +14,7 @@ Never put your private workspace inside the public clone. The old suspended GitH
 ### Privacy and original media imports (v3.3.1)
 
 When importing a presenter PNG from the local browser, tick the explicit checkbox confirming you own the portrait or hold written permission. The private localhost HTTP server also requires this acknowledgment and refuses missing consent. The checkbox does not automatically verify your permission. File import and signed-source processing cannot overlap, and `000.wav` is not a valid 45-turn original voice name. Existing media can never be overwritten.
+
+### Optional online Edge TTS safe source import (v3.5)
+
+This is **NOT OFFLINE**; the selected Hindi dialogue is sent to an online Microsoft Edge voice service and may be subject to its terms. Only after consciously opting in, install `.venv\Scripts\python.exe -m pip install -e ".[tts]"`. For exactly one missing original turn, run `.venv\Scripts\python.exe -m podcast_gpt --workspace "%USERPROFILE%\PodcastGPTStudio" tts-one --turn 1 --allow-network-tts` in CMD. The source **must not already be SHA-bound**. Existing original WAVs/checkpoint receipts are never overwritten, each new original voice is hash-recorded, and temporary downloaded/converted data stays on the private workspace drive. This option uses two voice presets rather than independently proving three distinct natural voices. All original voice content/rights and final 540–660 second duration require human verification.

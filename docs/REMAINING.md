@@ -16,3 +16,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [ ] On the user's actual GPU-less Windows system, run the real third-party SadTalker `PILOT`. The v3.4 subprocess smoke only runs a FAKE external Python process generating FFmpeg static pictures; it cannot measure real model speed, failure modes or visible lip motion.
 - [ ] After any model error, locally inspect only the private workspace `scratch/model-<chunk>/model-stderr.log` and `model-stdout.log`; never publish logs carrying personal paths or input filenames. Model failure must leave no falsely completed preview checkpoint.
+
+- [ ] If choosing optional online Edge TTS, personally approve that the selected Hindi script text is sent to an external service via explicit `--allow-network-tts`; the v3.5 adapter now prevents post-source-binding regeneration and records SHA receipts, but voice naturalness/usage rights still require human review.

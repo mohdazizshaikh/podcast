@@ -1,4 +1,4 @@
-# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.4)
+# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.5)
 
 > **Rebuilt from this ChatGPT Project's available requirements/milestone history, NOT cloned from or verified against the suspended repository.** New canonical repository: **https://github.com/mohdazizshaikh/podcast**. No access to the suspended account is required. The original v2.97 Git history and exact source-byte parity **cannot be claimed** from chat summaries alone. See [`docs/RECONSTRUCTION_LEDGER.md`](docs/RECONSTRUCTION_LEDGER.md).
 
@@ -110,6 +110,25 @@ PodcastGPTStudio/
 ```
 
 **Migration note:** `.migration/` contains the earlier migration bootstrap and the original v2.98 additive patch, preserved unchanged so it isn't lost. Its patch was written against the old v2.97 layout and **must NOT be applied blindly to this rebuilt v3 code**. The importer can import a separate local legacy clone, but that would require a planned conflict review; it is not a prerequisite for using reconstructed v3.
+
+### v3.5 — Online Edge Hindi TTS source integrity (optional, explicit network)
+
+Choosing `tts-one --allow-network-tts` is an **opt-in online** action: the
+selected Hindi script text is sent to the external Edge TTS service. Without
+the explicit flag the provider is not contacted. This route now checks
+that the original 45-turn source has **not** already been SHA-bound, refuses
+any existing WAV or same-turn receipt, converts its returned speech using
+the private workspace `scratch/` drive (not Windows C: TEMP), and re-verifies
+the unchanged script/source state after network synthesis before opening
+the destination with exclusive `xb` creation. The original audio SHA,
+provider voice preset, request speech rate and project SHA are saved in a
+private `.edge-tts-source.json` receipt; there is no automatic human voice
+quality approval. Simulated-provider FFmpeg tests verify this without
+actually connecting to Microsoft or generating neural voices.
+
+Use optional **offline Kokoro** instead if you do not wish to send your
+script text to the network; natural quality and 10-minute duration on your
+CPU remain unverified. See [v3.5 release notes](docs/V35_RELEASE_NOTES.md).
 
 ### v3.4 — External SadTalker subprocess + private failure troubleshooting
 
