@@ -1,19 +1,20 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
-title Podcast GPT - ONE guided original Hindi step
+title Podcast GPT - ONE guided original Hindi step v3.1
 set "BASE=%~1"
 if not defined BASE set "BASE=%PODCAST_WORKSPACE%"
 if not defined BASE set "BASE=%USERPROFILE%\PodcastGPTStudio"
 if not exist ".venv\Scripts\python.exe" (
- echo Run START_PODCAST_WINDOWS.bat first.
+ echo [BLOCKED] Run START_PODCAST_WINDOWS.bat first.
  exit /b 1
 )
 echo.
 echo ================================================================
 echo ORIGINAL HINDI 45 TURNS - ONE SAFE STEP EACH INVOCATION
-echo ================================================================
+ echo ================================================================
 echo INIT      - NEW private original 45-turn script
+ echo KOKORO    - optional OFFLINE original Hindi 3-voice local CPU synthesis
  echo BIND      - verify originals and write immutable SHA manifest
  echo CHUNKS    - export exact 1-10sec PCM source segments
  echo STATIC    - create true 720p original Hindi static AAC + SRT
@@ -34,6 +35,7 @@ set "STEP="
 set /p "STEP=Select exactly ONE action: "
 setlocal EnableDelayedExpansion
 if /I "!STEP!"=="INIT" (endlocal & goto :init)
+if /I "!STEP!"=="KOKORO" (endlocal & goto :kokoro)
 if /I "!STEP!"=="BIND" (endlocal & goto :bind)
 if /I "!STEP!"=="CHUNKS" (endlocal & goto :chunks)
 if /I "!STEP!"=="STATIC" (endlocal & goto :static)
@@ -51,23 +53,10 @@ if /I "!STEP!"=="REVIEWFULL" (endlocal & goto :reviewfull)
 endlocal
 exit /b 2
 :init
-if /I "%STEP%"=="BIND" goto :bind
-if /I "%STEP%"=="CHUNKS" goto :chunks
-if /I "%STEP%"=="STATIC" goto :static
-if /I "%STEP%"=="AUDIT" goto :audit
-if /I "%STEP%"=="PILOT" goto :cpu
-if /I "%STEP%"=="BATCH" goto :cpu
-if /I "%STEP%"=="SESSION" goto :cpu
-if /I "%STEP%"=="PROGRESS" goto :progress
-if /I "%STEP%"=="REVIEW" goto :review
-if /I "%STEP%"=="RECORD" goto :record
-if /I "%STEP%"=="INSPECT" goto :inspect
-if /I "%STEP%"=="COMPOSE" goto :compose
-if /I "%STEP%"=="AUDITFULL" goto :auditfull
-if /I "%STEP%"=="REVIEWFULL" goto :reviewfull
-exit /b 2
-:init
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" init
+exit /b %ERRORLEVEL%
+:kokoro
+call "%~dp0GENERATE_KOKORO_HINDI_CPU.bat" "%BASE%"
 exit /b %ERRORLEVEL%
 :bind
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" build-source

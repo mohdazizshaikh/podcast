@@ -1,6 +1,6 @@
 # Architecture and threat model
 
-`project.json` → 45 validated original PCM WAVs + three PNGs → immutable source SHA manifest → exact-frame PCM chunks (1–10s) → FFmpeg/Pillow real 720p original static video + SRT.
+`project.json` → optional explicit local Kokoro ONNX Hindi G2P + three distinct preset voice generation (no model download), or externally imported/online-consented original PCM → 45 validated original PCM WAVs + three PNGs → immutable source SHA manifest → exact-frame PCM chunks (1–10s) → FFmpeg/Pillow real 720p original static video + SRT.
 
 Optional real neural stage: local explicit-rights/consent CPU SadTalker → one signed MP4+JSON per chunk → independent MP4 full decode/SHA → atomic checkpoint → local human pilot observations → full 45-turn candidate composer from original source WAVs and saved neural VIDEO ONLY → independent AAC/video/SRT audit → local 45-turn human review.
 

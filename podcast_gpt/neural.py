@@ -175,6 +175,12 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
         raise ValueError("CPU time budget is outside safe finite bounds")
     root=workspace_path(root)
     source,done=verified_previews(root,allow_short=allow_short)
+    # Measure the ACTUAL private workspace volume, not the application repo.
+    # A real pretrained model can create large temporary frames before its MP4.
+    if shutil.disk_usage(root/"previews").free < 6*1024**3:
+        raise ValueError("At least 6 GiB free on the private CPU model output drive is required")
+    if shutil.disk_usage(root/"voices").free < 3*1024**3:
+        raise ValueError("At least 3 GiB free on the original Hindi source drive is required")
     lock=root/"source"/LOCK
     if lock.is_symlink() or lock.exists():raise ValueError("Another/orphan CPU session lock exists; manual inspection")
     clock=clock or time.monotonic
@@ -243,6 +249,8 @@ def compose_neural(root:Path,*,allow_short:bool=False) -> dict:
     captions=root/"exports"/"original_hindi_full_neural.srt"
     if any(p.exists() or p.is_symlink() for p in (target,report,captions)):
         raise ValueError("Existing full video/SRT/report cannot be silently overwritten")
+    if shutil.disk_usage(root/"exports").free < 6*1024**3:
+        raise ValueError("At least 6 GiB free for the final 720p candidate video output required")
     rows=timeline(root,src)
     groups={row["line_id"]:[] for row in chunks["chunks"]}
     for row in chunks["chunks"]:groups[row["line_id"]].append(row)

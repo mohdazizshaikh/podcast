@@ -80,10 +80,10 @@ def read_json(path: Path, max_size: int = 1_000_000) -> dict:
 
 
 def workspace_path(root: str | Path) -> Path:
-    root = Path(root).expanduser().resolve()
-    if root.is_symlink():
+    raw = Path(root).expanduser()
+    if raw.is_symlink():
         raise ValueError("Workspace cannot be a symlink")
-    return root
+    return raw.resolve()
 
 
 def init(root: Path) -> dict:
@@ -97,7 +97,7 @@ def init(root: Path) -> dict:
     for i in range(1, 46):
         speaker = SPEAKERS[(i-1) % len(SPEAKERS)]
         turns.append({"id": f"{i:03}", "speaker": speaker,
-                      "text": DIALOGUE[(i-1) % len(DIALOGUE)],
+                      "text": f"भाग {i}: {DIALOGUE[(i-1) % len(DIALOGUE)]}",
                       "pause_after": 0.4 if i < 45 else 0.0})
     project = {"schema": 3, "title": "Original Hindi Three-Presenter Podcast",
                "speakers": list(SPEAKERS), "language": "hi-IN", "turns": turns,

@@ -20,7 +20,7 @@
 
 1. Byte-identical historical source files and exact Git history of former project.
 2. Any user's original privately authorized presenter portraits, Kokoro voice WAVs, original actual rendered episode or signed output checkpoints.
-3. Exact multi-engine Kokoro Hindi voice downloads/weights. This reconstructed repo instead imports originals and has optional explicitly online Edge Hindi TTS. It does not falsely guarantee three distinctive neural voices with just two Edge presets.
+3. Exact old Kokoro source files and weight snapshots. Reconstructed v3.1 newly includes optional genuine LOCAL Kokoro ONNX Hindi voice generation with three distinct source voice PRESETS; model weights must be installed by the user. Offline voice quality remains unverified on real hardware.
 4. Real SadTalker model weights, their third-party licenses, full 10-minute CPU timing and Hindi phoneme accuracy on the user's Windows computer.
 5. Historical v2.97 manifest compatibility (different schema); old v2.98 patch is archived, not silently transplanted.
 6. Claims of complete historic parity or natural lip-sync quality approval.

@@ -32,6 +32,13 @@ def parse(argv=None):
     for name in ("aarav","meera","kabir"):
         review.add_argument("--"+name,choices=("PASS","FAIL"),required=True)
     review.add_argument("--acknowledgment",required=True)
+    offline=subs.add_parser("tts-kokoro",help="Optional genuine OFFLINE 3-distinct-preset Hindi Kokoro ONNX CPU WAV")
+    offline.add_argument("--model",type=Path,required=True,help="existing local Kokoro v1.0 .onnx")
+    offline.add_argument("--voices",type=Path,required=True,help="existing local voices-v1.0.bin")
+    offline.add_argument("--turn",type=int)
+    offline.add_argument("--next",action="store_true",help="generate earliest missing original WAVs")
+    offline.add_argument("--max-new",type=int,default=1,help="at most 5 explicit new WAVs per run")
+    offline.add_argument("--run-local",action="store_true",help="explicit model inference consent; no downloads")
     voice=subs.add_parser("tts-one",help="OPTIONAL explicit online Edge Hindi TTS for one turn")
     voice.add_argument("--turn",type=int,required=True)
     voice.add_argument("--allow-network-tts",action="store_true")
@@ -43,7 +50,13 @@ def doctor(root:Path) -> dict:
     from .media import tools_ready
     import importlib.util
     media=tools_ready()
+    parent=root.resolve()
+    while not parent.exists() and parent!=parent.parent:
+        parent=parent.parent
+    free_gib=round(shutil.disk_usage(parent).free/(1024**3),2)
     return {"version":__version__,"workspace":str(root.resolve()),
+            "workspace_disk_free_gib":free_gib,"source_minimum_free_gib_for_render":3,
+            "neural_minimum_free_gib_for_render":6,
             "ffmpeg":bool(media["ffmpeg"]),"ffprobe":bool(media["ffprobe"]),
             "pillow":bool(importlib.util.find_spec("PIL")),
             "edge_tts_optional":bool(importlib.util.find_spec("edge_tts")),
@@ -105,6 +118,10 @@ def execute(a)->dict:
     if action=="compose-neural":return neural.compose_neural(root)
     if action=="audit-neural":return neural.audit_neural(root)
     if action=="review-full":return review.review_full(root)
+    if action=="tts-kokoro":
+        from .kokoro import generate
+        return generate(root,model=a.model,voices=a.voices,turn=a.turn,
+                        next_missing=a.next,max_new=a.max_new,run_local=a.run_local)
     if action=="tts-one":
         import asyncio
         return asyncio.run(_tts_one(root,a.turn,a.allow_network_tts,a.voice))

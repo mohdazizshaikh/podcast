@@ -150,6 +150,8 @@ def render_static(root: Path, *, allow_short: bool=False) -> dict:
     captions=root/"exports"/"original_hindi.srt"
     if any(p.exists() or p.is_symlink() for p in (target,report_path,captions)):
         raise ValueError("Existing private static video/report/SRT; no silent overwrite")
+    if shutil.disk_usage(root/"exports").free < 3*1024**3:
+        raise ValueError("At least 3 GiB free for original 720p static video output required")
     rows=timeline(root,src)
     with tempfile.TemporaryDirectory(prefix="podcast-static-") as temp:
         temp=Path(temp)

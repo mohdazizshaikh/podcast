@@ -34,4 +34,4 @@ jobs:
       - name: 45-turn source, rights consent, local dashboard and real SHORT FFmpeg regression
         run: python -m pytest -q tests
       - name: Explicitly limit CI completion claims
-        run: python -c "from podcast_gpt import __version__; assert __version__ == '3.0.0'; print('SYNTHETIC tests only; no genuine SadTalker lipsync nor real 10m local Windows rendered')"
+        run: python -c "from podcast_gpt import __version__; assert __version__ == '3.1.0'; print('SYNTHETIC tests only; no genuine SadTalker lipsync nor real 10m local Windows rendered')"
