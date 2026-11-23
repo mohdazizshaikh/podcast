@@ -116,7 +116,7 @@ def test_default_45_hindi_conversation_is_unique_substantive_and_no_spoken_part_
     dialogues=[turn["text"] for turn in script]
     assert len(dialogues)==45
     assert len(set(dialogues))==45
-    assert sum(len(text.split()) for text in dialogues)>=1200
+    assert 1400<=sum(len(text.split()) for text in dialogues)<=1700
     assert not any(text.startswith("भाग ") for text in dialogues)
     assert [sum(turn["speaker"]==name for turn in script) for name in source.SPEAKERS]==[15,15,15]
     # Script length is NOT a duration guarantee: the production gate
