@@ -141,8 +141,10 @@ def generate(root:Path,*,model:Path,voices:Path,run_local:bool,
                 wav_info(fixed)
                 # Recheck project source after slow local inference; never
                 # adopt model audio if a user edited a different dialogue mid-run.
-                if load_project(root)!=project:
-                    raise ValueError("Original Hindi script changed during local TTS CPU inference")
+                if (load_project(root)!=project
+                        or (root/"source"/SOURCE_FILE).exists()
+                        or (root/"source"/SOURCE_FILE).is_symlink()):
+                    raise ValueError("Original Hindi script/source binding changed during local TTS CPU inference")
                 import shutil
                 with dest.open("xb") as out, fixed.open("rb") as incoming:
                     shutil.copyfileobj(incoming,out)
