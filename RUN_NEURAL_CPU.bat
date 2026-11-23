@@ -35,6 +35,11 @@ if not exist "%STROOT%\inference.py" goto :failed
 set "STPY=%STROOT%\.venv38\Scripts\python.exe"
 if not exist "%STPY%" goto :failed
 echo.
+echo [READ ONLY] Checking local SadTalker CLI, pretrained checkpoint files
+echo and Python interpreter before asking to run any AI model.
+".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" check-sadtalker --sadtalker-root "%STROOT%" --sadtalker-python "%STPY%"
+if errorlevel 1 goto :failed
+echo.
 echo [EXPLICIT CONSENT] This invokes ACTUAL locally installed CPU pretrained
  echo models on original face PNGs and original Hindi voice. You affirm you
  echo own the portraits or have written permission for ALL THREE presenters.

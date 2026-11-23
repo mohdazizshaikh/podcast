@@ -20,6 +20,9 @@ def parse(argv=None):
                  "compose-neural","audit-neural","review-full","web"):
         cmd=subs.add_parser(name)
         if name=="web":cmd.add_argument("--port",type=int,default=7860)
+    preflight=subs.add_parser("check-sadtalker",help="READ ONLY local SadTalker CPU installation check; NO inference")
+    preflight.add_argument("--sadtalker-root",type=Path,required=True)
+    preflight.add_argument("--sadtalker-python",type=Path,required=True)
     cpu=subs.add_parser("run-cpu",help="Genuine local SadTalker CPU; requires explicit rights")
     cpu.add_argument("--mode",choices=("pilot","batch","session"),required=True)
     cpu.add_argument("--max-new",type=int,default=3)
@@ -110,6 +113,9 @@ def execute(a)->dict:
     if action=="budget":
         from .budget import estimate_cpu_budget
         return estimate_cpu_budget(root)
+    if action=="check-sadtalker":
+        from .model_preflight import inspect_sadtalker_installation
+        return inspect_sadtalker_installation(a.sadtalker_root,a.sadtalker_python)
     if action=="run-cpu":return neural.run_cpu(root,mode=a.mode,
             rights_confirmed=a.rights_confirmed,max_new=a.max_new,
             wall_seconds=a.wall_seconds,per_chunk_timeout=a.per_chunk_timeout,

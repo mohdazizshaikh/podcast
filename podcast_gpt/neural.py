@@ -181,6 +181,12 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
         raise ValueError("CPU time budget is outside safe finite bounds")
     root=workspace_path(root)
     source,done=verified_previews(root,allow_short=allow_short)
+    if model_runner is None:
+        # Production CLI always preflights user-installed pretrained model
+        # assets BEFORE taking a lock or initiating an expensive model run.
+        from .model_preflight import inspect_sadtalker_installation
+        inspect_sadtalker_installation(Path(sadtalker_root or ""),
+                                       Path(sadtalker_python or ""))
     # Measure the ACTUAL private workspace volume, not the application repo.
     # A real pretrained model can create large temporary frames before its MP4.
     if shutil.disk_usage(root/"previews").free < 6*1024**3:
