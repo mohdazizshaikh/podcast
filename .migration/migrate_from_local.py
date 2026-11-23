@@ -104,6 +104,7 @@ def main(argv=None) -> int:
     p.add_argument('--publish', action='store_true', help='Explicitly push verified source and merge with new repo main')
     p.add_argument('--allow-public-media', action='store_true', help='Include tracked/untracked media after author confirms rights')
     p.add_argument('--backup-dir', type=Path, help='Where to store full local git bundle and JSON inventory')
+    p.add_argument('--v298-patch', type=Path, help='Optional verified additive offline v2.98 patch to apply before main publication')
     args = p.parse_args(argv)
     if not shutil.which('git'):
         print('BLOCKED: Git for Windows is required.', file=sys.stderr)
@@ -183,8 +184,27 @@ def main(argv=None) -> int:
                     raise RuntimeError('Merged Git tree differs from original source: ' + rel)
             elif published.exists():
                 raise RuntimeError('Original deleted file unexpectedly exists in merged Git tree: ' + rel)
+        if args.v298_patch:
+            patch = args.v298_patch.expanduser().resolve()
+            if not patch.is_file() or patch.is_symlink() or patch.stat().st_size > 1024 * 1024:
+                raise RuntimeError('Invalid v2.98 patch location or unsafe patch size')
+            chk = subprocess.run(['git', '-C', str(merged), 'apply', '--check', str(patch)],
+                                 capture_output=True, text=True)
+            if chk.returncode:
+                reverse = subprocess.run(['git', '-C', str(merged), 'apply', '--reverse',
+                                          '--check', str(patch)], capture_output=True)
+                if reverse.returncode:
+                    raise RuntimeError('v2.98 patch did not apply cleanly; refusing incomplete main publication: ' + chk.stderr[-500:])
+                print('v2.98 patch already present in local project; no duplicate apply.')
+            else:
+                git(merged, 'apply', str(patch))
+                git(merged, 'add', '-A')
+                git(merged, '-c', 'user.name=Podcast Git Migration',
+                    '-c', 'user.email=mohd.aziz.sk@gmail.com', 'commit',
+                    '-m', 'feat(v2.98): restore private original Hindi three-presenter manual QA addon')
+                print('APPLIED exact additive v2.98 offline patch to imported project.')
         git(merged, 'push', 'origin', 'HEAD:refs/heads/main')
-        print('PUBLISHED complete imported source and history on destination main.')
+        print('PUBLISHED complete imported source/history and requested addons on destination main.')
         # Do not discard alternate original source branches or tags.
         # They are separately archived under a non-conflicting namespace.
         branches = git(src, 'for-each-ref', '--format=%(refname:short)', 'refs/heads')
