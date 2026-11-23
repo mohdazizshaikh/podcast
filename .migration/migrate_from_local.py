@@ -25,6 +25,16 @@ DANGEROUS = ('*.env', '.env*', '*.pem', '*.p12', '*.pfx', '*.key', 'id_rsa*',
 MEDIA = ('.mp4', '.mov', '.wav', '.mp3', '.m4a', '.flac', '.png', '.jpg', '.jpeg',
          '.webp', '.ckpt', '.safetensors', '.pt', '.pth', '.onnx')
 MAX_BYTES = 95 * 1024 * 1024
+V297_REQUIRED = (
+    'README.md', 'CONTINUE_FULL_HINDI_NEURAL.bat',
+    'RUN_NEURAL_CHUNK_SESSION.bat', 'RUN_NEURAL_CHUNK_BATCH.bat',
+    'REVIEW_VERIFIED_NEURAL_CHUNKS.bat',
+    'scripts/neural_chunk_session.py', 'scripts/neural_chunk_batch.py',
+    'scripts/review_verified_neural_chunks.py', 'scripts/full_neural_chunks.py',
+    'scripts/review_full_hindi_turns.py',
+    'tests/test_v297.py', 'docs/V297_RELEASE_NOTES.md',
+    '.github/workflows/tests.yml',
+)
 
 
 def git(cwd: Path, *cmd: str, check: bool = True) -> str:
@@ -122,6 +132,16 @@ def main(argv=None) -> int:
         return 2
     if git(src, 'rev-parse', '--is-shallow-repository') == 'true':
         print('BLOCKED: shallow source clone cannot guarantee complete history.', file=sys.stderr)
+        return 2
+    missing_modules = [rel for rel in V297_REQUIRED if not (src / rel).is_file()]
+    if missing_modules:
+        print('BLOCKED: local clone lacks required v2.97 platform files: ' +
+              ', '.join(missing_modules), file=sys.stderr)
+        return 2
+    if ('PILOT' not in (src / 'CONTINUE_FULL_HINDI_NEURAL.bat').read_text(encoding='utf8', errors='replace')
+            or '--pilot-three-speakers' not in
+            (src / 'RUN_NEURAL_CHUNK_SESSION.bat').read_text(encoding='utf8', errors='replace')):
+        print('BLOCKED: original v2.97 PILOT stage markers absent in local clone.', file=sys.stderr)
         return 2
     items = paths(src, 'ls-files', '-z', '--cached', '--others', '--exclude-standard')
     inventory = validate(src, items, args.allow_public_media)
