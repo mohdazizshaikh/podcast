@@ -97,8 +97,11 @@ def test_plain_ascii_commandline_workspace_is_forwarded(windows_stage,tmp_path):
     env={**os.environ, "PODCAST_V31_NATIVE_TRACE":str(trace),
          "PYTHONIOENCODING":"utf-8"}
     env.pop("PODCAST_WORKSPACE",None)
-    result=subprocess.run(["cmd.exe","/d","/c",
-                           f'CONTINUE_FULL_HINDI_NEURAL.bat "{base}"'],
+    # Pass the command as ONE raw CreateProcessW string. A Python argv
+    # list with embedded quoted CMD commands introduces backslash-escaping
+    # that CMD treats as literal characters, not quote escaping.
+    native_command=f'cmd.exe /d /c CONTINUE_FULL_HINDI_NEURAL.bat "{base}"'
+    result=subprocess.run(native_command,
                           cwd=windows_stage,env=env,input="INIT\n",text=True,
                           encoding="utf-8",errors="replace",capture_output=True,
                           check=False,timeout=60)
