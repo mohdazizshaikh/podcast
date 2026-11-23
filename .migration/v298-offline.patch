@@ -1,0 +1,715 @@
+diff --git a/REVIEW_THREE_PRESENTER_PILOT.bat b/REVIEW_THREE_PRESENTER_PILOT.bat
+new file mode 100644
+index 0000000..4b1bdd0
+--- /dev/null
++++ b/REVIEW_THREE_PRESENTER_PILOT.bat
+@@ -0,0 +1,48 @@
++@echo off
++setlocal EnableExtensions DisableDelayedExpansion
++cd /d "%~dp0"
++title Podcast GPT - Private Human Review of Three Real Hindi AI Faces
++if not exist ".venv\Scripts\python.exe" goto :failed
++set "BASE=%~1"
++if not defined BASE set /p "BASE=Existing private signed Hindi BASE folder: "
++set "BASE=%BASE:"=%"
++if not defined BASE goto :failed
++set "OUT=%~2"
++if not defined OUT set "OUT=%BASE%\neural-speech-chunks"
++set "OUT=%OUT:"=%"
++if not exist "%BASE%\original\real-hindi-episode.qc.json" goto :failed
++if not exist "%BASE%\portraits\aarav.png" goto :failed
++if not exist "%BASE%\portraits\meera.png" goto :failed
++if not exist "%BASE%\portraits\kabir.png" goto :failed
++if not exist "%OUT%\precise-speech-chunks.json" goto :failed
++set "MODE=%~3"
++if /I "%MODE%"=="INSPECT" goto :inspect
++if defined MODE goto :failed
++echo.
++echo PRIVATE ORIGINAL HINDI PILOT: no AI inference, no downloads, no uploads.
++echo Requires 1 genuine SHA-bound and independently decoded face MP4 for EACH
++echo Aarav, Meera, Kabir before continuing. This is only HUMAN observation.
++powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\preflight_hybrid.ps1" -Phase Source -WorkspacePath "%BASE%" -OutputPath "%OUT%"
++if errorlevel 1 goto :failed
++".venv\Scripts\python.exe" -m scripts.pilot_quality_gate --episode-root "%BASE%\original" --portrait-dir "%BASE%\portraits" --output "%OUT%" --prepare --open-browser
++if errorlevel 1 goto :failed
++echo.
++echo Review all THREE actual saved Hindi speaking-face clips in browser.
++echo Check mouths against original Hindi audio; check cropping, motion and
++echo face identity. Browser checks are NOT publication approval.
++pause
++".venv\Scripts\python.exe" -m scripts.pilot_quality_gate --episode-root "%BASE%\original" --portrait-dir "%BASE%\portraits" --output "%OUT%" --record
++if errorlevel 1 goto :failed
++echo [PASS] A private self-attested human review note was saved.
++echo This does NOT approve full 10-minute lip sync, portrait rights or publishing.
++exit /b 0
++
++:inspect
++echo [READ ONLY] Recheck current originals, three preview videos and note.
++".venv\Scripts\python.exe" -m scripts.pilot_quality_gate --episode-root "%BASE%\original" --portrait-dir "%BASE%\portraits" --output "%OUT%" --inspect
++exit /b %ERRORLEVEL%
++
++:failed
++echo [BLOCKED] Missing signed source, three verified face previews, invalid
++echo answers or stale/unsafe private review. No AI model launched.
++exit /b 1
+diff --git a/docs/V298_RELEASE_NOTES.md b/docs/V298_RELEASE_NOTES.md
+new file mode 100644
+index 0000000..68eed20
+--- /dev/null
++++ b/docs/V298_RELEASE_NOTES.md
+@@ -0,0 +1,65 @@
++# v2.98 — private human review of the **three original Hindi AI presenter pilot faces**
++
++**Distribution status:** Offline additive patch. NOT pushed to GitHub because the connected GitHub API returned HTTP 403 ("Sorry. Your account was suspended"). Last known pushed commit was `a7d86609`; the final v2.97 CI status could not be verified during this session.
++
++## Why add this?
++
++v2.97 can generate one *genuine, source-bound* SadTalker talking-face preview for each of **Aarav, Meera and Kabir** before the long CPU-only render. v2.96 can play saved previews in a local HTML viewer. Neither tool records a human's explicit yes/no assessment of **all three** pilot faces against the original Hindi speech, for later review.
++
++This optional v2.98 tool adds a **private, source-bound human observation**. It does not automatically decide whether lips move accurately, verify presenter image rights, or authorize publishing. All original, signed Kokoro WAVs, AAC/SRT, PNG portraits and real neural MP4/JSON previews are unchanged.
++
++## Applying this offline patch
++
++Extract `podcast-gpt-v298-offline.zip` anywhere on your Windows computer. With an existing local clone of `podcast-gpt` at the **last known v2.97 codebase**, run `APPLY_V298_TO_LOCAL_REPO.bat` and enter the clone directory when asked. The installer only runs `git apply --check`, then `git apply`, using the local bundled patch. It **does not** pull/push code, install anything, run models, create audio/video, or touch existing user media. If the patch cannot be cleanly applied, it stops before changing the repository.
++
++Alternatively, inside the repo in PowerShell (replace the patch path with where you extracted it):
++
++```powershell
++cd C:\Projects\podcast-gpt
++git apply --check "C:\Downloads\v298-offline.patch"
++git apply "C:\Downloads\v298-offline.patch"
++```
++
++The patch adds these previously nonexistent files:
++
++- `scripts/pilot_quality_gate.py`
++- `REVIEW_THREE_PRESENTER_PILOT.bat`
++- `tests/test_v298.py`
++- `docs/V298_RELEASE_NOTES.md`
++
++It does not alter existing source scripts or Git history.
++
++## Windows workflow after three genuine model face clips exist
++
++Use the existing guided launcher to create the **one-per-speaker** real pilot if necessary. You still need all three authorized portraits, signed Kokoro Hindi speech, the source-bound PCM chunk export, real SadTalker CPU weights, and explicit `YES` before any model inference:
++
++```powershell
++.\CONTINUE_FULL_HINDI_NEURAL.bat
++```
++
++Choose `PILOT` at the neural stage, then inspect saved samples. After you have one source-verified MP4 for **each** presenter:
++
++```powershell
++.\REVIEW_THREE_PRESENTER_PILOT.bat "D:\HindiStudio"
++```
++
++The BAT performs a **read-only disk/source preflight**, independently verifies the full signed original source/portrait/PCM manifest, and independently decodes all saved real face previews. It creates or opens a local-only three-clip HTML reviewer, then pauses so you can inspect **each** presenter with the original Hindi voice. On returning to the terminal, enter `PASS` or `FAIL` separately for Aarav, Meera and Kabir, then type an exact uppercase review acknowledgment to store your own observation. If any face fails, the aggregate observation is **not passed**.
++
++The private review record is saved as a new file beside your *existing signed neural chunk manifest*, such as `pilot-original-hindi-human-observations-<binding>-001.json`. Every new review creates a distinct file: no overwrites or deleted old decisions. The record is source-bound to original project SHA, each selected MP4 SHA and source chunk ID. Current source/preview integrity is independently rechecked **again** before recording any observation. Existing offline reviewer HTML is compared byte-for-byte with the expected generated page before reuse.
++
++To inspect the most recent human note without writing anything:
++
++```powershell
++.\REVIEW_THREE_PRESENTER_PILOT.bat "D:\HindiStudio" "" INSPECT
++```
++
++**Important:** A `PASS` is merely a human *self-attested opinion on three short samples*; it **does not grant portrait publication rights**, prove natural phoneme alignment for all Hindi words, skip the full 45-turn human review, or cause the pipeline to automatically start the remaining model chunks. The existing full CPU model renderer is **not forcibly gated** by this new optional review; avoid continuing it yourself if any pilot is poor.
++
++## Testing and limitations
++
++- Offline local tests: 14/14 passed with synthetic 45-turn / 3-presenter data and **test-only mock validators**; no real neural AI, real Hindi voices or real video media were rendered or decoded.
++- Tests cover first saved clip selection per speaker, local-only HTML and immutable reopening, exact three-user decisions and acknowledgment, failed→passed re-review without overwrite, changed MP4 SHA refusal, existing review tamper rejection, missing third presenter, source SHA mismatch, symlinked HTML refusal, read-only inspection without a human note, altered browser HTML refusal before record, old-review invalidation after an MP4 changes, the real CLI prepare→record→inspect sequence with mocked originals, and refusal of suspicious review note filenames.
++- This patch has **not been integrated into GitHub CI or run on a real GPU-less Windows computer** while GitHub access is blocked. It requires the v2.96 viewer and v2.97 original signed PCM/batch modules already present in your clone.
++- A self-attestation JSON can be manually forged; it is **not** a cryptographic signature or independent quality/rights certificate.
++- Browser file access can vary. If Windows cannot auto-open the local HTML, open the reported `.html` file manually from your own private PCM workspace.
++- The full 10-minute, three-presenter naturally lip-synced episode remains **unproven on the user's actual machine**, and requires expensive model rendering followed by full media and human quality audit.
+diff --git a/scripts/pilot_quality_gate.py b/scripts/pilot_quality_gate.py
+new file mode 100644
+index 0000000..46f8e99
+--- /dev/null
++++ b/scripts/pilot_quality_gate.py
+@@ -0,0 +1,329 @@
++"""V2.98: private, source-bound, human-observed 3-presenter face pilot.
++
++This helper does not call an AI model, publish a video, certify identity,
++or decide whether Hindi mouth motion is natural. It only independently
++rechecks signed originals + saved real MP4 and helps a human record an
++explicit, revocable-by-new-review opinion on one clip for EACH speaker.
++"""
++from __future__ import annotations
++
++import argparse
++import datetime as dt
++import json
++import os
++import re
++from pathlib import Path
++
++from podcast.motion_qc import sha256_file
++from scripts.cast_five_second_cpu import source_ten_minute_gate
++from scripts.full_neural_chunks import _output_root, verify_chunks
++from scripts.neural_chunk_batch import _checksum, read_only_progress
++from scripts.real_hindi_neural_hybrid import preflight_episode
++from scripts.review_verified_neural_chunks import _page
++
++CAST = ("aarav", "meera", "kabir")
++IDS = re.compile(r"^[0-9]{3}-[0-9]{3}$")
++SHA = re.compile(r"^[0-9a-f]{64}$")
++PHRASE = "I INSPECTED ALL THREE ORIGINAL HINDI FACE CLIPS"
++STATUS = "private_human_observation_of_three_original_hindi_face_pilot_only"
++PAGE_PREFIX = "original-hindi-three-presenter-pilot-"
++REVIEW_PREFIX = "pilot-original-hindi-human-observations-"
++
++
++def plan_three_face_review(evidence: dict, output: Path, *,
++                           source_verifier=None, progress_reader=None) -> dict:
++    """Read-only SHA, original-PCM, portrait, and every saved MP4 decode gate."""
++    root = _output_root(evidence, output)
++    manifest = (source_verifier or verify_chunks)(evidence, root)
++    progress = (progress_reader or read_only_progress)(evidence, root)
++    rows = manifest.get("chunks") if isinstance(manifest, dict) else None
++    done = progress.get("_confirmed") if isinstance(progress, dict) else None
++    pending = progress.get("_pending") if isinstance(progress, dict) else None
++    lines = evidence.get("project", {}).get("lines")
++    if (not isinstance(rows, list) or len(rows) < 45
++            or not isinstance(lines, list) or len(lines) != 45
++            or not isinstance(done, dict) or not isinstance(pending, list)
++            or len(set(line["id"] for line in lines)) != 45
++            or progress.get("source_only_no_new_inference_called") is not True
++            or progress.get("human_lipsync_approved") is not False
++            or progress.get("full_ten_minute_neural_lip_sync_verified") is not False
++            or type(progress.get("original_chunks_total")) is not int
++            or progress["original_chunks_total"] != len(rows)
++            or type(progress.get("independently_decoded_previews")) is not int
++            or progress["independently_decoded_previews"] != len(done)
++            or type(progress.get("remaining_unrendered_chunks")) is not int
++            or progress["remaining_unrendered_chunks"] != len(pending)):
++        raise ValueError("Complete signed 45-turn original and independent preview scan required.")
++    original_binding = _checksum({
++        "source": manifest["source_mp4_sha256"],
++        "project": manifest["project_sha256"],
++        "portraits": manifest["portrait_sha256"],
++        "srt": manifest["original_srt_sha256"],
++        "wav": manifest["original_wav_sha256"],
++        "chunk_sha256": {r["chunk_id"]: r["chunk_wav_sha256"] for r in rows},
++    })
++    if progress.get("source_binding_sha256") != original_binding:
++        raise ValueError("Genuine saved preview inventory is not tied to current original Hindi source.")
++    seen = [r["chunk_id"] for r in rows]
++    if (len(set(seen)) != len(seen)
++            or any(not IDS.fullmatch(cid) for cid in seen)
++            or set(seen) != set(done) | set(pending)
++            or set(done) & set(pending)
++            or pending != [cid for cid in seen if cid not in done]):
++        raise ValueError("Original PCM chunk order and decoded saved preview inventory mismatch.")
++    by_id = {line["id"]: line for line in lines}
++    chosen = {}
++    for row in rows:
++        speaker = row["speaker"]
++        if speaker not in CAST or speaker != by_id[row["line_id"]]["speaker"]:
++            raise ValueError("Unexpected presenter in original Hindi manifest.")
++        cid = row["chunk_id"]
++        if speaker in chosen or cid not in done:
++            continue
++        expected_sha = done[cid]
++        path = root / "neural-one" / (cid + ".mp4")
++        if (not isinstance(expected_sha, str) or not SHA.fullmatch(expected_sha)
++                or path.is_symlink() or not path.is_file()
++                or sha256_file(path) != expected_sha):
++            raise ValueError("Saved real pilot MP4 was changed after source-bound decoder scan.")
++        seconds = row.get("duration_seconds")
++        if (isinstance(seconds, bool) or not isinstance(seconds, (int, float))
++                or not 1 <= seconds <= 10):
++            raise ValueError("Original pilot PCM duration invalid.")
++        text = by_id[row["line_id"]].get("text")
++        if not isinstance(text, str) or not text.strip():
++            raise ValueError("Source-bound original Hindi dialogue text missing.")
++        chosen[speaker] = {
++            "speaker": speaker, "id": cid, "line_id": row["line_id"],
++            "part": row["part"], "duration_seconds": seconds,
++            "original_whole_turn_text": text,
++            "preview_sha256": expected_sha,
++        }
++    if set(chosen) != set(CAST):
++        raise ValueError("A REAL independently verified face MP4 is required for EACH of Aarav, Meera and Kabir.")
++    selected = [chosen[speaker] for speaker in CAST]
++    pilot_binding = _checksum({
++        "original_binding": original_binding,
++        "selected_clip_sha256": {x["speaker"]: [x["id"], x["preview_sha256"]]
++                                 for x in selected},
++    })
++    return {
++        "schema_version": 1,
++        "status": STATUS,
++        "source_binding_sha256": original_binding,
++        "pilot_sample_binding_sha256": pilot_binding,
++        "selected": selected,
++        "three_real_original_hindi_presenters_reverified": True,
++        "new_model_inference_calls": 0,
++        "human_lipsync_approved": False,
++        "final_full_hindi_podcast_audited": False,
++        "publication_approved": False,
++    }
++
++
++def _private_page_path(root: Path, plan: dict) -> Path:
++    return root / (PAGE_PREFIX + plan["pilot_sample_binding_sha256"][:16] + ".html")
++
++
++def _expected_private_html(plan: dict) -> str:
++    """Reuse the already-tested v2.96 HTML, CSP and local-only JS."""
++    report = {
++        "preview_entries": plan["selected"],
++        "source_binding_sha256": plan["source_binding_sha256"],
++        "verified_real_speaking_face_previews": 3,
++        "original_signed_speech_chunks": 3,
++        "remaining_unrendered_original_speech_chunks": 0,
++    }
++    return _page(report).replace(
++        "Verified samples: 3 /\n3. Remaining: 0.",
++        "Three verified presenter samples. Final whole-episode review STILL REQUIRED.")
++
++
++def _assert_unchanged_local_html(path: Path, plan: dict) -> None:
++    if (path.is_symlink() or not path.is_file()
++            or path.stat().st_size > 100_000
++            or path.read_text(encoding="utf8") != _expected_private_html(plan)):
++        raise ValueError("Private three-presenter HTML altered or missing; do not trust or reuse it.")
++
++
++def prepare_manual_pilot_viewer(evidence: dict, root: Path, *,
++                                source_verifier=None, progress_reader=None) -> tuple[dict, Path]:
++    """Create or safely reopen exactly matching 3-clip OFFLINE HTML."""
++    root = _output_root(evidence, root)
++    plan = plan_three_face_review(evidence, root,
++                                  source_verifier=source_verifier,
++                                  progress_reader=progress_reader)
++    page = _private_page_path(root, plan)
++    if page.is_symlink():
++        raise ValueError("Symlinked pilot review HTML refused.")
++    if page.exists():
++        _assert_unchanged_local_html(page, plan)
++    else:
++        with page.open("x", encoding="utf8") as handle:
++            handle.write(_expected_private_html(plan))
++            handle.flush()
++            os.fsync(handle.fileno())
++    return plan, page
++
++
++def _review_name(root: Path, plan: dict) -> Path:
++    prefix = REVIEW_PREFIX + plan["pilot_sample_binding_sha256"][:16]
++    for n in range(1, 1000):
++        path = root / (prefix + f"-{n:03d}.json")
++        if path.is_symlink():
++            raise ValueError("Symlinked private manual review record refused.")
++        if not path.exists():
++            return path
++    raise ValueError("Too many private manual reviews for the same pilot media.")
++
++
++def save_human_observation(evidence: dict, output: Path,
++                           original_plan: dict, decisions: dict,
++                           acknowledgment: str, *,
++                           source_verifier=None, progress_reader=None) -> tuple[dict, Path]:
++    """Never infer approval from hashes. Human must explicitly inspect all 3."""
++    root = _output_root(evidence, output)
++    if acknowledgment != PHRASE:
++        raise ValueError("An explicit manual three-face observation acknowledgment is required.")
++    if (not isinstance(decisions, dict) or set(decisions) != set(CAST)
++            or any(type(x) is not str or x not in ("PASS", "FAIL")
++                   for x in decisions.values())):
++        raise ValueError("Exactly 3 explicit PASS/FAIL human observations are required.")
++    latest = plan_three_face_review(evidence, root,
++                                     source_verifier=source_verifier,
++                                     progress_reader=progress_reader)
++    if latest != original_plan:
++        raise ValueError("Original media or saved pilot previews changed during human review.")
++    viewer = _private_page_path(root, latest)
++    _assert_unchanged_local_html(viewer, latest)
++    content = {
++        "schema_version": 1, "status": STATUS,
++        "source_binding_sha256": latest["source_binding_sha256"],
++        "pilot_sample_binding_sha256": latest["pilot_sample_binding_sha256"],
++        "reviewed_presenters": [{
++            "speaker": item["speaker"], "chunk_id": item["id"],
++            "preview_sha256": item["preview_sha256"],
++            "human_observation": decisions[item["speaker"]],
++        } for item in latest["selected"]],
++        "reviewer_explicitly_confirmed_three_clips_inspected": True,
++        "human_self_attested_pilot_quality_pass": all(x == "PASS" for x in decisions.values()),
++        "automated_lipsync_quality_certification": False,
++        "full_ten_minute_neural_video_completed": False,
++        "full_45_turn_human_lipsync_approved": False,
++        "portrait_rights_independently_verified": False,
++        "publication_approved": False,
++        "record_created_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
++    }
++    destination = _review_name(root, latest)
++    with destination.open("x", encoding="utf8") as handle:
++        json.dump(content, handle, indent=2, ensure_ascii=False, allow_nan=False)
++        handle.write("\n")
++        handle.flush()
++        os.fsync(handle.fileno())
++    return content, destination
++
++
++def inspect_latest_observation(evidence: dict, output: Path, *,
++                               source_verifier=None, progress_reader=None) -> dict:
++    """READ ONLY: compare latest self-attested note with CURRENT clip SHA."""
++    root = _output_root(evidence, output)
++    plan = plan_three_face_review(evidence, root,
++                                  source_verifier=source_verifier,
++                                  progress_reader=progress_reader)
++    prefix = REVIEW_PREFIX + plan["pilot_sample_binding_sha256"][:16]
++    notes = sorted(root.glob(prefix + "-*.json"))
++    if any(not re.fullmatch(re.escape(prefix) + r"-[0-9]{3}\.json", p.name)
++           for p in notes):
++        raise ValueError("Unexpected private pilot review note name; inspect manually.")
++    if not notes:
++        return {"saved_manual_review_exists": False,
++                "three_presenter_current_samples_verified": True,
++                "human_self_attested_pilot_quality_pass": False}
++    latest = notes[-1]
++    if (latest.is_symlink() or not latest.is_file() or latest.stat().st_size > 20_000):
++        raise ValueError("Unsafe private pilot review record.")
++    data = json.loads(latest.read_text(encoding="utf8"))
++    expected = [
++        {"speaker": r["speaker"], "chunk_id": r["id"],
++         "preview_sha256": r["preview_sha256"]}
++        for r in plan["selected"]
++    ]
++    actual = data.get("reviewed_presenters") if isinstance(data, dict) else None
++    if (not isinstance(data, dict) or data.get("status") != STATUS
++            or data.get("schema_version") != 1
++            or data.get("source_binding_sha256") != plan["source_binding_sha256"]
++            or data.get("pilot_sample_binding_sha256") != plan["pilot_sample_binding_sha256"]
++            or not isinstance(actual, list) or len(actual) != 3
++            or [{key: row.get(key) for key in expected[0]} for row in actual] != expected
++            or any(row.get("human_observation") not in ("PASS", "FAIL") for row in actual)
++            or data.get("reviewer_explicitly_confirmed_three_clips_inspected") is not True
++            or data.get("human_self_attested_pilot_quality_pass") is not all(
++                row["human_observation"] == "PASS" for row in actual)
++            or data.get("publication_approved") is not False
++            or data.get("automated_lipsync_quality_certification") is not False
++            or data.get("full_45_turn_human_lipsync_approved") is not False):
++        raise ValueError("Saved manual review differs from CURRENT source/face sample SHA or has invalid flags.")
++    return {
++        "saved_manual_review_exists": True,
++        "three_presenter_current_samples_verified": True,
++        "human_self_attested_pilot_quality_pass": data["human_self_attested_pilot_quality_pass"],
++        "manual_observations": {r["speaker"]: r["human_observation"] for r in actual},
++        "source_binding_still_matches": True,
++        "publication_approved": False,
++        "full_45_turn_human_lipsync_approved": False,
++        "review_file_name": latest.name,
++    }
++
++
++def main(argv=None) -> int:
++    parser = argparse.ArgumentParser(description="OFFLINE creator-observed Hindi 3-face pilot; NO models")
++    parser.add_argument("--episode-root", required=True, type=Path)
++    parser.add_argument("--portrait-dir", required=True, type=Path)
++    parser.add_argument("--output", required=True, type=Path)
++    mode = parser.add_mutually_exclusive_group(required=True)
++    mode.add_argument("--prepare", action="store_true")
++    mode.add_argument("--record", action="store_true")
++    mode.add_argument("--inspect", action="store_true")
++    parser.add_argument("--open-browser", action="store_true")
++    args = parser.parse_args(argv)
++    try:
++        evidence = preflight_episode(args.episode_root, args.portrait_dir)
++        source_ten_minute_gate(evidence)
++        if args.inspect:
++            print(json.dumps(inspect_latest_observation(evidence, args.output), indent=2))
++            return 0
++        if args.prepare:
++            plan, page = prepare_manual_pilot_viewer(evidence, args.output)
++            print("PRIVATE OFFLINE three-presenter pilot HTML:", page)
++            print("New real model calls: 0. Three saved real samples structurally verified.")
++            if args.open_browser and os.name == "nt":
++                try:
++                    os.startfile(str(page))
++                except OSError:
++                    print("Browser did not auto-open. Open private HTML manually.")
++            return 0
++        plan, page = prepare_manual_pilot_viewer(evidence, args.output)
++        print("Inspect all THREE original Hindi face clips in", page)
++        decisions = {}
++        for entry in plan["selected"]:
++            name = entry["speaker"]
++            print(name, entry["id"], "— original speech seconds:", entry["duration_seconds"])
++            print("Judge visible Hindi mouth alignment, frozen frames, cropping, identity and audio.")
++            decisions[name] = input("Type PASS or FAIL for " + name + ": ").strip()
++        print("A saved PASS is YOUR opinion only, not AI accuracy or licensing evidence.")
++        acknowledgement = input("Type EXACTLY " + PHRASE + " : ").strip()
++        report, file = save_human_observation(evidence, args.output, plan, decisions,
++                                               acknowledgement)
++        print("PRIVATE MANUAL OBSERVATION SAVED:", file)
++        print("All 3 passed by human self-report:", report["human_self_attested_pilot_quality_pass"])
++        print("FULL 10-MINUTE VIDEO / PUBLICATION APPROVAL: FALSE")
++        return 0
++    except (ValueError, KeyError, TypeError, OSError, RuntimeError, EOFError,
++            json.JSONDecodeError):
++        print("BLOCKED: source, three real face clips, private review page or explicit answers invalid."
++              " No original voices, face MP4s or existing review records intentionally changed.")
++        return 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/tests/test_v298.py b/tests/test_v298.py
+new file mode 100644
+index 0000000..6994f4c
+--- /dev/null
++++ b/tests/test_v298.py
+@@ -0,0 +1,249 @@
++"""v2.98 offline manual 3-presenter observation. All video/voice fixtures FAKE.
++
++Only source-bound behavior is tested; these tests do not verify actual
++Hindi phonemes, human identities, legal permissions or real model inference.
++"""
++import hashlib
++import json
++from pathlib import Path
++
++import pytest
++
++from scripts import pilot_quality_gate as gate
++
++
++def _sha(data):
++    return hashlib.sha256(data).hexdigest()
++
++
++@pytest.fixture
++def private_fake_pilot(tmp_path, monkeypatch):
++    root = tmp_path / "private signed Hindi PCM folder"
++    previews = root / "neural-one"
++    previews.mkdir(parents=True)
++    cast = ("aarav", "meera", "kabir")
++    lines = [
++        {"id": f"{n:03d}", "speaker": cast[(n-1) % 3],
++         "text": f"नमस्ते original Hindi speech {n}"}
++        for n in range(1, 46)
++    ]
++    rows = [
++        {"chunk_id": f"{line['id']}-001", "line_id": line["id"],
++         "speaker": line["speaker"], "part": 1,
++         "duration_seconds": 5.0, "chunk_wav_sha256": _sha(line["id"].encode())}
++        for line in lines
++    ]
++    manifest = {
++        "source_mp4_sha256": "a" * 64,
++        "project_sha256": "b" * 64,
++        "portrait_sha256": {s: "c" * 64 for s in cast},
++        "original_srt_sha256": "d" * 64,
++        "original_wav_sha256": {line["id"]: "e" * 64 for line in lines},
++        "chunks": rows,
++    }
++    for cid in ("001-001", "002-001", "003-001"):
++        (previews / (cid + ".mp4")).write_bytes(
++            b"FAKE UNIT TEST NOT A REAL FACE OR HINDI AUDIO " + cid.encode())
++    done = {cid: _sha((previews / (cid + ".mp4")).read_bytes())
++            for cid in ("001-001", "002-001", "003-001")}
++    binding = gate._checksum({
++        "source": manifest["source_mp4_sha256"],
++        "project": manifest["project_sha256"],
++        "portraits": manifest["portrait_sha256"],
++        "srt": manifest["original_srt_sha256"],
++        "wav": manifest["original_wav_sha256"],
++        "chunk_sha256": {r["chunk_id"]: r["chunk_wav_sha256"] for r in rows},
++    })
++    progress = {
++        "_confirmed": done, "_pending": [r["chunk_id"] for r in rows if r["chunk_id"] not in done],
++        "source_binding_sha256": binding, "source_only_no_new_inference_called": True,
++        "human_lipsync_approved": False,
++        "full_ten_minute_neural_lip_sync_verified": False,
++        "original_chunks_total": 45, "independently_decoded_previews": 3,
++        "remaining_unrendered_chunks": 42,
++    }
++    evidence = {"project": {"lines": lines}, "portrait_dir": tmp_path / "portraits"}
++    monkeypatch.setattr(gate, "_output_root", lambda e, out: Path(out))
++    monkeypatch.setattr(gate, "verify_chunks", lambda e, out: manifest)
++    monkeypatch.setattr(gate, "read_only_progress", lambda e, out: progress)
++    return evidence, root, manifest, progress
++
++
++def test_planner_reads_only_original_three_presenters(private_fake_pilot):
++    evidence, root, source, progress = private_fake_pilot
++    old = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
++    plan = gate.plan_three_face_review(evidence, root)
++    assert [x["speaker"] for x in plan["selected"]] == list(gate.CAST)
++    assert [x["id"] for x in plan["selected"]] == ["001-001", "002-001", "003-001"]
++    assert plan["human_lipsync_approved"] is False
++    assert plan["publication_approved"] is False
++    assert plan["new_model_inference_calls"] == 0
++    assert {p: p.read_bytes() for p in old} == old
++
++
++def test_three_original_immutable_offline_html_and_safe_reopen(private_fake_pilot):
++    evidence, root, source, progress = private_fake_pilot
++    plan, page = gate.prepare_manual_pilot_viewer(evidence, root)
++    text = page.read_text(encoding="utf8")
++    assert "neural-one/001-001.mp4" in text
++    assert "neural-one/002-001.mp4" in text
++    assert "neural-one/003-001.mp4" in text
++    assert "connect-src 'none'" in text
++    assert "default-src 'none'" in text
++    assert "नमस्ते" in text
++    assert "https://" not in text
++    assert page.parent == root
++    assert plan["status"] == gate.STATUS
++    plan2, page2 = gate.prepare_manual_pilot_viewer(evidence, root)
++    assert plan2 == plan and page2 == page
++    page.write_text(text.replace("default-src 'none'", "default-src *"), encoding="utf8")
++    with pytest.raises(ValueError, match="altered"):
++        gate.prepare_manual_pilot_viewer(evidence, root)
++
++
++def test_no_human_pilot_pass_without_exact_three_decisions_and_phrase(private_fake_pilot):
++    evidence, root, _, _ = private_fake_pilot
++    plan, page = gate.prepare_manual_pilot_viewer(evidence, root)
++    for bad_answers in ({"aarav": "PASS"},
++                        {"aarav": "PASS", "meera": "PASS", "kabir": "YES"},
++                        {"aarav": True, "meera": "PASS", "kabir": "PASS"}):
++        with pytest.raises(ValueError):
++            gate.save_human_observation(evidence, root, plan, bad_answers, gate.PHRASE)
++    with pytest.raises(ValueError, match="acknowledgment"):
++        gate.save_human_observation(evidence, root, plan, dict.fromkeys(gate.CAST, "PASS"), "YES")
++    assert not list(root.glob("pilot-original-hindi-human-observations-*.json"))
++
++
++def test_fail_then_explicit_new_pass_creates_separate_private_reviews(private_fake_pilot):
++    evidence, root, _, _ = private_fake_pilot
++    plan, page = gate.prepare_manual_pilot_viewer(evidence, root)
++    first, first_path = gate.save_human_observation(
++        evidence, root, plan,
++        {"aarav": "PASS", "meera": "FAIL", "kabir": "PASS"}, gate.PHRASE)
++    assert first["human_self_attested_pilot_quality_pass"] is False
++    assert first["publication_approved"] is False
++    prior = first_path.read_bytes()
++    second, second_path = gate.save_human_observation(
++        evidence, root, plan, dict.fromkeys(gate.CAST, "PASS"), gate.PHRASE)
++    assert first_path != second_path
++    assert first_path.read_bytes() == prior
++    assert second["human_self_attested_pilot_quality_pass"] is True
++    assert second["full_45_turn_human_lipsync_approved"] is False
++    assert second["publication_approved"] is False
++    check = gate.inspect_latest_observation(evidence, root)
++    assert check["human_self_attested_pilot_quality_pass"] is True
++    assert check["manual_observations"] == dict.fromkeys(gate.CAST, "PASS")
++    assert check["full_45_turn_human_lipsync_approved"] is False
++
++
++def test_changed_real_preview_sha_blocks_record_after_human_inspection(private_fake_pilot):
++    evidence, root, _, _ = private_fake_pilot
++    plan, page = gate.prepare_manual_pilot_viewer(evidence, root)
++    (root / "neural-one" / "002-001.mp4").write_bytes(b"MUTATED FAKE TEST")
++    with pytest.raises(ValueError, match="changed"):
++        gate.save_human_observation(evidence, root, plan,
++                                    dict.fromkeys(gate.CAST, "PASS"), gate.PHRASE)
++    assert not list(root.glob(gate.REVIEW_PREFIX + "*.json"))
++
++
++def test_changed_existing_review_cannot_claim_publication_approval(private_fake_pilot):
++    evidence, root, _, _ = private_fake_pilot
++    plan, page = gate.prepare_manual_pilot_viewer(evidence, root)
++    record, note = gate.save_human_observation(
++        evidence, root, plan, dict.fromkeys(gate.CAST, "PASS"), gate.PHRASE)
++    data = json.loads(note.read_text(encoding="utf8"))
++    data["publication_approved"] = True
++    note.write_text(json.dumps(data), encoding="utf8")
++    with pytest.raises(ValueError, match="invalid flags"):
++        gate.inspect_latest_observation(evidence, root)
++
++
++def test_missing_kabir_real_preview_blocks_all_gate_writes(private_fake_pilot):
++    evidence, root, _, progress = private_fake_pilot
++    progress["_confirmed"].pop("003-001")
++    progress["_pending"].insert(0, "003-001")
++    progress["remaining_unrendered_chunks"] += 1
++    progress["independently_decoded_previews"] -= 1
++    with pytest.raises(ValueError, match="EACH"):
++        gate.prepare_manual_pilot_viewer(evidence, root)
++    assert not list(root.glob("*.html"))
++
++
++def test_saved_review_readonly_inspection_no_record_is_not_approval(private_fake_pilot):
++    evidence, root, _, _ = private_fake_pilot
++    view = gate.inspect_latest_observation(evidence, root)
++    assert view["saved_manual_review_exists"] is False
++    assert view["human_self_attested_pilot_quality_pass"] is False
++
++
++def test_current_source_binding_mismatch_fails_closed(private_fake_pilot):
++    evidence, root, _, progress = private_fake_pilot
++    progress["source_binding_sha256"] = "0" * 64
++    with pytest.raises(ValueError, match="original Hindi source"):
++        gate.plan_three_face_review(evidence, root)
++    assert not list(root.glob("*.html"))
++
++
++def test_symlinked_review_page_refused(private_fake_pilot):
++    evidence, root, _, _ = private_fake_pilot
++    plan = gate.plan_three_face_review(evidence, root)
++    target = root / "untrusted.html"
++    target.write_text("FAKE TEST ONLY")
++    path = gate._private_page_path(root, plan)
++    try:
++        path.symlink_to(target)
++    except (NotImplementedError, OSError):
++        pytest.skip("Windows may require symlink privileges")
++    with pytest.raises(ValueError, match="Symlinked"):
++        gate.prepare_manual_pilot_viewer(evidence, root)
++
++
++def test_modified_three_face_html_refused_before_human_observation(private_fake_pilot):
++    evidence, root, _, _ = private_fake_pilot
++    plan, page = gate.prepare_manual_pilot_viewer(evidence, root)
++    page.write_text('FAKE MALICIOUS REPLACEMENT', encoding='utf8')
++    with pytest.raises(ValueError, match='altered'):
++        gate.save_human_observation(
++            evidence, root, plan, dict.fromkeys(gate.CAST, 'PASS'), gate.PHRASE)
++    assert not list(root.glob(gate.REVIEW_PREFIX + '*.json'))
++
++
++def test_current_face_sha_mutation_invalidates_old_human_review(private_fake_pilot):
++    evidence, root, _, _ = private_fake_pilot
++    plan, page = gate.prepare_manual_pilot_viewer(evidence, root)
++    rec, path = gate.save_human_observation(
++        evidence, root, plan, dict.fromkeys(gate.CAST, 'PASS'), gate.PHRASE)
++    assert path.is_file()
++    (root / 'neural-one' / '001-001.mp4').write_bytes(b'AFTER REVIEW FAKE ALTERED VIDEO')
++    with pytest.raises(ValueError, match='changed'):
++        gate.inspect_latest_observation(evidence, root)
++    assert path.is_file()  # old human note never deleted or silently overwritten
++
++
++def test_command_line_prepare_record_inspect_no_ai_or_publication(
++        private_fake_pilot, monkeypatch, capsys):
++    evidence, root, _, _ = private_fake_pilot
++    monkeypatch.setattr(gate, "preflight_episode", lambda *args: evidence)
++    monkeypatch.setattr(gate, "source_ten_minute_gate", lambda evidence: None)
++    params = ["--episode-root", str(root / "original"),
++              "--portrait-dir", str(root / "portraits"),
++              "--output", str(root)]
++    assert gate.main(params + ["--prepare"]) == 0
++    answers = iter(["PASS", "FAIL", "PASS", gate.PHRASE])
++    monkeypatch.setattr("builtins.input", lambda prompt: next(answers))
++    assert gate.main(params + ["--record"]) == 0
++    assert gate.main(params + ["--inspect"]) == 0
++    output = capsys.readouterr().out
++    assert '"meera": "FAIL"' in output
++    assert '"publication_approved": false' in output
++    assert "FULL 10-MINUTE VIDEO / PUBLICATION APPROVAL: FALSE" in output
++
++
++def test_suspicious_spoofed_review_filename_refused_in_readonly_inspect(
++        private_fake_pilot):
++    evidence, root, _, _ = private_fake_pilot
++    plan, _ = gate.prepare_manual_pilot_viewer(evidence, root)
++    prefix = gate.REVIEW_PREFIX + plan["pilot_sample_binding_sha256"][:16]
++    (root / (prefix + "-9999.json")).write_text("{}", encoding="utf8")
++    with pytest.raises(ValueError, match="Unexpected"):
++        gate.inspect_latest_observation(evidence, root)
