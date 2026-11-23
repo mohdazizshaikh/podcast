@@ -143,7 +143,7 @@ def serve(root:Path,port:int=7860):
                 return self._json(202,{"task_started":command,"next":"Refresh /api/status for result; no AI inference"})
             if url.path=="/api/upload":
                 kind=query.get("kind",[""])[0];name=query.get("name",[""])[0]
-                valid=(name in [s+".png" for s in SPEAKERS]) if kind=="portrait" else bool(re.fullmatch(r"0(?:0[1-9]|[1-3]\\d|4[0-5])\\.wav",name)) if kind=="voice" else False
+                valid=(name in [s+".png" for s in SPEAKERS]) if kind=="portrait" else bool(re.fullmatch(r"0(?:0[1-9]|[1-3]\d|4[0-5])\.wav",name)) if kind=="voice" else False
                 limit=25_000_000 if kind=="portrait" else 75_000_000
                 if not valid or size>limit or size<44:
                     return self._json(400,{"error":"Invalid original media name/size"})
