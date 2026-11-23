@@ -21,7 +21,7 @@ echo DRY-RUN finished. Verify inventory/count and confirm no secrets.
 choice /C YN /M "Publish full local project into new GitHub repo?"
 if errorlevel 2 exit /b 0
 set "BACKUP=%USERPROFILE%\Podcast-Git-Migration-Backups"
-py -3 "%~dp0migrate_from_local.py" --source "%SOURCE%" --publish --backup-dir "%BACKUP%"
+py -3 "%~dp0migrate_from_local.py" --source "%SOURCE%" --publish --backup-dir "%BACKUP%" --v298-patch "%~dp0v298-offline.patch"
 if errorlevel 1 goto :blocked
 echo.
 echo SUCCESS: new repo MAIN has original committed source AND local changes.
