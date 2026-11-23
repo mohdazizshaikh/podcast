@@ -25,6 +25,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install FFmpeg + ffprobe on Ubuntu (REQUIRED media tests)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install FFmpeg + ffprobe on Windows (REQUIRED media tests)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install ffmpeg --yes --no-progress
+      - name: Require actual FFmpeg and ffprobe (never silently skip media checks)
+        run: python -c "import shutil; assert shutil.which('ffmpeg') and shutil.which('ffprobe'), 'FFmpeg and ffprobe MUST be installed for full media CI'"
       - name: Install application and synthetic test tools (NO model weights)
         run: python -m pip install -e ".[test]"
       - name: Verify source compilation
@@ -44,6 +53,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Install actual FFmpeg + ffprobe (required extended video pipeline)
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Install app and Python tests (no model weights)
         run: python -m pip install -e ".[test]"
       - name: Verify real FFmpeg is available
