@@ -14,8 +14,8 @@ echo [VERIFY] Genuine original source exact PCM and existing saved MP4s.
 if errorlevel 1 goto :failed
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" progress
 if errorlevel 1 goto :failed
-set "MODE="
-set /p "MODE=Enter PILOT (3 presenters), BATCH (<=5) or SESSION (<=20): "
+set "MODE=%~2"
+if not defined MODE set /p "MODE=Enter PILOT (3 presenters), BATCH (<=5) or SESSION (<=20): "
 setlocal EnableDelayedExpansion
 if /I "!MODE!"=="PILOT" (endlocal & set "MODE=pilot" & goto :mode_ok)
 if /I "!MODE!"=="BATCH" (endlocal & set "MODE=batch" & goto :mode_ok)

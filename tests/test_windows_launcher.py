@@ -26,7 +26,7 @@ with open(os.environ["PODCAST_V31_NATIVE_TRACE"],"a",encoding="utf-8") as f:
 print("TEST ONLY harmless Python command")
 ''',encoding="utf-8")
     (stage/"RUN_NEURAL_CPU.bat").write_text('''@echo off
->> "%PODCAST_V31_NATIVE_TRACE%" echo NEURAL-STUB
+>> "%PODCAST_V31_NATIVE_TRACE%" echo NEURAL-STUB:%~2
 exit /b 0
 ''',encoding="ascii")
     (stage/"GENERATE_KOKORO_HINDI_CPU.bat").write_text('''@echo off
@@ -74,8 +74,8 @@ def test_one_original_hindi_stage_only(windows_stage,tmp_path,mode,expected):
 
 
 @pytest.mark.skipif(os.name!="nt",reason="Windows CMD only")
-@pytest.mark.parametrize("mode,expected",[("PILOT","NEURAL-STUB"),("BATCH","NEURAL-STUB"),
-                                        ("SESSION","NEURAL-STUB"),("KOKORO","KOKORO-STUB")])
+@pytest.mark.parametrize("mode,expected",[("PILOT","NEURAL-STUB:PILOT"),("BATCH","NEURAL-STUB:BATCH"),
+                                        ("SESSION","NEURAL-STUB:SESSION"),("KOKORO","KOKORO-STUB")])
 def test_one_real_model_stage_is_only_local_stub_no_inference(windows_stage,tmp_path,mode,expected):
     result,lines,_=_run(windows_stage,tmp_path,mode+"\n")
     assert result.returncode==0,result.stdout+result.stderr

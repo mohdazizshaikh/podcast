@@ -43,9 +43,9 @@ if /I "!STEP!"=="BIND" (endlocal & goto :bind)
 if /I "!STEP!"=="CHUNKS" (endlocal & goto :chunks)
 if /I "!STEP!"=="STATIC" (endlocal & goto :static)
 if /I "!STEP!"=="AUDIT" (endlocal & goto :audit)
-if /I "!STEP!"=="PILOT" (endlocal & goto :cpu)
-if /I "!STEP!"=="BATCH" (endlocal & goto :cpu)
-if /I "!STEP!"=="SESSION" (endlocal & goto :cpu)
+if /I "!STEP!"=="PILOT" (endlocal & goto :cpu_pilot)
+if /I "!STEP!"=="BATCH" (endlocal & goto :cpu_batch)
+if /I "!STEP!"=="SESSION" (endlocal & goto :cpu_session)
 if /I "!STEP!"=="PROGRESS" (endlocal & goto :progress)
 if /I "!STEP!"=="REVIEW" (endlocal & goto :review)
 if /I "!STEP!"=="RECORD" (endlocal & goto :record)
@@ -73,8 +73,14 @@ exit /b %ERRORLEVEL%
 :audit
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" audit-static
 exit /b %ERRORLEVEL%
-:cpu
-call "%~dp0RUN_NEURAL_CPU.bat" "%BASE%"
+:cpu_pilot
+call "%~dp0RUN_NEURAL_CPU.bat" "%BASE%" "PILOT"
+exit /b %ERRORLEVEL%
+:cpu_batch
+call "%~dp0RUN_NEURAL_CPU.bat" "%BASE%" "BATCH"
+exit /b %ERRORLEVEL%
+:cpu_session
+call "%~dp0RUN_NEURAL_CPU.bat" "%BASE%" "SESSION"
 exit /b %ERRORLEVEL%
 :progress
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" progress
