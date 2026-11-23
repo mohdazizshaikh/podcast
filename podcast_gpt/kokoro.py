@@ -122,7 +122,15 @@ def generate(root:Path,*,model:Path,voices:Path,run_local:bool,
         if not isinstance(phonemes,str) or not phonemes.strip():
             raise ValueError("Hindi G2P produced no model phonemes")
         samples,rate=engine.create(phonemes,voice=voice,speed=1.0,is_phonemes=True)
-        with tempfile.TemporaryDirectory(prefix="private-kokoro-") as temp:
+        # Intermediate PCM must remain on the same private workspace volume.
+        # A D:-drive studio must not unexpectedly fill Windows C:\\TEMP.
+        import shutil
+        scratch_root=root/"scratch"
+        if scratch_root.is_symlink() or not scratch_root.is_dir():
+            raise ValueError("Private Kokoro temporary scratch directory missing/unsafe")
+        if shutil.disk_usage(scratch_root).free<100*1024**2:
+            raise ValueError("At least 100 MiB free on the private TTS scratch drive required")
+        with tempfile.TemporaryDirectory(prefix="private-kokoro-",dir=scratch_root) as temp:
             scratch=Path(temp)
             raw=scratch/"generated.wav"
             fixed=scratch/"original-16k.wav"
