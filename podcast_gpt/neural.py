@@ -31,7 +31,13 @@ def _clip_paths(root: Path, cid: str) -> tuple[Path,Path]:
 
 
 def _verify_model_clip(mp4:Path, seconds:float) -> dict:
-    return full_decode(mp4,seconds=seconds)
+    measured=full_decode(mp4,seconds=seconds)
+    # A clip with ten seconds of AAC but only a fraction of a second of
+    # face frames is NOT a real ten-second speaking face. FFprobe's format
+    # duration alone would incorrectly accept it.
+    if abs(measured["video_duration"]-seconds)>max(.45,.025*seconds):
+        raise ValueError("Real facial video stream does not cover original Hindi PCM chunk")
+    return measured
 
 
 def verified_previews(root:Path,*, allow_short:bool=False) -> tuple[dict,dict]:
@@ -221,6 +227,33 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
             lock.unlink()
 
 
+def quantize_segment_frames(durations:list[float],*,fps:int=FPS) -> list[int]:
+    """Round the *cumulative* signed speech/pause timeline to 24fps.
+
+    Independent per-clip rounding accumulates up to ~0.5 frame error on
+    EACH of 100+ segments. Cumulative rounding keeps total error at
+    most half one frame, and prevents end-of-episode visual drift.
+    """
+    if (not isinstance(durations,list) or not durations
+            or type(fps) is not int or fps<1 or fps>120):
+        raise ValueError("Invalid source-bound 24fps segment plan")
+    t=0.0
+    previous=0
+    plan=[]
+    for duration in durations:
+        if (type(duration) not in (int,float)
+                or not math.isfinite(duration) or duration<=0):
+            raise ValueError("Invalid original spoken/pause segment duration")
+        t+=duration
+        next_count=round(t*fps)
+        number=next_count-previous
+        if number<1:raise ValueError("Sub-frame source segment is not playable")
+        plan.append(number)
+        previous=next_count
+    assert sum(plan)==round(t*fps)
+    return plan
+
+
 def _concat_video(chunks:list[Path],tmp:Path, duration:float) -> Path:
     lst=tmp/"join.ffconcat"
     lines=["ffconcat version 1.0"]
@@ -259,32 +292,54 @@ def compose_neural(root:Path,*,allow_short:bool=False) -> dict:
     rows=timeline(root,src)
     groups={row["line_id"]:[] for row in chunks["chunks"]}
     for row in chunks["chunks"]:groups[row["line_id"]].append(row)
+    ordered=[]
+    for turn in rows:
+        for part in groups[turn["id"]]:
+            ordered.append(("speech",turn,part,float(part["duration"])))
+        if turn["pause"]>0:
+            ordered.append(("pause",turn,None,float(turn["pause"])))
+    if not ordered:raise ValueError("No original Hindi speaking face timeline to compose")
+    frame_plan=quantize_segment_frames([segment[3] for segment in ordered])
+    if sum(frame_plan)!=round(src["original_seconds"]*FPS):
+        raise ValueError("Original final frame timeline is not source bound")
     with tempfile.TemporaryDirectory(prefix="podcast-full-neural-",dir=scratch) as folder:
         tmp=Path(folder);segments=[]
-        for turn in rows:
-            for row in groups[turn["id"]]:
-                model_video=root/"previews"/(row["id"]+".mp4")
-                segment=tmp/(row["id"]+".mp4")
-                # Only video pixels from real saved face. Never model-generated audio.
+        for (kind,turn,part,_),frame_count in zip(ordered,frame_plan):
+            if kind=="speech":
+                model_video=root/"previews"/(part["id"]+".mp4")
+                segment=tmp/(part["id"]+".mp4")
+                # Video pixels only. Pad any sub-frame end gap by cloning
+                # the last face frame; exact cumulative frame count is
+                # source-PCM-derived, never determined by model AAC.
                 cmd(["ffmpeg","-y","-hide_banner","-v","error","-i",str(model_video),
                      "-an","-vf",f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,"
-                     f"crop={WIDTH}:{HEIGHT},fps={FPS},format=yuv420p",
+                     f"crop={WIDTH}:{HEIGHT},fps={FPS},"
+                     "tpad=stop_mode=clone:stop_duration=1,format=yuv420p",
+                     "-frames:v",str(frame_count),
                      "-c:v","libx264","-threads","2","-preset","ultrafast","-crf","23",
-                     "-t",f"{row['duration']:.6f}",str(segment)],timeout=max(120,int(row['duration']*20)))
+                     str(segment)],timeout=max(120,int(part["duration"]*20)))
                 segments.append(segment)
-            if turn["pause"]>0:
-                # Hold same presenter's source-verified portrait still in pauses.
+            else:
+                # Original source-bound still card during exact silence.
                 card=tmp/(turn["speaker"]+"-still.png")
                 if not card.exists():portrait_card(root,turn["speaker"],card)
                 segment=tmp/(turn["id"]+"-pause.mp4")
-                cmd(["ffmpeg","-y","-hide_banner","-v","error","-loop","1","-framerate",str(FPS),
-                     "-i",str(card),"-an","-c:v","libx264","-threads","2","-preset","ultrafast",
-                     "-t",f"{turn['pause']:.6f}","-pix_fmt","yuv420p",str(segment)],timeout=120)
+                cmd(["ffmpeg","-y","-hide_banner","-v","error","-loop","1",
+                     "-framerate",str(FPS),"-i",str(card),"-an",
+                     "-frames:v",str(frame_count),"-c:v","libx264",
+                     "-threads","2","-preset","ultrafast",
+                     "-pix_fmt","yuv420p",str(segment)],timeout=120)
                 segments.append(segment)
-            if os.environ.get("PODCAST_BUILD_PROGRESS") == "1" and int(turn["id"]) % 10 == 0:
-                print(f"[SOURCE-BOUND COMPOSER] Encoded {turn['id']}/045 turns; model inference calls 0", flush=True)
+            if (os.environ.get("PODCAST_BUILD_PROGRESS")=="1"
+                    and kind=="pause" and int(turn["id"])%10==0):
+                print(f"[SOURCE-BOUND COMPOSER] Encoded {turn['id']}/045 original turns; real model inference calls 0",flush=True)
         if not segments:raise ValueError("No genuine verified neural face videos")
         joined=_concat_video(segments,tmp,src["original_seconds"])
+        # No segment-by-segment 24fps rounding drift: 45-turn joined video
+        # must span the PCM timeline, within at most one 24fps frame.
+        joined_video=streams(joined)
+        if abs(joined_video["video_duration"]-src["original_seconds"])>1/FPS+.005:
+            raise ValueError("45-turn neural candidate video timing drifted from original Hindi PCM")
         audio=tmp/"original.wav";original_audio(root,rows,audio)
         staged=tmp/"full.mp4"
         cmd(["ffmpeg","-y","-hide_banner","-v","error","-i",str(joined),"-i",str(audio),
