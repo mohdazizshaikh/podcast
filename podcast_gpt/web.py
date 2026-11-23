@@ -16,7 +16,8 @@ from pathlib import Path
 from urllib.parse import parse_qs,urlsplit
 
 from .cli import doctor
-from .source import SPEAKERS,init,build_source,prepare_chunks,wav_info,read_json,workspace_path
+from .source import (SPEAKERS, SOURCE_FILE, init, build_source, prepare_chunks,
+                     wav_info, read_json, workspace_path, original_voice_lock)
 from .media import render_static,audit_static
 from .neural import progress
 from .readiness import inspect as inspect_readiness
@@ -157,36 +158,45 @@ def serve(root:Path,port:int=7860):
                 if not lock.acquire(blocking=False):
                     return self._json(409,{"error":"Active private task/media import; retry later"})
                 try:
-                    folder=root/("portraits" if kind=="portrait" else "voices")
-                    if folder.is_symlink():
-                        return self._json(400,{"error":"Unsafe private media directory symlink"})
-                    folder.mkdir(parents=True,exist_ok=True)
-                    if folder.is_symlink():
-                        return self._json(400,{"error":"Unsafe private media directory symlink"})
-                    target=folder/name
-                    created=False
-                    try:
-                        with target.open("xb") as file:
-                            created=True
-                            pending=size
-                            while pending:
-                                piece=self.rfile.read(min(pending,1024*1024))
-                                if not piece:raise ValueError("Upload interrupted")
-                                file.write(piece);pending-=len(piece)
-                        if kind=="voice":wav_info(target)
-                        else:
-                            from PIL import Image
-                            with Image.open(target) as im: im.verify()
-                            with Image.open(target) as im:
-                                if im.format!="PNG" or min(im.size)<200:
-                                    raise ValueError("Portrait must be PNG >=200px")
-                        return self._json(201,{"original_local_file_imported":name,
-                                               "portrait_rights_independently_verified":False})
-                    except FileExistsError:
-                        return self._json(409,{"error":"Original exists; refused overwrite"})
-                    except Exception:
-                        if created:target.unlink(missing_ok=True)
-                        return self._json(400,{"error":"Invalid, incomplete or unsupported private media"})
+                    # Unlike the per-server threading.Lock, this EXCLUSIVE
+                    # filesystem lock also serializes separate Windows/Python
+                    # TTS and BIND processes running against the same studio.
+                    with original_voice_lock(root):
+                        bound=root/"source"/SOURCE_FILE
+                        if bound.exists() or bound.is_symlink():
+                            return self._json(409,{"error":"Original source SHA already bound; all media imports closed"})
+                        folder=root/("portraits" if kind=="portrait" else "voices")
+                        if folder.is_symlink():
+                            return self._json(400,{"error":"Unsafe private media directory symlink"})
+                        folder.mkdir(parents=True,exist_ok=True)
+                        if folder.is_symlink():
+                            return self._json(400,{"error":"Unsafe private media directory symlink"})
+                        target=folder/name
+                        created=False
+                        try:
+                            with target.open("xb") as file:
+                                created=True
+                                pending=size
+                                while pending:
+                                    piece=self.rfile.read(min(pending,1024*1024))
+                                    if not piece:raise ValueError("Upload interrupted")
+                                    file.write(piece);pending-=len(piece)
+                            if kind=="voice":wav_info(target)
+                            else:
+                                from PIL import Image
+                                with Image.open(target) as im: im.verify()
+                                with Image.open(target) as im:
+                                    if im.format!="PNG" or min(im.size)<200:
+                                        raise ValueError("Portrait must be PNG >=200px")
+                            return self._json(201,{"original_local_file_imported":name,
+                                                   "portrait_rights_independently_verified":False})
+                        except FileExistsError:
+                            return self._json(409,{"error":"Original exists; refused overwrite"})
+                        except Exception:
+                            if created:target.unlink(missing_ok=True)
+                            return self._json(400,{"error":"Invalid, incomplete or unsupported private media"})
+                except ValueError as err:
+                    return self._json(409,{"error":"Cross-process original source lock/blocker: "+str(err)})
                 finally:
                     lock.release()
             return self._json(404,{"error":"Unknown private API"})
