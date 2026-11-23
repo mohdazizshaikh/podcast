@@ -27,7 +27,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install FFmpeg + ffprobe on Ubuntu (REQUIRED media tests)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        timeout-minutes: 6
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null; then
+            echo "Already installed; skipping apt downloads."
+          else
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install -y ffmpeg
+          fi
       - name: Install FFmpeg + ffprobe on Windows (REQUIRED media tests)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -68,7 +77,18 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install actual FFmpeg + ffprobe (required extended video pipeline)
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        timeout-minutes: 6
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null; then
+            echo "FFmpeg and ffprobe already installed; no package mirror required."
+          else
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 update
+            sudo apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=20 install -y ffmpeg
+          fi
+          command -v ffmpeg
+          command -v ffprobe
       - name: Install app and Python tests (no model weights)
         run: python -m pip install -e ".[test]"
       - name: Verify real FFmpeg is available
