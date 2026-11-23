@@ -29,6 +29,8 @@ def _fake_sadtalker(root: Path, *, output_variant: str="official") -> Path:
     inference.write_text(
         """
 import argparse
+import os
+import sys
 import subprocess
 import wave
 from pathlib import Path
@@ -42,6 +44,9 @@ parser.add_argument('--preprocess',required=True)
 args=parser.parse_args()
 if not args.cpu or not args.still or args.preprocess!='full':
     raise SystemExit(17)
+if os.environ.get('PODCAST_FAKE_SADTALKER_FAIL_TEST_ONLY')=='1':
+    print('TEST-ONLY-MISSING-DEPS-NOT-REAL-INFERENCE',file=sys.stderr)
+    raise SystemExit(19)
 result_dir=Path(args.result_dir)
 with wave.open(args.driven_audio,'rb') as w:
     duration=w.getnframes()/w.getframerate()
@@ -101,6 +106,25 @@ def test_real_external_process_cli_three_presenter_pilot_and_resume(chunk_studio
     assert resume["verified"]==3
 
 
+def test_external_model_nonzero_exit_preserves_private_error_logs_and_no_fake_success(
+        chunk_studio,tmp_path,monkeypatch):
+    fake=_fake_sadtalker(tmp_path)
+    monkeypatch.setenv("PODCAST_FAKE_SADTALKER_FAIL_TEST_ONLY","1")
+    with pytest.raises(RuntimeError,match="error code 19"):
+        neural.run_cpu(chunk_studio,mode="pilot",rights_confirmed=True,
+                       max_new=3,wall_seconds=300,per_chunk_timeout=120,
+                       sadtalker_root=fake,sadtalker_python=Path(sys.executable),
+                       allow_short=True)
+    private=chunk_studio/"scratch"/"model-001-001"
+    assert (private/"model-stderr.log").is_file()
+    assert "TEST-ONLY-MISSING-DEPS" in (private/"model-stderr.log").read_text(encoding="utf-8")
+    assert (private/"model-stdout.log").is_file()
+    assert not (chunk_studio/"previews"/"001-001.mp4").exists()
+    assert not (chunk_studio/"previews"/"001-001.json").exists()
+    assert not (chunk_studio/"source"/neural.LOCK).exists()
+    assert neural.progress(chunk_studio,allow_short=True)["verified"]==0
+
+
 def test_external_process_exit_zero_without_mp4_is_refused_and_no_checkpoint(chunk_studio,tmp_path):
     fake=_fake_sadtalker(tmp_path,output_variant="no-video")
     with pytest.raises(ValueError,match="ONE fresh pretrained face MP4"):
@@ -113,3 +137,5 @@ def test_external_process_exit_zero_without_mp4_is_refused_and_no_checkpoint(chu
     assert not (chunk_studio/"source"/neural.LOCK).exists()
     # Failed model scratch intentionally remains for manual inspection.
     assert (chunk_studio/"scratch"/"model-001-001").is_dir()
+    assert (chunk_studio/"scratch"/"model-001-001"/"model-stdout.log").is_file()
+    assert (chunk_studio/"scratch"/"model-001-001"/"model-stderr.log").is_file()
