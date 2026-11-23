@@ -1,6 +1,7 @@
 import json
 import wave
 from pathlib import Path
+from PIL import Image
 
 import pytest
 from podcast_gpt import source
@@ -73,3 +74,38 @@ def test_false_completion_flags_are_explicit(chunk_studio):
     m=source.verify_chunks(chunk_studio,allow_short=True)
     assert m["human_lipsync_approved"] is False
     assert m["full_ten_minute_neural_video_completed"] is False
+
+
+def test_real_ten_minute_pcm_timeline_source_binding_and_90_exact_chunks(tmp_path):
+    """540–660s production gate on REAL 16k PCM file bytes, NO AI inference.
+
+    Audio content is deliberately synthetic; this proves source duration and
+    frame identity, NOT a natural Hindi voice, model or lip-sync video.
+    """
+    root=tmp_path/"real length FAKE synthetic no model"
+    source.init(root)
+    for idx, name in enumerate(source.SPEAKERS):
+        Image.new("RGB",(240+idx*5,250),(90+idx*20,100,110)).save(
+            root/"portraits"/(name+".png"))
+    frames=source.RATE*12  # 45 * 12s speech + 44 * .4s pause = 557.6 seconds
+    for turn in range(1,46):
+        path=root/"voices"/f"{turn:03}.wav"
+        # Every source voice receives distinct deterministic PCM bytes.
+        with wave.open(str(path),"wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(source.RATE)
+            wav.writeframes(bytes((turn, 0))*frames)
+    bound=source.build_source(root)
+    assert 540<=bound["original_seconds"]<=660
+    assert bound["synthetic_short_test_only"] is False
+    assert bound["original_turn_count"]==45
+    chunks=source.prepare_chunks(root)
+    assert chunks["count"]==90
+    verified=source.verify_chunks(root)
+    assert verified["count"]==90
+    assert all(1<=row["duration"]<=10 for row in verified["chunks"])
+    assert sum(x["frames"] for x in verified["chunks"])==45*frames
+    assert source.verify_source(root)==bound
+    assert verified["human_lipsync_approved"] is False
+    assert verified["full_ten_minute_neural_video_completed"] is False

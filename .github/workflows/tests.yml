@@ -35,3 +35,20 @@ jobs:
         run: python -m pytest -q tests
       - name: Explicitly limit CI completion claims
         run: python -c "from podcast_gpt import __version__; assert __version__ == '3.1.0'; print('SYNTHETIC tests only; no genuine SadTalker lipsync nor real 10m local Windows rendered')"
+  synthetic-full-45-turn-composition:
+    name: Extended 45-turn SHORT synthetic video candidate (NOT real model)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install app and Python tests (no model weights)
+        run: python -m pip install -e ".[test]"
+      - name: Verify real FFmpeg is available
+        run: ffmpeg -version
+      - name: Build and independently verify 45-turn STATIC fake-face candidate
+        run: python tests/long_ffmpeg_smoke.py
+      - name: Document limited scope
+        run: python -c "print('Only 45-turn synthetic SHORT voice/video pipeline, not 10-minute SadTalker nor human lip-sync QA')"
