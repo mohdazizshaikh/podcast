@@ -9,6 +9,8 @@ import hashlib
 import json
 import os
 import re
+import uuid
+from contextlib import contextmanager
 import struct
 import wave
 from pathlib import Path
@@ -23,6 +25,7 @@ MIN_DURATION = 1.0
 TOTAL_MIN, TOTAL_MAX = 540.0, 660.0
 SOURCE_FILE = "source-manifest.json"
 CHUNK_FILE = "chunks-manifest.json"
+ORIGINALS_LOCK = "originals-voice-and-binding-exclusive.lock"
 CHUNK_RE = re.compile(r"^\d{3}-\d{3}$")
 
 DIALOGUE = (
@@ -121,6 +124,39 @@ def workspace_path(root: str | Path) -> Path:
     return raw.resolve()
 
 
+@contextmanager
+def original_voice_lock(root: Path):
+    """Cross-PROCESS lock: never bind originals while any TTS is generating.
+
+    The lock is a private, exclusively created file in the user's workspace,
+    not a thread-only dashboard mutex. Crashed/interrupted sessions retain a
+    stale file for manual inspection; never auto-remove an unknown lock.
+    """
+    root = workspace_path(root)
+    lock_folder = root / "source"
+    if lock_folder.is_symlink() or not lock_folder.is_dir():
+        raise ValueError("Private source lock directory missing or symlinked; run INIT")
+    lock = lock_folder / ORIGINALS_LOCK
+    marker = "SOURCE_ORIGINALS_SESSION=" + uuid.uuid4().hex + "\n"
+    try:
+        with lock.open("x", encoding="ascii") as handle:
+            handle.write(marker)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except FileExistsError as exc:
+        raise ValueError("Another or interrupted original voice/source-binding lock exists; inspect manually") from exc
+    try:
+        yield
+    finally:
+        # Never delete a lock substituted by a concurrent process or user.
+        if lock.is_file() and not lock.is_symlink():
+            try:
+                if lock.read_text(encoding="ascii") == marker:
+                    lock.unlink()
+            except (OSError, UnicodeError):
+                pass
+
+
 def init(root: Path) -> dict:
     root = workspace_path(root)
     if (root / "project.json").exists() or (root / "project.json").is_symlink():
@@ -213,12 +249,16 @@ def source_inventory(root: Path, *, allow_short: bool = False) -> dict:
 
 def build_source(root: Path, *, allow_short: bool = False) -> dict:
     root = workspace_path(root)
-    dest = root / "source" / SOURCE_FILE
-    if dest.exists() or dest.is_symlink():
-        raise ValueError("Bound source manifest exists; use verify-source, no silent replacement")
-    manifest = source_inventory(root, allow_short=allow_short)
-    atomic_json(dest, manifest, new=True)
-    return manifest
+    # TTS and BIND share an on-disk exclusive marker across separate Python
+    # and Windows processes, preventing an in-flight new WAV from entering
+    # an already committed source SHA inventory.
+    with original_voice_lock(root):
+        dest = root / "source" / SOURCE_FILE
+        if dest.exists() or dest.is_symlink():
+            raise ValueError("Bound source manifest exists; use verify-source, no silent replacement")
+        manifest = source_inventory(root, allow_short=allow_short)
+        atomic_json(dest, manifest, new=True)
+        return manifest
 
 
 def verify_source(root: Path, *, allow_short: bool = False) -> dict:
