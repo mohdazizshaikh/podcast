@@ -68,30 +68,71 @@ def doctor(root:Path) -> dict:
 
 
 async def _tts_one(root:Path, turn:int, allow:bool, voice:str|None)->dict:
-    from .source import load_project,SPEAKERS
-    if not allow:raise ValueError("Online TTS requires explicit --allow-network-tts")
-    if not 1<=turn<=45:raise ValueError("Original Hindi turn must be 1..45")
-    try:import edge_tts
-    except ImportError as err:raise ValueError("Optional edge-tts not installed; install pip install -e '.[tts]'") from err
-    project=load_project(root);line=project["turns"][turn-1]
-    if voice is None:voice="hi-IN-SwaraNeural" if line["speaker"]=="meera" else "hi-IN-MadhurNeural"
-    wav=root/"voices"/(line["id"]+".wav")
-    if wav.exists() or wav.is_symlink():raise ValueError("Original Hindi WAV exists; no overwrites")
-    import tempfile,subprocess
+    """Optional ONLINE Edge voice. No network until explicit consent and preflight."""
+    if allow is not True:raise ValueError("Online TTS requires explicit --allow-network-tts")
+    if type(turn) is not int or not 1<=turn<=45:
+        raise ValueError("Original Hindi turn must be 1..45")
+    from .source import (load_project, SOURCE_FILE, wav_info, digest,
+                         json_digest, atomic_json, workspace_path)
+    root=workspace_path(root)
+    project=load_project(root)
+    line=project["turns"][turn-1]
+    if voice is None:
+        voice="hi-IN-SwaraNeural" if line["speaker"]=="meera" else "hi-IN-MadhurNeural"
+    if voice not in ("hi-IN-SwaraNeural","hi-IN-MadhurNeural"):
+        raise ValueError("Explicit unsupported online Hindi voice preset")
+    bound=root/"source"/SOURCE_FILE
+    if bound.exists() or bound.is_symlink():
+        raise ValueError("Original private source already SHA-bound; online TTS cannot alter it")
+    folder=root/"voices"
+    if folder.is_symlink() or not folder.is_dir():
+        raise ValueError("Original private voices folder missing/unsafe")
+    wav=folder/(line["id"]+".wav")
+    receipt=folder/(line["id"]+".edge-tts-source.json")
+    if any(p.exists() or p.is_symlink() for p in (wav,receipt)):
+        raise ValueError("Original Hindi WAV/online-TTS receipt exists; never overwrite")
+    scratch_root=root/"scratch"
+    if scratch_root.is_symlink() or not scratch_root.is_dir():
+        raise ValueError("Private voice scratch directory missing/unsafe")
+    if shutil.disk_usage(scratch_root).free<100*1024**2:
+        raise ValueError("At least 100 MiB free on the private original voice scratch drive required")
+    try:
+        import edge_tts
+    except ImportError as err:
+        raise ValueError("Optional online edge-tts not installed; install pip install -e '.[tts]'") from err
+    import tempfile
     from .media import cmd
-    root.joinpath("voices").mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="hindi-tts-") as folder:
-        mp3=Path(folder)/"output.mp3"
-        await edge_tts.Communicate(line["text"],voice,rate="-10%" if line["speaker"]=="kabir" else "+0%").save(str(mp3))
-        temp=Path(folder)/"original.wav"
-        cmd(["ffmpeg","-y","-hide_banner","-v","error","-i",str(mp3),"-ar","16000","-ac","1",
-             "-c:a","pcm_s16le",str(temp)],timeout=120)
-        from .source import wav_info
-        wav_info(temp)
-        import shutil
-        shutil.copyfile(temp,wav)
+    rate="-10%" if line["speaker"]=="kabir" else "+0%"
+    with tempfile.TemporaryDirectory(prefix="hindi-online-tts-",dir=scratch_root) as tempdir:
+        tmp=Path(tempdir)
+        mp3=tmp/"original-online.mp3"
+        await edge_tts.Communicate(line["text"],voice,rate=rate).save(str(mp3))
+        converted=tmp/"original-16k.wav"
+        cmd(["ffmpeg","-y","-hide_banner","-v","error","-i",str(mp3),
+             "-ar","16000","-ac","1","-c:a","pcm_s16le",str(converted)],timeout=120)
+        wav_info(converted)
+        # A real network call may take seconds. Recheck both immutable project
+        # and source-manifest state before committing any source WAV.
+        if load_project(root)!=project or bound.exists() or bound.is_symlink():
+            raise ValueError("Original Hindi project/source SHA changed during online TTS")
+        if receipt.exists() or receipt.is_symlink():
+            raise ValueError("Online TTS receipt exists; no repeated or ambiguous source")
+        with wav.open("xb") as dest, converted.open("rb") as inp:
+            shutil.copyfileobj(inp,dest)
+        atomic_json(receipt,{
+            "schema":3,"status":"explicit_online_edge_hindi_original_voice_not_neural_face",
+            "turn_id":line["id"],"speaker":line["speaker"],"voice_preset":voice,
+            "speech_rate":rate,"project_sha256":json_digest(project),
+            "wav_sha256":digest(wav),"network_tts_used":True,
+            "all_three_distinct_natural_voices_guaranteed":False,
+            "human_voice_quality_approved":False,
+            "full_ten_minute_neural_video_completed":False
+        },new=True)
     return {"saved_original_hindi_wav":line["id"],"network_tts_used":True,
-            "all_three_distinct_natural_voice_identities_guaranteed":False}
+            "source_wav_sha256":digest(wav),
+            "all_three_distinct_natural_voice_identities_guaranteed":False,
+            "human_voice_quality_approved":False,
+            "full_ten_minute_neural_video_completed":False}
 
 
 def execute(a)->dict:
