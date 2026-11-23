@@ -23,10 +23,11 @@ def _port():
         return s.getsockname()[1]
 
 
-def _request(port,path,*,body=None,token=None,origin=None):
+def _request(port,path,*,body=None,token=None,origin=None,rights=False):
     hdr={}
     if token is not None:hdr["X-CSRF-Token"]=token
     if origin is not None:hdr["Origin"]=origin
+    if rights:hdr["X-Portrait-Rights-Confirmed"]="YES"
     request=urllib.request.Request(f"http://127.0.0.1:{port}"+path,data=body,
                                     headers=hdr,method="POST" if body is not None else "GET")
     try:
@@ -69,20 +70,28 @@ def test_local_dashboard_real_loopback_csrf_private_upload_and_no_serve_media(tm
     image=io.BytesIO();Image.new("RGB",(230,230),(73,121,188)).save(image,format="PNG")
     png=image.getvalue()
     code,_=_request(port,"/api/upload?kind=portrait&name=aarav.png",body=png,token=token)
+    assert code==403  # Rights not declared; portrait not imported.
+    assert not (root/"portraits"/"aarav.png").exists()
+    code,_=_request(port,"/api/upload?kind=portrait&name=aarav.png",body=png,
+                    token=token,rights=True)
     assert code==201
     before=(root/"portraits"/"aarav.png").read_bytes()
-    code,_=_request(port,"/api/upload?kind=portrait&name=aarav.png",body=png,token=token)
+    code,_=_request(port,"/api/upload?kind=portrait&name=aarav.png",body=png,
+                    token=token,rights=True)
     assert code==409
     assert (root/"portraits"/"aarav.png").read_bytes()==before
     code,_=_request(port,"/portraits/aarav.png")
     assert code==404
-    code,_=_request(port,"/api/upload?kind=portrait&name=..%2Fsecret.png",body=png,token=token)
+    code,_=_request(port,"/api/upload?kind=portrait&name=..%2Fsecret.png",body=png,token=token,rights=True)
     assert code==400
     with io.BytesIO() as raw:
         with wave.open(raw,"wb") as wav:
             wav.setnchannels(1);wav.setsampwidth(2);wav.setframerate(16000)
             wav.writeframes(b"\0\0"*16000)
         original_wav=raw.getvalue()
+    code,_=_request(port,"/api/upload?kind=voice&name=000.wav",body=original_wav,token=token)
+    assert code==400  # The numbered original source turns are strictly 001..045.
+    assert not (root/"voices"/"000.wav").exists()
     code,_=_request(port,"/api/upload?kind=voice&name=001.wav",body=original_wav,token=token)
     assert code==201
     assert (root/"voices"/"001.wav").read_bytes()==original_wav

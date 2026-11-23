@@ -42,6 +42,7 @@ def html_page(token:str)->str:
 <small>Once created, edit private project.json to your own Hindi dialogue.</small></section>
 <section class="panel"><h2>2. Import authorized original media</h2>
 <p>Portrait PNGs (>=200px):</p>
+<label><input id="portraitRights" type="checkbox"> I own these portraits or have written permission to use them for AI talking-face creation. This is my own declaration, not automatic rights verification.</label>
 <label>Aarav <input id="aarav" type="file" accept="image/png"></label>
 <label>Meera <input id="meera" type="file" accept="image/png"></label>
 <label>Kabir <input id="kabir" type="file" accept="image/png"></label>
@@ -59,7 +60,8 @@ def html_page(token:str)->str:
 <section class="panel"><h2>Local task log</h2><pre id="status" aria-live="polite">Ready. Nothing running.</pre></section>
 <script>
 'use strict';const token='''+json.dumps(token)+''';const out=document.getElementById('status');
-async function send(endpoint,data){let opt={method:'POST',headers:{'X-CSRF-Token':token}};
+async function send(endpoint,data,portraitRights=false){let opt={method:'POST',headers:{'X-CSRF-Token':token}};
+if(portraitRights)opt.headers['X-Portrait-Rights-Confirmed']='YES';
 if(data instanceof File){opt.body=data;opt.headers['Content-Type']='application/octet-stream'}
 let r=await fetch(endpoint,opt);let j=await r.json();if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
 async function refresh(){
@@ -74,8 +76,11 @@ async function action(name){try{
  await refresh();
 }catch(e){out.textContent='BLOCKED: '+e.message}}
 document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>action(b.dataset.action)));
-async function upload(files,kind){for(let file of files){out.textContent='Importing '+file.name;
-let q=new URLSearchParams({kind,name:file.name});await send('/api/upload?'+q,file);}
+async function upload(files,kind){
+if(kind==='portrait'&&!document.getElementById('portraitRights').checked)
+  throw new Error('Explicit portrait ownership/written permission required');
+for(let file of files){out.textContent='Importing '+file.name;
+let q=new URLSearchParams({kind,name:file.name});await send('/api/upload?'+q,file,kind==='portrait');}
 out.textContent='Imported '+files.length+' local media file(s). No existing originals overwritten.'}
 document.getElementById('faces').addEventListener('click',async()=>{try{let files=[];for(let x of ['aarav','meera','kabir']){
 let f=document.getElementById(x).files[0];if(f){if(f.name.toLowerCase().split('.').pop()!=='png')throw new Error('PNG only');files.push(new File([f],x+'.png',{type:'image/png'}))}}
@@ -137,33 +142,50 @@ def serve(root:Path,port:int=7860):
                 threading.Thread(target=run,daemon=True).start()
                 return self._json(202,{"task_started":command,"next":"Refresh /api/status for result; no AI inference"})
             if url.path=="/api/upload":
-                if lock.locked():return self._json(409,{"error":"Active task; don't change original files"})
                 kind=query.get("kind",[""])[0];name=query.get("name",[""])[0]
-                valid=(name in [s+".png" for s in SPEAKERS]) if kind=="portrait" else bool(re.fullmatch(r"0(?:[0-3]\d|4[0-5])\.wav",name)) if kind=="voice" else False
+                valid=(name in [s+".png" for s in SPEAKERS]) if kind=="portrait" else bool(re.fullmatch(r"0(?:0[1-9]|[1-3]\\d|4[0-5])\\.wav",name)) if kind=="voice" else False
                 limit=25_000_000 if kind=="portrait" else 75_000_000
-                if not valid or size>limit or size<44:return self._json(400,{"error":"Invalid original media name/size"})
-                folder=root/("portraits" if kind=="portrait" else "voices")
-                folder.mkdir(parents=True,exist_ok=True)
-                target=folder/name
+                if not valid or size>limit or size<44:
+                    return self._json(400,{"error":"Invalid original media name/size"})
+                if kind=="portrait" and self.headers.get("X-Portrait-Rights-Confirmed")!="YES":
+                    return self._json(403,{"error":"Explicit self-attested portrait rights declaration required"})
+                # ONE exclusive lock protects BOTH media upload and source-binding
+                # jobs; the old lock.locked() check allowed a time-of-check race.
+                if not lock.acquire(blocking=False):
+                    return self._json(409,{"error":"Active private task/media import; retry later"})
                 try:
-                    with target.open("xb") as file:
-                        pending=size
-                        while pending:
-                            piece=self.rfile.read(min(pending,1024*1024))
-                            if not piece:raise ValueError("Upload interrupted")
-                            file.write(piece);pending-=len(piece)
-                    if kind=="voice":wav_info(target)
-                    else:
-                        from PIL import Image
-                        with Image.open(target) as im:
-                            im.verify()
-                        with Image.open(target) as im:
-                            if im.format!="PNG" or min(im.size)<200:raise ValueError("Portrait must be valid PNG >=200px")
-                    return self._json(201,{"original_local_file_imported":name})
-                except FileExistsError:return self._json(409,{"error":"Original exists; refused overwrite"})
-                except Exception:
-                    target.unlink(missing_ok=True)
-                    return self._json(400,{"error":"Invalid, incomplete or unsupported private media"})
+                    folder=root/("portraits" if kind=="portrait" else "voices")
+                    if folder.is_symlink():
+                        return self._json(400,{"error":"Unsafe private media directory symlink"})
+                    folder.mkdir(parents=True,exist_ok=True)
+                    if folder.is_symlink():
+                        return self._json(400,{"error":"Unsafe private media directory symlink"})
+                    target=folder/name
+                    created=False
+                    try:
+                        with target.open("xb") as file:
+                            created=True
+                            pending=size
+                            while pending:
+                                piece=self.rfile.read(min(pending,1024*1024))
+                                if not piece:raise ValueError("Upload interrupted")
+                                file.write(piece);pending-=len(piece)
+                        if kind=="voice":wav_info(target)
+                        else:
+                            from PIL import Image
+                            with Image.open(target) as im: im.verify()
+                            with Image.open(target) as im:
+                                if im.format!="PNG" or min(im.size)<200:
+                                    raise ValueError("Portrait must be PNG >=200px")
+                        return self._json(201,{"original_local_file_imported":name,
+                                               "portrait_rights_independently_verified":False})
+                    except FileExistsError:
+                        return self._json(409,{"error":"Original exists; refused overwrite"})
+                    except Exception:
+                        if created:target.unlink(missing_ok=True)
+                        return self._json(400,{"error":"Invalid, incomplete or unsupported private media"})
+                finally:
+                    lock.release()
             return self._json(404,{"error":"Unknown private API"})
         def log_message(self,format,*args):pass  # no local portrait or private URL traces
 

@@ -27,3 +27,9 @@ def test_local_dashboard_has_no_model_start_or_publish_controls():
     assert "run-cpu" not in page
     assert "upload('/remote" not in page
     assert "https://" not in page
+
+def test_portrait_ui_requires_explicit_local_owner_declaration():
+    page=web.html_page("1"*64)
+    assert 'id="portraitRights"' in page
+    assert "X-Portrait-Rights-Confirmed" in page
+    assert "source authentic" not in page.lower()
