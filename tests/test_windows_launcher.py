@@ -44,7 +44,9 @@ def _run(windows_stage,tmp_path,answer:str):
     # quoted absolute command path containing spaces/& into an invalid token.
     # Python passes cwd as a process attribute, so no path shell parsing is
     # needed; the privately selected BASE remains a single quoted argument.
-    cmd=f'call CONTINUE_FULL_HINDI_NEURAL.bat "{base}"'
+    # Execute a BAT directly from CMD. CALL performs a second metacharacter
+    # expansion of the already quoted source path (&/! and Unicode can break).
+    cmd=f'CONTINUE_FULL_HINDI_NEURAL.bat "{base}"'
     result=subprocess.run(["cmd.exe","/d","/c",cmd],cwd=windows_stage,
                           env=env,input=answer,text=True,encoding="utf-8",errors="replace",
                           capture_output=True,check=False,timeout=60)
