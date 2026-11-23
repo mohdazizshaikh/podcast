@@ -62,8 +62,17 @@ def html_page(token:str)->str:
 async function send(endpoint,data){let opt={method:'POST',headers:{'X-CSRF-Token':token}};
 if(data instanceof File){opt.body=data;opt.headers['Content-Type']='application/octet-stream'}
 let r=await fetch(endpoint,opt);let j=await r.json();if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
-async function action(name){try{out.textContent='Starting '+name+'...';out.textContent=JSON.stringify(await send('/api/action?cmd='+encodeURIComponent(name)),null,2)}
-catch(e){out.textContent='BLOCKED: '+e.message}}
+async function refresh(){
+ let r=await fetch('/api/status',{cache:'no-store'});let status=await r.json();
+ out.textContent=JSON.stringify(status,null,2);
+ if(status.phase==='running')setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
+}
+async function action(name){try{
+ out.textContent='Starting '+name+'...';
+ let receipt=await send('/api/action?cmd='+encodeURIComponent(name));
+ out.textContent=JSON.stringify(receipt,null,2);
+ await refresh();
+}catch(e){out.textContent='BLOCKED: '+e.message}}
 document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>action(b.dataset.action)));
 async function upload(files,kind){for(let file of files){out.textContent='Importing '+file.name;
 let q=new URLSearchParams({kind,name:file.name});await send('/api/upload?'+q,file);}

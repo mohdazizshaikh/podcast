@@ -40,8 +40,12 @@ def _run(windows_stage,tmp_path,answer:str):
     trace=tmp_path/"native.log"
     base=tmp_path/"private source folder & हिंदी ! important"
     env={**os.environ,"PODCAST_V31_NATIVE_TRACE":str(trace),"PYTHONIOENCODING":"utf-8"}
-    cmd=f'call "{windows_stage/"CONTINUE_FULL_HINDI_NEURAL.bat"}" "{base}"'
-    result=subprocess.run(["cmd.exe","/d","/s","/c",cmd],cwd=windows_stage,
+    # Use a relative BAT name under cwd. cmd.exe /s /c rewrites an initial
+    # quoted absolute command path containing spaces/& into an invalid token.
+    # Python passes cwd as a process attribute, so no path shell parsing is
+    # needed; the privately selected BASE remains a single quoted argument.
+    cmd=f'call CONTINUE_FULL_HINDI_NEURAL.bat "{base}"'
+    result=subprocess.run(["cmd.exe","/d","/c",cmd],cwd=windows_stage,
                           env=env,input=answer,text=True,encoding="utf-8",errors="replace",
                           capture_output=True,check=False,timeout=60)
     lines=trace.read_text(encoding="utf-8").splitlines() if trace.exists() else []
