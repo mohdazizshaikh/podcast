@@ -158,6 +158,15 @@ def serve(root:Path,port:int=7860):
                 if not lock.acquire(blocking=False):
                     return self._json(409,{"error":"Active private task/media import; retry later"})
                 try:
+                    # Media may be imported before INIT (historical dashboard
+                    # workflow). Lazily create only the *private lock folder*;
+                    # do not create a project or bind originals automatically.
+                    source_lock_dir=root/"source"
+                    if source_lock_dir.is_symlink():
+                        return self._json(400,{"error":"Unsafe private source-lock directory"})
+                    source_lock_dir.mkdir(parents=True,exist_ok=True)
+                    if source_lock_dir.is_symlink():
+                        return self._json(400,{"error":"Unsafe private source-lock directory"})
                     # Unlike the per-server threading.Lock, this EXCLUSIVE
                     # filesystem lock also serializes separate Windows/Python
                     # TTS and BIND processes running against the same studio.
