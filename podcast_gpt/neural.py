@@ -251,10 +251,15 @@ def compose_neural(root:Path,*,allow_short:bool=False) -> dict:
         raise ValueError("Existing full video/SRT/report cannot be silently overwritten")
     if shutil.disk_usage(root/"exports").free < 6*1024**3:
         raise ValueError("At least 6 GiB free for the final 720p candidate video output required")
+    scratch=root/"scratch"
+    if scratch.is_symlink() or not scratch.is_dir():
+        raise ValueError("Private full neural scratch directory missing/symlinked")
+    if shutil.disk_usage(scratch).free < 6*1024**3:
+        raise ValueError("At least 6 GiB free on actual neural encoder scratch volume required")
     rows=timeline(root,src)
     groups={row["line_id"]:[] for row in chunks["chunks"]}
     for row in chunks["chunks"]:groups[row["line_id"]].append(row)
-    with tempfile.TemporaryDirectory(prefix="podcast-full-neural-") as folder:
+    with tempfile.TemporaryDirectory(prefix="podcast-full-neural-",dir=scratch) as folder:
         tmp=Path(folder);segments=[]
         for turn in rows:
             for row in groups[turn["id"]]:

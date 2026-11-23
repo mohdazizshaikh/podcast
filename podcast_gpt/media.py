@@ -153,7 +153,13 @@ def render_static(root: Path, *, allow_short: bool=False) -> dict:
     if shutil.disk_usage(root/"exports").free < 3*1024**3:
         raise ValueError("At least 3 GiB free for original 720p static video output required")
     rows=timeline(root,src)
-    with tempfile.TemporaryDirectory(prefix="podcast-static-") as temp:
+    scratch=root/"scratch"
+    if scratch.is_symlink() or not scratch.is_dir():
+        raise ValueError("Private original media scratch directory missing/symlinked")
+    if shutil.disk_usage(scratch).free < 3*1024**3:
+        raise ValueError("At least 3 GiB free on actual static encoder scratch volume required")
+    # Never silently fill Windows C:\\TEMP when private originals live on D:.
+    with tempfile.TemporaryDirectory(prefix="podcast-static-",dir=scratch) as temp:
         temp=Path(temp)
         audio=temp/"original.wav";original_audio(root,rows,audio)
         listing=_images_concat(root,rows,temp)

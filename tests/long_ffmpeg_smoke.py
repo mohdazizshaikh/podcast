@@ -55,7 +55,18 @@ def main():
         assert neural.progress(root,allow_short=True)["verified"]==45
         review.review_pilot(root,allow_short=True)
         review.record_pilot(root,{x:"PASS" for x in source.SPEAKERS},review.ACK,allow_short=True)
-        full=neural.compose_neural(root,allow_short=True)
+        # Real full candidate staging must never consume unrelated C: TEMP.
+        original_temp=neural.tempfile.TemporaryDirectory
+        temp_roots=[]
+        def trace_temp(*args,**kwargs):
+            temp_roots.append(kwargs.get("dir"))
+            return original_temp(*args,**kwargs)
+        neural.tempfile.TemporaryDirectory=trace_temp
+        try:
+            full=neural.compose_neural(root,allow_short=True)
+        finally:
+            neural.tempfile.TemporaryDirectory=original_temp
+        assert temp_roots==[root/"scratch"]
         audited=neural.audit_neural(root,allow_short=True)
         review.review_full(root,allow_short=True)
         assert audited["complete_45_turn_video_structurally_audited"] is True

@@ -10,8 +10,16 @@ from podcast_gpt import media,neural,review,source
 pytestmark=pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"),reason="FFmpeg/FFprobe needed")
 
 
-def test_real_ffmpeg_45_hindi_static_aac_srt_and_decoder(signed_studio):
+def test_real_ffmpeg_45_hindi_static_aac_srt_and_decoder(signed_studio,monkeypatch):
+    # Assert large intermediate encodes stay on the PRIVATE workspace drive.
+    original_temp=media.tempfile.TemporaryDirectory
+    temp_roots=[]
+    def trace_temp(*args,**kwargs):
+        temp_roots.append(kwargs.get("dir"))
+        return original_temp(*args,**kwargs)
+    monkeypatch.setattr(media.tempfile,"TemporaryDirectory",trace_temp)
     done=media.render_static(signed_studio,allow_short=True)
+    assert temp_roots==[signed_studio/"scratch"]
     assert done["turns"]==45
     assert done["neural_lipsync_verified"] is False
     assert done["human_lipsync_approved"] is False
