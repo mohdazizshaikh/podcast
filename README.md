@@ -1,4 +1,4 @@
-# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.2)
+# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.3)
 
 > **Rebuilt from this ChatGPT Project's available requirements/milestone history, NOT cloned from or verified against the suspended repository.** New canonical repository: **https://github.com/mohdazizshaikh/podcast**. No access to the suspended account is required. The original v2.97 Git history and exact source-byte parity **cannot be claimed** from chat summaries alone. See [`docs/RECONSTRUCTION_LEDGER.md`](docs/RECONSTRUCTION_LEDGER.md).
 
@@ -110,6 +110,21 @@ PodcastGPTStudio/
 ```
 
 **Migration note:** `.migration/` contains the earlier migration bootstrap and the original v2.98 additive patch, preserved unchanged so it isn't lost. Its patch was written against the old v2.97 layout and **must NOT be applied blindly to this rebuilt v3 code**. The importer can import a separate local legacy clone, but that would require a planned conflict review; it is not a prerequisite for using reconstructed v3.
+
+### v3.3 — Read-only model preflight and source-bound video sync
+
+Choose **`MODEL`** in `CONTINUE_FULL_HINDI_NEURAL.bat` or run
+`CHECK_SADTALKER_CPU.bat` before an expensive genuine SadTalker CPU `PILOT`.
+This verifies the existing local script's expected CLI flags, source config,
+nonempty checkpoint files, and selected Python interpreter version without
+loading third-party weights or performing any AI inference. It does NOT prove
+that the model can load, that portrait usage is authorized, or that lips are natural.
+
+**Audio/video correction:** 24fps final-video frames are allocated by
+rounding the cumulative original Hindi PCM and pause timeline rather than
+independently rounding every short face/pause segment. The app also rejects
+face MP4s with insufficient actual video stream duration, even when AAC or
+container duration appears long enough. See [v3.3 release notes](docs/V33_RELEASE_NOTES.md).
 
 ### Read-only real CPU pace budget (`BUDGET` stage)
 

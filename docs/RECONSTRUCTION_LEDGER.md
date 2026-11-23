@@ -34,3 +34,8 @@
 ## Rebuilding rather than falsely marking migration complete
 
 This repository is a **new independent implementation based on observed requirements**, retaining previous migration backup tools for optional future legacy import. Complete architectural **functional parity** requires real authorized source inputs and Windows testing; old Git history preservation requires the user's original local Git clone. Do not claim it is a byte-perfect migration.
+## v3.3 additions (new implementation; not recovered source)
+
+- Read-only `MODEL` SadTalker CPU interpreter/checkpoint/argparse structural preflight; genuine inference still needs separate explicit portrait rights consent.
+- Full composer cumulative 24fps allocation from original PCM speech and silence; independent input MP4 video duration validation beyond AAC/container checks.
+- Synthetic tests and long FFmpeg integration validate structure only, **not** natural 10-minute Hindi lip-sync on real Windows hardware.

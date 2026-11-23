@@ -12,3 +12,4 @@
 - [ ] Optional non-goals not rebuilt: YouTube publishing integration, monetization, proprietary voice cloning or unverified paid AI tools.
 
 CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker evidence.
+- [ ] Run the new `MODEL` read-only preflight on the user's actual installed SadTalker Python, source and checkpoint files. It does **not** certify pretrained-model loading or real performance.
