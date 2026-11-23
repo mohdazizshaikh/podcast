@@ -98,3 +98,23 @@ def test_old_source_manifest_prevents_kokoro_without_writing_receipts(signed_stu
                         voices=root/"not-installed.bin",turn=1,max_new=1,
                         run_local=True)
     assert not (root/"source"/source.ORIGINALS_LOCK).exists()
+
+
+
+@pytest.mark.parametrize("git_worktree_marker",["directory","file"])
+def test_private_original_media_can_never_be_initialized_inside_public_git_repo(
+        tmp_path,git_worktree_marker):
+    public_clone=tmp_path/"Public Git working tree"
+    public_clone.mkdir()
+    marker=public_clone/".git"
+    if git_worktree_marker=="directory":
+        marker.mkdir()
+    else:
+        marker.write_text("gitdir: ../.git/worktrees/linked",encoding="ascii")
+    private=public_clone/"original-portraits-and-voices"/"nested-private-studio"
+    with pytest.raises(ValueError,match="OUTSIDE every Git"):
+        source.init(private)
+    assert not private.exists()
+    # Even the read-only inspectors must refuse accidental publication paths.
+    with pytest.raises(ValueError,match="OUTSIDE every Git"):
+        source.workspace_path(private)
