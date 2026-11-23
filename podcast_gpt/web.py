@@ -19,6 +19,7 @@ from .cli import doctor
 from .source import SPEAKERS,init,build_source,prepare_chunks,wav_info,read_json,workspace_path
 from .media import render_static,audit_static
 from .neural import progress
+from .readiness import inspect as inspect_readiness
 
 STYLE="""body{font:16px system-ui;background:#121b2b;color:#f4f7ff;margin:auto;max-width:1100px;padding:28px}
 header{padding:18px;border-bottom:1px solid #53627c}.panel{padding:18px;margin:18px 0;border:1px solid #4c5a70;border-radius:12px}
@@ -103,7 +104,7 @@ def serve(root:Path,port:int=7860):
              "render-static":lambda:render_static(root),
              "audit-static":lambda:audit_static(root),
              "progress":lambda:progress(root),
-             "readiness":lambda:__import__("podcast_gpt.readiness",fromlist=["inspect"]).inspect(root)}
+             "readiness":lambda:inspect_readiness(root)}
 
     class Handler(BaseHTTPRequestHandler):
         def _send(self,code:int,payload:bytes,kind="application/json"):
