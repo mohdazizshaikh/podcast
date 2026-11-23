@@ -121,7 +121,16 @@ def workspace_path(root: str | Path) -> Path:
     raw = Path(root).expanduser()
     if raw.is_symlink():
         raise ValueError("Workspace cannot be a symlink")
-    return raw.resolve()
+    resolved = raw.resolve()
+    # The PRIVATE portrait/voice/model scratch studio must never be anywhere
+    # inside a Git working tree: otherwise a broad `git add .` may publish
+    # images, Hindi voice files, failure logs or third-party model assets.
+    # This also handles nested Git worktrees (.git can be a FILE, not a folder).
+    for ancestor in (resolved, *resolved.parents):
+        git_marker = ancestor / ".git"
+        if git_marker.exists() or git_marker.is_symlink():
+            raise ValueError("Private podcast workspace must be OUTSIDE every Git repository/worktree")
+    return resolved
 
 
 @contextmanager
