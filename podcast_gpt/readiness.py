@@ -49,6 +49,19 @@ def inspect(root: Path, *, allow_short: bool=False) -> dict:
         result["all_source_and_media_structurally_verified"]=False
         return result
     mark("workspace","exists_private_path_not_rights_certified")
+    originals_lock=root/"source"/source.ORIGINALS_LOCK
+    if originals_lock.exists() or originals_lock.is_symlink():
+        # A different Windows/CLI process may be generating original WAVs or
+        # binding its SHA source RIGHT NOW. Never report a half-written source
+        # as complete, and never remove someone else's exclusive lock.
+        mark("original_voice_source_session","blocked",
+             reason="Private original WAV/TTS/BIND session active or interrupted; inspect lock manually",
+             lock_path=str(originals_lock))
+        result["blocked_stages"]=["original_voice_source_session"]
+        result["next_safe_action"]="STOP — original voice/BIND process active or crashed; inspect private exclusive lock before retrying"
+        result["all_source_and_media_structurally_verified"]=False
+        return result
+    mark("original_voice_source_session","clear")
     project_path=root/"project.json"
     if not project_path.exists() and not project_path.is_symlink():
         mark("script","missing")
