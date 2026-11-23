@@ -37,7 +37,9 @@ To manually record observations after 3 genuine verified face samples:
 REVIEW_THREE_PRESENTER_PILOT.bat "C:\Users\YOU\PodcastGPTStudio"
 ```
 
-Both 720p static and neural composition now stage large intermediates in the **private workspace `scratch/` directory** (not Windows system `C:\\TEMP`), and independently check free space on both actual scratch and export drives before encoding. Scratch must be a real private directory, not a symlink. This prevents a D:-drive studio from unexpectedly exhausting the C: system partition.\n\nAll media, portraits, scripts, WAVs, SadTalker model assets, runtime outputs and review notes should live outside this PUBLIC Git repo; `.gitignore` blocks common media/model/secrets but **always manually inspect `git status` before pushing**. The dashboard binds to loopback only, has per-instance CSRF protection and does not serve your media over HTTP. No YouTube/publishing tokens or automatic posting are part of the current software.
+Both 720p static and neural composition now stage large intermediates in the **private workspace `scratch/` directory** (not Windows system `C:\\TEMP`), and independently check free space on both actual scratch and export drives before encoding. Scratch must be a real private directory, not a symlink. This prevents a D:-drive studio from unexpectedly exhausting the C: system partition.
+
+All media, portraits, scripts, WAVs, SadTalker model assets, runtime outputs and review notes should live outside this PUBLIC Git repo; `.gitignore` blocks common media/model/secrets but **always manually inspect `git status` before pushing**. The dashboard binds to loopback only, has per-instance CSRF protection and does not serve your media over HTTP. No YouTube/publishing tokens or automatic posting are part of the current software.
 
 ## CLI: independent source and media checks
 
