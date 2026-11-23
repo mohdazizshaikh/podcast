@@ -27,6 +27,7 @@ echo INIT      - NEW private original 45-turn script
  echo SESSION   - bounded real CPU clips, separate YES consent
  echo PROGRESS  - read-only independently decode saved MP4 previews
  echo BUDGET    - READ ONLY estimated CPU hours from measured saved previews
+ echo READINESS - READ ONLY stage-by-stage original 45-turn workspace audit
  echo MODEL     - READ ONLY installed SadTalker CPU environment check
  echo REVIEW    - local private 3-face sample HTML (real clips required)
  echo RECORD    - manual three face PASS/FAIL observation record
@@ -50,6 +51,7 @@ if /I "!STEP!"=="BATCH" (endlocal & goto :cpu_batch)
 if /I "!STEP!"=="SESSION" (endlocal & goto :cpu_session)
 if /I "!STEP!"=="PROGRESS" (endlocal & goto :progress)
 if /I "!STEP!"=="BUDGET" (endlocal & goto :budget)
+if /I "!STEP!"=="READINESS" (endlocal & goto :readiness)
 if /I "!STEP!"=="MODEL" (endlocal & goto :model)
 if /I "!STEP!"=="REVIEW" (endlocal & goto :review)
 if /I "!STEP!"=="RECORD" (endlocal & goto :record)
@@ -91,6 +93,9 @@ exit /b %ERRORLEVEL%
 exit /b %ERRORLEVEL%
 :budget
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" budget
+exit /b %ERRORLEVEL%
+:readiness
+".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" readiness
 exit /b %ERRORLEVEL%
 :model
 call "%~dp0CHECK_SADTALKER_CPU.bat" "%BASE%"

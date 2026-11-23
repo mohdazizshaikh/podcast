@@ -16,7 +16,7 @@ def parse(argv=None):
     p.add_argument("--workspace",type=Path,default=Path(os.environ.get("PODCAST_WORKSPACE",str(Path.home()/"PodcastGPTStudio"))))
     subs=p.add_subparsers(dest="operation",required=True)
     for name in ("doctor","init","build-source","verify-source","prepare-chunks","verify-chunks",
-                 "render-static","audit-static","progress","budget","review-pilot","inspect-pilot",
+                 "render-static","audit-static","progress","budget","readiness","review-pilot","inspect-pilot",
                  "compose-neural","audit-neural","review-full","web"):
         cmd=subs.add_parser(name)
         if name=="web":cmd.add_argument("--port",type=int,default=7860)
@@ -151,6 +151,9 @@ def execute(a)->dict:
     if action=="render-static":return media.render_static(root)
     if action=="audit-static":return media.audit_static(root)
     if action=="progress":return neural.progress(root)
+    if action=="readiness":
+        from .readiness import inspect
+        return inspect(root)
     if action=="budget":
         from .budget import estimate_cpu_budget
         return estimate_cpu_budget(root)

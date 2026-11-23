@@ -62,7 +62,8 @@ def _run(windows_stage,tmp_path,answer:str):
 @pytest.mark.parametrize("mode,expected",[
     ("INIT","init"),("BIND","build-source"),("CHUNKS","prepare-chunks"),
     ("STATIC","render-static"),("AUDIT","audit-static"),
-    ("PROGRESS","progress"),("BUDGET","budget"),("REVIEW","review-pilot"),
+    ("PROGRESS","progress"),("BUDGET","budget"),("READINESS","readiness"),
+    ("REVIEW","review-pilot"),
     ("INSPECT","inspect-pilot"),("COMPOSE","compose-neural"),
     ("AUDITFULL","audit-neural"),("REVIEWFULL","review-full"),
 ])
