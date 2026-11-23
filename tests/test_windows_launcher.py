@@ -39,14 +39,14 @@ exit /b 0
 def _run(windows_stage,tmp_path,answer:str):
     trace=tmp_path/"native.log"
     base=tmp_path/"private source folder & हिंदी ! important"
-    env={**os.environ,"PODCAST_V31_NATIVE_TRACE":str(trace),"PYTHONIOENCODING":"utf-8"}
-    # Use a relative BAT name under cwd. cmd.exe /s /c rewrites an initial
-    # quoted absolute command path containing spaces/& into an invalid token.
-    # Python passes cwd as a process attribute, so no path shell parsing is
-    # needed; the privately selected BASE remains a single quoted argument.
-    # Execute a BAT directly from CMD. CALL performs a second metacharacter
-    # expansion of the already quoted source path (&/! and Unicode can break).
-    cmd=f'CONTINUE_FULL_HINDI_NEURAL.bat "{base}"'
+    # Workspace paths with Hindi, & and ! are supplied via the supported
+    # PODCAST_WORKSPACE environment input, avoiding extra cmd.exe parsing.
+    # This is also how users can configure an alternate permanent workspace.
+    env={**os.environ,"PODCAST_V31_NATIVE_TRACE":str(trace),
+         "PODCAST_WORKSPACE":str(base),"PYTHONIOENCODING":"utf-8"}
+    # Launch BAT directly from cwd without a nested CALL or cmd /s,
+    # both of which can expand punctuation and quotes a second time.
+    cmd='CONTINUE_FULL_HINDI_NEURAL.bat'
     result=subprocess.run(["cmd.exe","/d","/c",cmd],cwd=windows_stage,
                           env=env,input=answer,text=True,encoding="utf-8",errors="replace",
                           capture_output=True,check=False,timeout=60)
@@ -89,3 +89,19 @@ def test_malformed_or_cancelled_user_choice_does_not_dispatch(windows_stage,tmp_
     assert result.returncode==2,result.stdout+result.stderr
     assert lines==[]
     assert not (windows_stage/"malicious.txt").exists()
+
+@pytest.mark.skipif(os.name!="nt",reason="Windows CMD only")
+def test_plain_ascii_commandline_workspace_is_forwarded(windows_stage,tmp_path):
+    trace=tmp_path/"plain_trace.jsonl"
+    base=tmp_path/"private workspace with spaces"
+    env={**os.environ, "PODCAST_V31_NATIVE_TRACE":str(trace),
+         "PYTHONIOENCODING":"utf-8"}
+    env.pop("PODCAST_WORKSPACE",None)
+    result=subprocess.run(["cmd.exe","/d","/c",
+                           f'CONTINUE_FULL_HINDI_NEURAL.bat "{base}"'],
+                          cwd=windows_stage,env=env,input="INIT\\n",text=True,
+                          encoding="utf-8",errors="replace",capture_output=True,
+                          check=False,timeout=60)
+    assert result.returncode==0,result.stdout+result.stderr
+    call=json.loads(trace.read_text(encoding="utf-8").splitlines()[0][3:])
+    assert call==["--workspace",str(base),"init"]
