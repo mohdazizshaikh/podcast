@@ -51,6 +51,7 @@ python -m podcast_gpt --workspace "$HOME\PodcastGPTStudio" prepare-chunks
 python -m podcast_gpt --workspace "$HOME\PodcastGPTStudio" render-static
 python -m podcast_gpt --workspace "$HOME\PodcastGPTStudio" audit-static
 python -m podcast_gpt --workspace "$HOME\PodcastGPTStudio" progress
+python -m podcast_gpt --workspace "$HOME\PodcastGPTStudio" budget  # Read-only local measured CPU hours; never starts a model
 ```
 
 For real SadTalker CPU model calls (owner/written-permission for ALL THREE images required):
@@ -107,6 +108,19 @@ PodcastGPTStudio/
 ```
 
 **Migration note:** `.migration/` contains the earlier migration bootstrap and the original v2.98 additive patch, preserved unchanged so it isn't lost. Its patch was written against the old v2.97 layout and **must NOT be applied blindly to this rebuilt v3 code**. The importer can import a separate local legacy clone, but that would require a planned conflict review; it is not a prerequisite for using reconstructed v3.
+
+### Read-only real CPU pace budget (`BUDGET` stage)
+
+Once at least one genuine source/FFmpeg-verified SadTalker CPU sample exists,
+choose `BUDGET` in the Windows guide or run `python -m podcast_gpt
+--workspace "<PRIVATE_STUDIO>" budget`. It rechecks signed original PCM,
+authorized portrait SHAs, and ALL saved MP4s; then uses saved local
+`actual_cpu_model_seconds` to illustrate remaining model CPU hours.
+It does **not** start a model, encode video, download anything or claim that
+its broad 0.5x–3x range is a reliable clock-time promise. Unmeasured speakers
+borrow the global median and are explicitly identified; with zero genuine
+measured clips it returns **no estimate**, never an invented figure.
+This reflects previous v2.92 planning intent and is a newly reconstructed implementation.
 
 ## Quality, trust and limitations
 

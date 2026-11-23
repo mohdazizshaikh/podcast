@@ -26,6 +26,7 @@ echo INIT      - NEW private original 45-turn script
  echo BATCH     - max 5 real CPU clips, separate YES consent
  echo SESSION   - bounded real CPU clips, separate YES consent
  echo PROGRESS  - read-only independently decode saved MP4 previews
+ echo BUDGET    - READ ONLY estimated CPU hours from measured saved previews
  echo REVIEW    - local private 3-face sample HTML (real clips required)
  echo RECORD    - manual three face PASS/FAIL observation record
  echo INSPECT   - verify manual observation against current media
@@ -47,6 +48,7 @@ if /I "!STEP!"=="PILOT" (endlocal & goto :cpu_pilot)
 if /I "!STEP!"=="BATCH" (endlocal & goto :cpu_batch)
 if /I "!STEP!"=="SESSION" (endlocal & goto :cpu_session)
 if /I "!STEP!"=="PROGRESS" (endlocal & goto :progress)
+if /I "!STEP!"=="BUDGET" (endlocal & goto :budget)
 if /I "!STEP!"=="REVIEW" (endlocal & goto :review)
 if /I "!STEP!"=="RECORD" (endlocal & goto :record)
 if /I "!STEP!"=="INSPECT" (endlocal & goto :inspect)
@@ -84,6 +86,9 @@ call "%~dp0RUN_NEURAL_CPU.bat" "%BASE%" "SESSION"
 exit /b %ERRORLEVEL%
 :progress
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" progress
+exit /b %ERRORLEVEL%
+:budget
+".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" budget
 exit /b %ERRORLEVEL%
 :review
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" review-pilot
