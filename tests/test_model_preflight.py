@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -46,11 +47,9 @@ def test_incomplete_local_sadtalker_installation_fails_before_model(
         fake_sadtalker_root,missing):
     path=fake_sadtalker_root/missing
     if path.is_dir():
-        path.rmdir() if not list(path.iterdir()) else None
+        shutil.rmtree(path)
     else:
         path.unlink()
-    if missing=="src/config":
-        (fake_sadtalker_root/"src"/"config").rmdir() if (fake_sadtalker_root/"src"/"config").exists() else None
     with pytest.raises(ValueError):
         inspect_sadtalker_installation(fake_sadtalker_root,Path(sys.executable))
 
