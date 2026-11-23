@@ -52,7 +52,7 @@ def inspect_sadtalker_installation(model_root:Path,python_executable:Path,*,runn
     probe=runner or subprocess.run
     code="import json,sys; print(json.dumps({'major':sys.version_info.major,'minor':sys.version_info.minor,'executable':sys.executable}))"
     try:
-        completed=probe([str(interpreter),"-c",code],
+        completed=probe([str(interpreter),"-I","-S","-c",code],
                         cwd=str(root),capture_output=True,text=True,
                         encoding="utf-8",errors="replace",timeout=25,check=False)
     except (OSError,subprocess.TimeoutExpired) as err:

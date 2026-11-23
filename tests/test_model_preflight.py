@@ -79,8 +79,8 @@ def test_python_version_only_check_refuses_broken_selected_binary(fake_sadtalker
     commands=[]
     def fake_runner(*args,**kwargs):
         commands.append(args[0])
-        assert args[0][1]=="-c"
-        assert "import torch" not in args[0][2]
+        assert args[0][1:4]==["-I","-S","-c"]
+        assert "import torch" not in args[0][4]
         assert kwargs["timeout"]<=25
         return Bad()
     with pytest.raises(ValueError,match="interpreter failed"):
