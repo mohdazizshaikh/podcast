@@ -1,4 +1,4 @@
-# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.3.1)
+# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.4)
 
 > **Rebuilt from this ChatGPT Project's available requirements/milestone history, NOT cloned from or verified against the suspended repository.** New canonical repository: **https://github.com/mohdazizshaikh/podcast**. No access to the suspended account is required. The original v2.97 Git history and exact source-byte parity **cannot be claimed** from chat summaries alone. See [`docs/RECONSTRUCTION_LEDGER.md`](docs/RECONSTRUCTION_LEDGER.md).
 
@@ -110,6 +110,29 @@ PodcastGPTStudio/
 ```
 
 **Migration note:** `.migration/` contains the earlier migration bootstrap and the original v2.98 additive patch, preserved unchanged so it isn't lost. Its patch was written against the old v2.97 layout and **must NOT be applied blindly to this rebuilt v3 code**. The importer can import a separate local legacy clone, but that would require a planned conflict review; it is not a prerequisite for using reconstructed v3.
+
+### v3.4 — External SadTalker subprocess + private failure troubleshooting
+
+CI now launches a **separate Python subprocess** with the same CPU CLI
+arguments and timestamp-named MP4 layout documented in upstream SadTalker.
+The external program is deliberately a **fake test runner** that makes
+short static FFmpeg video; this validates actual subprocess/MP4 discovery,
+three-speaker pilot checkpointing, reuse-on-resume and incomplete-output
+refusal on Windows and Ubuntu. It does NOT download, run or certify the
+real SadTalker neural model or natural Hindi lip motion.
+
+When an authorized real model subprocess fails, its complete stdout/stderr
+are preserved in the **private workspace** at `scratch/model-<chunk>/model-stdout.log`
+and `model-stderr.log` for local troubleshooting. The app no longer buffers
+unbounded subprocess output in RAM. Successful chunks remove their own
+temporary logs with scratch cleanup. Do **not** upload private logs, portraits
+or original recordings to the public repository.
+
+Local Kokoro-to-16k original WAV conversion also uses the private workspace
+`scratch/` directory (with 100 MiB minimum free) rather than the Windows
+system temporary drive. SadTalker Python's read-only version preflight uses
+`-I -S` to avoid normal site/user initialization; this does not authenticate
+the third-party Python interpreter. [v3.4 release notes](docs/V34_RELEASE_NOTES.md).
 
 ### v3.3.1 — Private dashboard import safety
 

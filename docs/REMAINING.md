@@ -13,3 +13,6 @@
 
 CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker evidence.
 - [ ] Run the new `MODEL` read-only preflight on the user's actual installed SadTalker Python, source and checkpoint files. It does **not** certify pretrained-model loading or real performance.
+
+- [ ] On the user's actual GPU-less Windows system, run the real third-party SadTalker `PILOT`. The v3.4 subprocess smoke only runs a FAKE external Python process generating FFmpeg static pictures; it cannot measure real model speed, failure modes or visible lip motion.
+- [ ] After any model error, locally inspect only the private workspace `scratch/model-<chunk>/model-stderr.log` and `model-stdout.log`; never publish logs carrying personal paths or input filenames. Model failure must leave no falsely completed preview checkpoint.
