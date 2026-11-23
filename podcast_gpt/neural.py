@@ -337,8 +337,14 @@ def compose_neural(root:Path,*,allow_short:bool=False) -> dict:
         joined=_concat_video(segments,tmp,src["original_seconds"])
         # No segment-by-segment 24fps rounding drift: 45-turn joined video
         # must span the PCM timeline, within at most one 24fps frame.
-        joined_video=streams(joined)
-        if abs(joined_video["video_duration"]-src["original_seconds"])>1/FPS+.005:
+        probe=json.loads(cmd(["ffprobe","-v","error","-select_streams","v:0",
+                              "-show_entries","stream=duration","-of","json",
+                              str(joined)],timeout=90).stdout)
+        if len(probe.get("streams",[]))!=1:
+            raise ValueError("Joined original face video stream missing")
+        joined_seconds=float(probe["streams"][0].get("duration",0))
+        if (not math.isfinite(joined_seconds)
+                or abs(joined_seconds-src["original_seconds"])>1/FPS+.005):
             raise ValueError("45-turn neural candidate video timing drifted from original Hindi PCM")
         audio=tmp/"original.wav";original_audio(root,rows,audio)
         staged=tmp/"full.mp4"
