@@ -10,14 +10,14 @@
 4. Check printed file count, uncommitted changes, source SHA and blocking findings. It scans tracked and untracked **non-ignored** files and refuses secret-looking/media/model artifacts by default. Ignored media, virtual environments and downloaded model weights stay local; they are **not** silently published to this public repo.
 5. Confirm `Y` to publish. Git for Windows and Python 3 are needed, along with an authenticated **new** GitHub account through Git Credential Manager.
 6. A separate offline Git bundle of all original refs/tags is saved under `%USERPROFILE%\Podcast-Git-Migration-Backups` **before** any upload. Original source directory is never modified.
-7. The new repo's `main` receives a merge commit connecting the original project Git lineage and this bootstrap branch. Verify `git log --all --oneline`, tracked files and CI; don't delete original local clone/bundle until the result is verified.
+7. The importer runs `git apply --check` on the preserved v2.98 patch inside `.migration/` and applies it if source is compatible, or confirms it was previously applied. If neither is true, `main` is NOT updated. The new repo's `main` then receives a merge commit connecting the original project Git lineage and this bootstrap branch. Verify `git log --all --oneline`, tracked files and CI; don't delete original local clone/bundle until the result is verified.
 
 ### Important limitations
 
 - The migration tool is **not a full original source copy**. It cannot re-create code that is absent from the local clone.
 - If the original project was a **shallow** clone, lacks `.git`, contains symlinks/submodules, secrets, large files or potentially private media, the tool refuses. An authorized expert can inspect those items before extending the migration. `--allow-public-media` exists for separately inspected public-safe media but the interactive `.bat` does not enable it.
 - Untracked **ignored** content is not uploaded or backed up in the `.bundle`. Private portraits, generated clips, downloads and model weights should remain on the Windows workspace and be backed up separately, not pushed publicly.
-- `v2.98` was an **offline patch**, not a previous GitHub commit. Apply that patch only after successfully importing source, using the downloadable `podcast-gpt-v298-offline.zip` from the chat, and inspect/test it before committing. This repo does not yet contain full v2.98 source.
+- `v2.98` was an **offline patch**, not a previous GitHub commit. The original patch is now preserved in `.migration/v298-offline.patch` and the guided Windows importer will apply it only if clean; otherwise it refuses to publish an incomplete `main`. Check actual platform tests after import; synthetic migration tests do not establish Hindi video quality.
 - Unexpected merge conflicts leave the original import branch on GitHub; no forced overwrite or fake success. Resolve conflicts locally before retrying a safe merge.
 
 ## Project milestone (prior development record)
