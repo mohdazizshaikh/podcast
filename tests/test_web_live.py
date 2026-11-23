@@ -194,4 +194,11 @@ def test_signed_source_manifest_refuses_any_late_dashboard_original_upload(signe
     assert code==409
     assert "SHA already bound" in body.decode("utf-8")
     assert (root/"voices"/"001.wav").read_bytes()==before
-    assert not (root/"source"/"originals-voice-and-binding-exclusive.lock").exists()
+    # The HTTP response can reach the client just before the handler's
+    # contextmanager __exit__ releases its lock. Check bounded eventual
+    # cleanup, not an impossible same-microsecond scheduling guarantee.
+    private_lock=root/"source"/"originals-voice-and-binding-exclusive.lock"
+    for _ in range(100):
+        if not private_lock.exists():break
+        time.sleep(.01)
+    assert not private_lock.exists()
