@@ -5,6 +5,9 @@ title Podcast GPT - ONE guided original Hindi step v3.1
 set "BASE=%~1"
 if not defined BASE set "BASE=%PODCAST_WORKSPACE%"
 if not defined BASE set "BASE=%USERPROFILE%\PodcastGPTStudio"
+rem cmd.exe /c can preserve surrounding literal quotes in first BAT arg.
+rem Strip double quote characters before passing one safe quoted workspace arg.
+set "BASE=%BASE:"=%"
 if not exist ".venv\Scripts\python.exe" (
  echo [BLOCKED] Run START_PODCAST_WINDOWS.bat first.
  exit /b 1
