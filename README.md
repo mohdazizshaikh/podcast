@@ -1,4 +1,4 @@
-# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.1)
+# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.2)
 
 > **Rebuilt from this ChatGPT Project's available requirements/milestone history, NOT cloned from or verified against the suspended repository.** New canonical repository: **https://github.com/mohdazizshaikh/podcast**. No access to the suspended account is required. The original v2.97 Git history and exact source-byte parity **cannot be claimed** from chat summaries alone. See [`docs/RECONSTRUCTION_LEDGER.md`](docs/RECONSTRUCTION_LEDGER.md).
 

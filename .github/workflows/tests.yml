@@ -31,7 +31,21 @@ jobs:
       - name: Install FFmpeg + ffprobe on Windows (REQUIRED media tests)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: choco install ffmpeg --yes --no-progress
+        run: |
+          # Chocolatey V2 may transiently time out on GitHub-hosted Windows
+          # runners; retry the download instead of silently skipping video QA.
+          $ErrorActionPreference = 'Continue'
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            $ff = Get-Command ffmpeg -ErrorAction SilentlyContinue
+            $probe = Get-Command ffprobe -ErrorAction SilentlyContinue
+            if ($ff -and $probe) { break }
+            Write-Host "Installing real FFmpeg/ffprobe (attempt $attempt / 3)"
+            choco install ffmpeg --yes --no-progress --execution-timeout=240
+            if ($attempt -lt 3) { Start-Sleep -Seconds (5 * $attempt) }
+          }
+          if (-not ((Get-Command ffmpeg -ErrorAction SilentlyContinue) -and (Get-Command ffprobe -ErrorAction SilentlyContinue))) {
+            throw "FFmpeg/ffprobe still unavailable after 3 real Windows installer attempts; media CI must fail closed."
+          }
       - name: Require actual FFmpeg and ffprobe (never silently skip media checks)
         run: python -c "import shutil; assert shutil.which('ffmpeg') and shutil.which('ffprobe'), 'FFmpeg and ffprobe MUST be installed for full media CI'"
       - name: Install application and synthetic test tools (NO model weights)
@@ -43,7 +57,7 @@ jobs:
       - name: 45-turn source, rights consent, local dashboard and real SHORT FFmpeg regression
         run: python -m pytest -q tests
       - name: Explicitly limit CI completion claims
-        run: python -c "from podcast_gpt import __version__; assert __version__ == '3.1.0'; print('SYNTHETIC tests only; no genuine SadTalker lipsync nor real 10m local Windows rendered')"
+        run: python -c "from podcast_gpt import __version__; assert __version__ == '3.2.0'; print('SYNTHETIC tests only; no genuine SadTalker lipsync nor real 10m local Windows rendered')"
   synthetic-full-45-turn-composition:
     name: Extended 45-turn SHORT synthetic video candidate (NOT real model)
     runs-on: ubuntu-latest

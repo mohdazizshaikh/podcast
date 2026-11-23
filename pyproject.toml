@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "podcast-gpt-reconstructed"
-version = "3.1.0"
+version = "3.2.0"
 description = "Source-bound CPU Hindi three-presenter podcast studio reconstructed from project history"
 requires-python = ">=3.10"
 dependencies = ["Pillow>=10,<13"]

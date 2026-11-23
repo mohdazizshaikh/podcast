@@ -16,6 +16,12 @@
 - `podcast_gpt/cli.py` and `podcast_gpt/web.py`: CLI + loopback-only browser dashboard, upload originals to private workspace, CSRF, no media HTTP serving, no model auto-run.
 - Windows BATs, packaging, synthetic/FFmpeg tests, Linux/Windows CI.
 
+## v3.2 follow-up implementation (new source, not historical file recovery)
+
+- `BUDGET` guided action and `python -m podcast_gpt budget` now perform a **read-only** independent PCM/portrait/real saved MP4+JSON verification, then illustrate remaining CPU hours using saved `actual_cpu_model_seconds`. One presenter missing model measurements triggers explicit cross-presenter fallback; zero eligible measurements yields **no estimate**. It is not a promise of clock time, performance, natural mouth sync or publication.
+- CI now installs actual FFmpeg/ffprobe (rather than silently skipping video tests) on Ubuntu/Windows, checks a genuine 557.6-second synthetic PCM-only original timeline with 90 exact chunks, and separately builds+audits a 45-turn **short synthetic static-face** candidate MP4. No external SadTalker weights or 10-minute natural-human video are exercised.
+- Windows guided `PILOT`/`BATCH`/`SESSION` now preserves the exact choice into the model-consent launcher instead of asking for it twice. Portrait rights confirmation remains a separate explicit action.
+
 ## Not recoverable from chat summaries / not represented as recovered original code
 
 1. Byte-identical historical source files and exact Git history of former project.
