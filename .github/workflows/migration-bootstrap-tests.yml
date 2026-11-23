@@ -1,0 +1,36 @@
+name: Test migration bootstrap ONLY (not full podcast platform)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.migration/**'
+      - '.github/workflows/migration-bootstrap-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-offline-local-migration:
+    name: Synthetic local Git migration (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Python syntax check
+        run: python -m py_compile .migration/migrate_from_local.py
+      - name: Offline local Git history and working tree regression tests
+        run: python -m unittest discover -s .migration/tests -v
+      - name: Confirm this is only bootstrap CI
+        shell: python
+        run: |
+          from pathlib import Path
+          assert Path('.migration/MIGRATION_STATUS.md').is_file()
+          assert Path('.migration/migrate_from_local.py').is_file()
+          print('Only migration tooling tested: full podcast source/media NOT certified')
