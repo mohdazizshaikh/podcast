@@ -1,0 +1,37 @@
+name: Reconstructed Podcast v3 - source authenticity and synthetic media CI
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'podcast_gpt/**'
+      - 'tests/**'
+      - '*.bat'
+      - 'pyproject.toml'
+      - '.github/workflows/tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-media-tests:
+    name: ${{ matrix.os }} Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install application and synthetic test tools (NO model weights)
+        run: python -m pip install -e ".[test]"
+      - name: Verify source compilation
+        run: python -m compileall -q podcast_gpt
+      - name: Display optional real FFmpeg tool availability
+        run: python -m podcast_gpt doctor
+      - name: 45-turn source, rights consent, local dashboard and real SHORT FFmpeg regression
+        run: python -m pytest -q tests
+      - name: Explicitly limit CI completion claims
+        run: python -c "from podcast_gpt import __version__; assert __version__ == '3.0.0'; print('SYNTHETIC tests only; no genuine SadTalker lipsync nor real 10m local Windows rendered')"

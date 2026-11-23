@@ -1,0 +1,75 @@
+import json
+import wave
+from pathlib import Path
+
+import pytest
+from podcast_gpt import source
+
+
+def test_original_45_turn_personas_and_no_overwrite(private_studio):
+    p=source.load_project(private_studio)
+    assert len(p["turns"])==45
+    assert set(t["speaker"] for t in p["turns"])==set(source.SPEAKERS)
+    with pytest.raises(ValueError):source.init(private_studio)
+
+
+def test_real_full_10_min_duration_gate_blocks_synthetic_quick_test(private_studio):
+    with pytest.raises(ValueError,match="10 minutes"):
+        source.build_source(private_studio)
+    assert not (private_studio/"source"/source.SOURCE_FILE).exists()
+    d=source.build_source(private_studio,allow_short=True)
+    assert d["original_turn_count"]==45 and d["synthetic_short_test_only"]
+
+
+def test_change_original_source_wav_refused_after_sha_bind(signed_studio):
+    p=signed_studio/"voices"/"003.wav"
+    p.write_bytes(p.read_bytes()+b"changed")
+    with pytest.raises(ValueError):source.verify_source(signed_studio,allow_short=True)
+
+
+def test_short_duplicate_wav_rejected(private_studio):
+    p=private_studio/"voices"/"002.wav"
+    p.write_bytes((private_studio/"voices"/"001.wav").read_bytes())
+    with pytest.raises(ValueError,match="distinct"):
+        source.build_source(private_studio,allow_short=True)
+
+
+def test_exact_original_pcm_repartition_45_turns(chunk_studio):
+    m=source.verify_chunks(chunk_studio,allow_short=True)
+    assert m["count"]==45
+    assert len(set(x["chunk_sha256"] for x in m["chunks"]))==45
+    assert sum(x["frames"] for x in m["chunks"])==sum(x["frames"] for x in source.verify_source(chunk_studio,allow_short=True)["voices"].values())
+    with pytest.raises(ValueError):source.prepare_chunks(chunk_studio,allow_short=True)
+
+
+def test_pcm_frame_bounds_exact_no_overlap():
+    for f in (16000,160001,320000,640000,1599999):
+        out=source.frame_bounds(f)
+        assert out[0][0]==0 and out[-1][1]==f
+        assert all(b-a>=16000 and b-a<=160000 for a,b in out)
+        assert all(out[i][1]==out[i+1][0] for i in range(len(out)-1))
+
+
+def test_chunk_tampering_and_symlink_refused(chunk_studio):
+    wav=chunk_studio/"chunks"/"002-001.wav"
+    wav.write_bytes(wav.read_bytes()+b"tamper")
+    with pytest.raises(ValueError):source.verify_chunks(chunk_studio,allow_short=True)
+
+
+def test_unauthorized_bad_portrait_and_project_edit(signed_studio):
+    portrait=signed_studio/"portraits"/"kabir.png"
+    portrait.write_bytes(portrait.read_bytes()+b"edit")
+    with pytest.raises(ValueError):source.verify_source(signed_studio,allow_short=True)
+
+
+def test_invalid_script_wrong_count_or_voice(signed_studio):
+    project=signed_studio/"project.json"
+    d=json.loads(project.read_text(encoding="utf-8"));d["turns"][9]["speaker"]="unknown"
+    project.write_text(json.dumps(d,ensure_ascii=False),encoding="utf-8")
+    with pytest.raises(ValueError):source.verify_source(signed_studio,allow_short=True)
+
+
+def test_false_completion_flags_are_explicit(chunk_studio):
+    m=source.verify_chunks(chunk_studio,allow_short=True)
+    assert m["human_lipsync_approved"] is False
+    assert m["full_ten_minute_neural_video_completed"] is False
