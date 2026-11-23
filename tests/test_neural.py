@@ -70,12 +70,12 @@ def test_full_human_navigator_requires_verified_real_candidate(chunk_studio):
 
 
 def test_cumulative_original_hindi_frames_never_drift_across_ninety_segments():
-    durations=[1.0125,0.4]*44+[1.0125]
+    durations=[1.023,0.4]*44+[1.023]
     plan=neural.quantize_segment_frames(durations)
     assert len(plan)==89
     assert all(x>=1 for x in plan)
     assert sum(plan)==round(sum(durations)*neural.FPS)
-    # Independently rounding each 0.4-second pause to 10 frames causes
+    # Independently rounding speech and each pause separately can cause
     # a cumulative large, audible video/audio offset on 45 turns.
     naive=sum(round(duration*neural.FPS) for duration in durations)
     assert abs(naive-sum(plan))>=10
