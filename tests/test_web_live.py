@@ -95,3 +95,52 @@ def test_local_dashboard_real_loopback_csrf_private_upload_and_no_serve_media(tm
     code,_=_request(port,"/api/upload?kind=voice&name=001.wav",body=original_wav,token=token)
     assert code==201
     assert (root/"voices"/"001.wav").read_bytes()==original_wav
+
+
+def test_original_voice_upload_blocks_concurrent_source_actions(tmp_path,monkeypatch):
+    """Native threaded localhost HTTP: uploads hold the SAME exclusive task lock."""
+    port=_port()
+    root=tmp_path/"Private race-free studio"
+    threading.Thread(target=web.serve,args=(root,port),daemon=True).start()
+    page=None
+    for _ in range(70):
+        try:
+            status,page=_request(port,"/")
+            if status==200:break
+        except (OSError,ConnectionError):
+            time.sleep(.08)
+    assert page is not None
+    token=re.search(r'const token="([0-9a-f]{64})"',page.decode("utf-8")).group(1)
+    blob=io.BytesIO()
+    with wave.open(blob,"wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(16000)
+        w.writeframes(b"\0\0"*16000)
+    entered=threading.Event()
+    resume=threading.Event()
+    original=web.wav_info
+    def slow_independent_pcm_validation(path):
+        entered.set()
+        if not resume.wait(10):
+            raise RuntimeError("test-only upload validation timeout")
+        return original(path)
+    monkeypatch.setattr(web,"wav_info",slow_independent_pcm_validation)
+    result=[]
+    upload=threading.Thread(
+        target=lambda:result.append(_request(
+            port,"/api/upload?kind=voice&name=003.wav",body=blob.getvalue(),
+            token=token)),daemon=True)
+    upload.start()
+    try:
+        assert entered.wait(10), "Local upload should reach real WAV validation"
+        code,_=_request(port,"/api/action?cmd=doctor",body=b"",token=token)
+        assert code==409, "No source/action may start mid-upload"
+    finally:
+        resume.set()
+        upload.join(timeout=10)
+    assert not upload.is_alive()
+    assert [x[0] for x in result]==[201]
+    assert (root/"voices"/"003.wav").is_file()
+    code,_=_request(port,"/api/action?cmd=doctor",body=b"",token=token)
+    assert code==202, "Exclusive lock must release after original upload"
