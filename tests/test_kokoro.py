@@ -24,7 +24,8 @@ def fake_factory(model,voices):
         def create(self,phonemes,*,voice,speed,is_phonemes):
             assert is_phonemes and speed==1.0
             assert voice in kokoro.VOICE_CHOICES
-            assert phonemes.startswith("भाग ")
+            assert isinstance(phonemes,str) and len(phonemes.split()) >= 15
+            assert not phonemes.startswith("भाग "), "Do not speak a mechanical turn label"
             value={"hm_omega":.09,"hf_alpha":.17,"hm_psi":.28}[voice]
             return array('f',[value])*(24_000+len(phonemes)),24000
     return FakeLocalModel(),lambda text:(text,None)
