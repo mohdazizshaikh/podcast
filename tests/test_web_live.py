@@ -109,6 +109,20 @@ def test_local_dashboard_real_loopback_csrf_private_upload_and_no_serve_media(tm
     code,_=_request(port,"/api/upload?kind=voice&name=001.wav",body=original_wav,token=token)
     assert code==201
     assert (root/"voices"/"001.wav").read_bytes()==original_wav
+    # The browser import and a different Python CLI/TTS process must use
+    # the SAME private exclusive originals lock, not just a thread mutex.
+    from podcast_gpt import source
+    with source.original_voice_lock(root):
+        code,resp=_request(port,"/api/upload?kind=voice&name=004.wav",
+                           body=original_wav,token=token)
+        assert code==409,resp
+        assert "lock" in resp.decode("utf-8").lower()
+        assert not (root/"voices"/"004.wav").exists()
+    code,_=_request(port,"/api/upload?kind=voice&name=004.wav",
+                    body=original_wav,token=token)
+    assert code==201
+    assert (root/"voices"/"004.wav").read_bytes()==original_wav
+
 
 
 def test_original_voice_upload_blocks_concurrent_source_actions(tmp_path,monkeypatch):
@@ -158,3 +172,26 @@ def test_original_voice_upload_blocks_concurrent_source_actions(tmp_path,monkeyp
     assert (root/"voices"/"003.wav").is_file()
     code,_=_request(port,"/api/action?cmd=doctor",body=b"",token=token)
     assert code==202, "Exclusive lock must release after original upload"
+
+
+def test_signed_source_manifest_refuses_any_late_dashboard_original_upload(signed_studio):
+    """A second local dashboard may not mutate source after SHA binding."""
+    root=signed_studio
+    port=_port()
+    threading.Thread(target=web.serve,args=(root,port),daemon=True).start()
+    page=None
+    for _ in range(70):
+        try:
+            code,page=_request(port,"/")
+            if code==200:break
+        except (OSError,ConnectionError):
+            time.sleep(.08)
+    assert page is not None
+    token=re.search(r'const token="([0-9a-f]{64})"',page.decode("utf-8")).group(1)
+    before=(root/"voices"/"001.wav").read_bytes()
+    code,body=_request(port,"/api/upload?kind=voice&name=001.wav",
+                       body=before,token=token)
+    assert code==409
+    assert "SHA already bound" in body.decode("utf-8")
+    assert (root/"voices"/"001.wav").read_bytes()==before
+    assert not (root/"source"/"originals-voice-and-binding-exclusive.lock").exists()
