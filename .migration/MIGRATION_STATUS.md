@@ -11,7 +11,7 @@
 
 ## Requirements before declaring full migration complete
 
-1. Source Git clone scanned, full history confirmed (`--is-shallow-repository=false`).
+1. Required v2.97 source modules/launchers/tests and PILOT markers present; Git clone scanned, full history confirmed (`--is-shallow-repository=false`).
 2. Tracked/untracked source file inventory and secret/media audit passed.
 3. All original Git refs/tags backed up to an offline `.bundle`.
 4. Source import branch uploaded using **new** GitHub account.
