@@ -33,6 +33,10 @@ exit /b 0
 >> "%PODCAST_V31_NATIVE_TRACE%" echo KOKORO-STUB
 exit /b 0
 ''',encoding="ascii")
+    (stage/"CHECK_SADTALKER_CPU.bat").write_text('''@echo off
+>> "%PODCAST_V31_NATIVE_TRACE%" echo MODEL-PREFLIGHT-STUB
+exit /b 0
+''',encoding="ascii")
     return stage
 
 
@@ -75,7 +79,8 @@ def test_one_original_hindi_stage_only(windows_stage,tmp_path,mode,expected):
 
 @pytest.mark.skipif(os.name!="nt",reason="Windows CMD only")
 @pytest.mark.parametrize("mode,expected",[("PILOT","NEURAL-STUB:PILOT"),("BATCH","NEURAL-STUB:BATCH"),
-                                        ("SESSION","NEURAL-STUB:SESSION"),("KOKORO","KOKORO-STUB")])
+                                        ("SESSION","NEURAL-STUB:SESSION"),("KOKORO","KOKORO-STUB"),
+                                        ("MODEL","MODEL-PREFLIGHT-STUB")])
 def test_one_real_model_stage_is_only_local_stub_no_inference(windows_stage,tmp_path,mode,expected):
     result,lines,_=_run(windows_stage,tmp_path,mode+"\n")
     assert result.returncode==0,result.stdout+result.stderr
