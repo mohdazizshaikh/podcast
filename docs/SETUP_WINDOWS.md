@@ -11,3 +11,6 @@
 8. After all chunks have signed decoder-audited real face MP4s, run `compose-neural`, `audit-neural`, `review-full`; manually review all 45 turns and identity/rights before ever publishing yourself.
 
 Never put your private workspace inside the public clone. The old suspended GitHub account is not contacted.
+### Privacy and original media imports (v3.3.1)
+
+When importing a presenter PNG from the local browser, tick the explicit checkbox confirming you own the portrait or hold written permission. The private localhost HTTP server also requires this acknowledgment and refuses missing consent. The checkbox does not automatically verify your permission. File import and signed-source processing cannot overlap, and `000.wav` is not a valid 45-turn original voice name. Existing media can never be overwritten.

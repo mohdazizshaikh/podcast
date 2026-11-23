@@ -1,4 +1,4 @@
-# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.3)
+# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.3.1)
 
 > **Rebuilt from this ChatGPT Project's available requirements/milestone history, NOT cloned from or verified against the suspended repository.** New canonical repository: **https://github.com/mohdazizshaikh/podcast**. No access to the suspended account is required. The original v2.97 Git history and exact source-byte parity **cannot be claimed** from chat summaries alone. See [`docs/RECONSTRUCTION_LEDGER.md`](docs/RECONSTRUCTION_LEDGER.md).
 
@@ -110,6 +110,18 @@ PodcastGPTStudio/
 ```
 
 **Migration note:** `.migration/` contains the earlier migration bootstrap and the original v2.98 additive patch, preserved unchanged so it isn't lost. Its patch was written against the old v2.97 layout and **must NOT be applied blindly to this rebuilt v3 code**. The importer can import a separate local legacy clone, but that would require a planned conflict review; it is not a prerequisite for using reconstructed v3.
+
+### v3.3.1 — Private dashboard import safety
+
+Portrait uploads in the localhost dashboard require an explicit self-attested
+owner/written-permission checkbox, verified again server-side, before storing
+a PNG. This is not independent rights or identity verification. Media uploads
+take the same exclusive lock as source binding and rendering tasks, so no
+background action can start while a WAV or portrait is only partially saved.
+The original WAV filename validator accepts exactly `001.wav`–`045.wav`, not
+`000.wav`. Originals remain no-overwrite, local-only and protected by CSRF.
+Loopback HTTP regression tests cover failed rights acknowledgment, forbidden
+filename, existing-file refusal and upload/action concurrency.
 
 ### v3.3 — Read-only model preflight and source-bound video sync
 

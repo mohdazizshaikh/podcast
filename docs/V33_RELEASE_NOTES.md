@@ -55,3 +55,7 @@ Upstream offline voice reference: https://github.com/thewh1teagle/kokoro-onnx
 
 Read [Remaining acceptance](REMAINING.md), [Windows setup](SETUP_WINDOWS.md)
 and [Architecture](ARCHITECTURE.md).
+
+## v3.3.1 follow-up — private media import race and rights acknowledgment
+
+The local dashboard requires an explicit declaration of rights before each AI-presenter portrait import; the HTTP server checks the declaration as well as the per-instance CSRF token. This is self-attestation, NOT proof of a valid likeness license. All original portrait/WAV imports now hold the same exclusive mutex used by one-stage processing, closing the upload-vs-source-binding race. The voice filename validator refuses `000.wav` and any name outside `001.wav`–`045.wav`. New real-loopback HTTP tests verify the refusal and simultaneous import/action safety. This does not run real SadTalker or prove quality.
