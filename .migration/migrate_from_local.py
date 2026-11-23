@@ -113,6 +113,9 @@ def main(argv=None) -> int:
     if not (src / '.git').exists() or not git(src, 'rev-parse', '--is-inside-work-tree') == 'true':
         print('BLOCKED: --source must be the existing FULL working Git clone.', file=sys.stderr)
         return 2
+    if not git(src, 'branch', '--show-current'):
+        print('BLOCKED: checkout a named original branch; detached HEAD cannot guarantee branch migration.', file=sys.stderr)
+        return 2
     origin = git(src, 'remote', 'get-url', 'origin', check=False)
     if 'github.com/mohdazizshaikh/podcast' in origin.lower():
         print('BLOCKED: source is the NEW destination clone, not the original project.', file=sys.stderr)
