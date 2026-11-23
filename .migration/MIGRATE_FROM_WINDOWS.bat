@@ -11,13 +11,16 @@ set "SOURCE=%~1"
 if not defined SOURCE set /p "SOURCE=Full existing local podcast-gpt clone folder: "
 set "SOURCE=%SOURCE:"=%"
 if not exist "%SOURCE%\.git" goto :blocked
-if not exist "..\..\.git" echo New recovery tools must be inside the new repo clone.
+if not exist "..\.git" goto :blocked
 where py >nul 2>&1
 if errorlevel 1 goto :blocked
 py -3 "%~dp0migrate_from_local.py" --source "%SOURCE%"
 if errorlevel 1 goto :blocked
 echo.
 echo DRY-RUN finished. Verify inventory/count and confirm no secrets.
+echo IMPORTANT: Destination GitHub repo is PUBLIC, and ALL Git history
+echo will become visible. Review old commits for leaked API keys or
+echo confidential media before consenting to publish.
 choice /C YN /M "Publish full local project into new GitHub repo?"
 if errorlevel 2 exit /b 0
 set "BACKUP=%USERPROFILE%\Podcast-Git-Migration-Backups"
