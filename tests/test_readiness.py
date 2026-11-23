@@ -76,3 +76,19 @@ def test_cli_readiness_does_not_start_models_or_create_workspace(tmp_path):
     result=cli.execute(args)
     assert result["new_model_inference_calls"]==0
     assert not workspace.exists()
+
+
+
+def test_readiness_refuses_a_half_written_or_crashed_voice_session(private_studio):
+    root=private_studio
+    with source.original_voice_lock(root):
+        report=readiness.inspect(root,allow_short=True)
+        assert report["checks"]["original_voice_source_session"]["status"]=="blocked"
+        assert "original_voice_source_session" in report["blocked_stages"]
+        assert report["all_source_and_media_structurally_verified"] is False
+        assert "STOP" in report["next_safe_action"]
+        assert report["new_model_inference_calls"]==0
+        assert report["downloads"]==0
+    report=readiness.inspect(root,allow_short=True)
+    assert report["checks"]["original_voice_source_session"]["status"]=="clear"
+    assert report["checks"]["original_voice_files"]["status"]=="technically_valid_unbound"
