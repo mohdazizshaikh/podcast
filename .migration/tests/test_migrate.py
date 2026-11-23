@@ -85,6 +85,32 @@ class Migration(unittest.TestCase):
         self.assertEqual(len(bundles), 1)
         git(restored, 'bundle', 'verify', str(bundles[0]))
 
+    def test_v298_additive_patch_is_applied_only_after_full_original_merge(self):
+        patch = self.base / 'v298-mini.patch'
+        patch.write_text('diff --git a/QA_V298.txt b/QA_V298.txt\nnew file mode 100644\n'
+                         '--- /dev/null\n+++ b/QA_V298.txt\n@@ -0,0 +1 @@\n'
+                         '+Synthetic verified private QA module\n')
+        result = self.invoke('--publish', '--backup-dir', str(self.base / 'backup'),
+                             '--v298-patch', str(patch))
+        self.assertEqual(result, 0)
+        final = self.base / 'v298-dest'
+        subprocess.run(['git', 'clone', str(self.dest), str(final)], check=True, capture_output=True)
+        self.assertEqual((final / 'QA_V298.txt').read_text(), 'Synthetic verified private QA module\n')
+        self.assertTrue((final / '.migration' / 'README.md').exists())
+        self.assertTrue((final / 'README.md').exists())
+
+    def test_incompatible_patch_does_not_publish_incomplete_main(self):
+        original_main = git(self.dest, 'rev-parse', 'refs/heads/main')
+        patch = self.base / 'bad-v298.patch'
+        patch.write_text('diff --git a/README.md b/README.md\n'
+                         '--- a/README.md\n+++ b/README.md\n'
+                         '@@ -99,1 +99,1 @@\n-missing-source\n+fake-replacement\n')
+        with self.assertRaises(RuntimeError):
+            self.invoke('--publish', '--backup-dir', str(self.base / 'backup'),
+                        '--v298-patch', str(patch))
+        self.assertEqual(git(self.dest, 'rev-parse', 'refs/heads/main'), original_main)
+        self.assertTrue(git(self.dest, 'rev-parse', 'refs/heads/migration/full-local-source'))
+
     def test_sensitive_media_blocks_before_writes(self):
         (self.src / 'face.png').write_bytes(b'fake private portrait')
         self.assertEqual(self.invoke('--publish', '--backup-dir', str(self.base / 'backup')), 2)
