@@ -32,6 +32,17 @@ class Migration(unittest.TestCase):
         git(self.src, 'config', 'user.name', 'Migration Unit')
         (self.src / 'README.md').write_text('ORIGINAL PODCAST SOURCE\n')
         (self.src / 'deleted.txt').write_text('old\n')
+        for rel in m.V297_REQUIRED:
+            f = self.src / rel
+            f.parent.mkdir(parents=True, exist_ok=True)
+            if f.name == 'README.md':
+                continue
+            if rel == 'CONTINUE_FULL_HINDI_NEURAL.bat':
+                f.write_text('PILOT\n')
+            elif rel == 'RUN_NEURAL_CHUNK_SESSION.bat':
+                f.write_text('--pilot-three-speakers\n')
+            else:
+                f.write_text('Synthetic v2.97 test module - not real source\n')
         git(self.src, 'add', '-A')
         git(self.src, 'commit', '-m', 'first real podcast history')
         self.original_sha = git(self.src, 'rev-parse', 'HEAD')
@@ -118,6 +129,17 @@ class Migration(unittest.TestCase):
         (self.src / 'face.png').unlink()
         (self.src / '.env').write_text('SECRET=irrelevant')
         self.assertEqual(self.invoke(), 2)
+
+    def test_incomplete_v297_source_clone_blocks_even_if_valid_git(self):
+        (self.src / 'tests' / 'test_v297.py').unlink()
+        self.assertEqual(self.invoke('--publish', '--backup-dir', str(self.base / 'backup')), 2)
+        self.assertFalse((self.base / 'backup').exists())
+        self.assertFalse(git(self.dest, 'branch', '--list', 'migration/full-local-source'))
+
+    def test_fake_pilot_marker_blocks_before_any_upload(self):
+        (self.src / 'CONTINUE_FULL_HINDI_NEURAL.bat').write_text('No pilot')
+        self.assertEqual(self.invoke('--publish', '--backup-dir', str(self.base / 'backup')), 2)
+        self.assertFalse((self.base / 'backup').exists())
 
     def test_unknown_source_or_wrong_clone_does_not_push(self):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
