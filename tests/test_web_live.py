@@ -67,6 +67,20 @@ def test_local_dashboard_real_loopback_csrf_private_upload_and_no_serve_media(tm
         time.sleep(.07)
     assert result["phase"]=="complete",result
     assert (root/"project.json").is_file()
+    # Read-only device stage inspector is accessible without model/voice calls.
+    code,_=_request(port,"/api/action?cmd=readiness",body=b"",token=token)
+    assert code==202
+    for _ in range(90):
+        code,response=_request(port,"/api/status")
+        report=json.loads(response)
+        if report["phase"]!="running":break
+        time.sleep(.07)
+    assert report["phase"]=="complete",report
+    assert report["result"]["new_model_inference_calls"]==0
+    assert report["result"]["new_tts_service_calls"]==0
+    assert report["result"]["publication_approved"] is False
+    assert report["result"]["checks"]["script"]["status"]=="verified"
+    assert "portraits" in report["result"]["next_safe_action"]
     image=io.BytesIO();Image.new("RGB",(230,230),(73,121,188)).save(image,format="PNG")
     png=image.getvalue()
     code,_=_request(port,"/api/upload?kind=portrait&name=aarav.png",body=png,token=token)
