@@ -1,4 +1,4 @@
-# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.5)
+# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.6)
 
 > **Rebuilt from this ChatGPT Project's available requirements/milestone history, NOT cloned from or verified against the suspended repository.** New canonical repository: **https://github.com/mohdazizshaikh/podcast**. No access to the suspended account is required. The original v2.97 Git history and exact source-byte parity **cannot be claimed** from chat summaries alone. See [`docs/RECONSTRUCTION_LEDGER.md`](docs/RECONSTRUCTION_LEDGER.md).
 
@@ -110,6 +110,29 @@ PodcastGPTStudio/
 ```
 
 **Migration note:** `.migration/` contains the earlier migration bootstrap and the original v2.98 additive patch, preserved unchanged so it isn't lost. Its patch was written against the old v2.97 layout and **must NOT be applied blindly to this rebuilt v3 code**. The importer can import a separate local legacy clone, but that would require a planned conflict review; it is not a prerequisite for using reconstructed v3.
+
+### v3.6 — READINESS: verified, read-only local remaining-work planner
+
+Choose **`READINESS`** in `CONTINUE_FULL_HINDI_NEURAL.bat`, click
+**READINESS** on the private localhost dashboard, or run:
+
+```powershell
+python -m podcast_gpt --workspace "$HOME\PodcastGPTStudio" readiness
+```
+
+This runs **no TTS/AI inference, downloads or video encoding** and does not
+alter the workspace. It verifies actual script/portrait/WAV source structure,
+checks the 540–660s production audio gate, re-hashes the signed original
+source and exact PCM chunks, and—where present—independently decodes static
+and complete candidate MP4s, verifies original facial preview SHAs and
+checks private presenter PASS/FAIL records. It explicitly marks any missing,
+partial or tampered stage and suggests **one next safe action**. On a fully
+rendered episode the final action still requires human 45-turn review;
+readiness NEVER certifies natural Hindi lip sync, likeness rights or
+publication approval. Deep decode can take several minutes on CPU and
+the diagnostic stays on the owner's device.
+
+See [v3.6 release notes](docs/V36_RELEASE_NOTES.md).
 
 ### v3.5 — Online Edge Hindi TTS source integrity (optional, explicit network)
 

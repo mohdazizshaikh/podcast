@@ -18,3 +18,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] After any model error, locally inspect only the private workspace `scratch/model-<chunk>/model-stderr.log` and `model-stdout.log`; never publish logs carrying personal paths or input filenames. Model failure must leave no falsely completed preview checkpoint.
 
 - [ ] If choosing optional online Edge TTS, personally approve that the selected Hindi script text is sent to an external service via explicit `--allow-network-tts`; the v3.5 adapter now prevents post-source-binding regeneration and records SHA receipts, but voice naturalness/usage rights still require human review.
+
+- [ ] On the user's actual PC, run `CONTINUE_FULL_HINDI_NEURAL.bat` → **READINESS** (or `python -m podcast_gpt --workspace ... readiness`) to inspect real local completeness, the 540–660s source-duration gate, verified SHA/PCM and actual MP4 decoder status. No source files or model calls should be added by this check.
