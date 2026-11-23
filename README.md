@@ -1,4 +1,4 @@
-# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.6)
+# Podcast GPT — Reconstructed Hindi Three-Presenter Studio (v3.7)
 
 > **Rebuilt from this ChatGPT Project's available requirements/milestone history, NOT cloned from or verified against the suspended repository.** New canonical repository: **https://github.com/mohdazizshaikh/podcast**. No access to the suspended account is required. The original v2.97 Git history and exact source-byte parity **cannot be claimed** from chat summaries alone. See [`docs/RECONSTRUCTION_LEDGER.md`](docs/RECONSTRUCTION_LEDGER.md).
 
@@ -110,6 +110,32 @@ PodcastGPTStudio/
 ```
 
 **Migration note:** `.migration/` contains the earlier migration bootstrap and the original v2.98 additive patch, preserved unchanged so it isn't lost. Its patch was written against the old v2.97 layout and **must NOT be applied blindly to this rebuilt v3 code**. The importer can import a separate local legacy clone, but that would require a planned conflict review; it is not a prerequisite for using reconstructed v3.
+
+### v3.7 — Cross-process original audio, portrait and source-binding protection
+
+**The private `BIND` action, offline Kokoro voice generator, explicitly
+consented online Edge TTS, and dashboard WAV/portrait imports now share
+a real **cross-process exclusive file lock** in the private workspace:
+`source/originals-voice-and-binding-exclusive.lock`. This prevents a
+separate Windows terminal or browser import from changing originals during
+a slow voice generation/source SHA-binding operation. Any existing unknown
+or interrupted lock blocks the next write; the app never silently deletes
+a different process's lock. `READINESS` reports active/stale locks as
+BLOCKED, rather than treating partially written audio as valid.
+
+Workspaces are deliberately **refused inside any Git working tree** (including
+linked worktrees using a `.git` file), to reduce the risk that private
+portrait images, Hindi WAVs, model results or troubleshooting logs could
+accidentally be published with a broad Git add/push command. Keep the
+default `%USERPROFILE%\\PodcastGPTStudio` or another directory **outside**
+the public project clone. Dashboard imports remain allowed *before* INIT,
+but do not bind or generate a project automatically; they lazily create
+only the private lock folder as needed.
+
+After interruption, investigate whether any Python/Kokoro/Edge/model
+process is still running and whether a WAV/receipt was partially written.
+Do **not** force-remove the lock while a process is active, and do not
+overwrite existing original media. See [v3.7 release notes](docs/V37_RELEASE_NOTES.md).
 
 ### v3.6 — READINESS: verified, read-only local remaining-work planner
 

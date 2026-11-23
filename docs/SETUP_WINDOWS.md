@@ -22,3 +22,7 @@ This is **NOT OFFLINE**; the selected Hindi dialogue is sent to an online Micros
 ### Read-only one-click status — v3.6
 
 In `CONTINUE_FULL_HINDI_NEURAL.bat`, choose **READINESS**. Or use the READINESS button on the private local dashboard. It independently checks 45 voice WAVs (including duration gate), three PNGs, SHA-bound manifest, PCM chunks, and any present static/face/final videos and human pilot observation record. It reports the **next safe step** and refuses to mark broken/tampered evidence complete. The report does not run neural models, contact TTS services, download weights, encode video, write local files, or automatically approve publication. With many full videos it may take time to decode every clip.
+
+### v3.7 — concurrent Windows source-binding and voice generation safety
+
+Keep `PODCAST_WORKSPACE` **outside** the public Git repo and any other Git worktree; the platform now refuses a private workspace under a `.git` ancestor. Browser original-media imports, offline Kokoro synthesis, opt-in online Edge TTS and `BIND` share the private `source\originals-voice-and-binding-exclusive.lock` even when started from different CMD/PowerShell processes. Uploads can still occur before `INIT` and never silently initialize a project. If an operation crashes mid-way, READINESS shows the stale lock and refuses further source writes. Inspect the relevant processes and private files carefully **before** manually resolving an abandoned lock; never remove an active lock or overwrite a saved original WAV.

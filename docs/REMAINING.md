@@ -20,3 +20,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] If choosing optional online Edge TTS, personally approve that the selected Hindi script text is sent to an external service via explicit `--allow-network-tts`; the v3.5 adapter now prevents post-source-binding regeneration and records SHA receipts, but voice naturalness/usage rights still require human review.
 
 - [ ] On the user's actual PC, run `CONTINUE_FULL_HINDI_NEURAL.bat` → **READINESS** (or `python -m podcast_gpt --workspace ... readiness`) to inspect real local completeness, the 540–660s source-duration gate, verified SHA/PCM and actual MP4 decoder status. No source files or model calls should be added by this check.
+
+- [ ] Keep every real private workspace outside the Git clone/worktree. If READINESS reports `original_voice_source_session` BLOCKED, check whether an original WAV import, Kokoro/Edge TTS call or BIND is still running; inspect any incomplete WAV/receipt before manually resolving an abandoned cross-process originals lock. This requires local machine access and is not auto-remediated.
