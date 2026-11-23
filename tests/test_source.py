@@ -109,3 +109,15 @@ def test_real_ten_minute_pcm_timeline_source_binding_and_90_exact_chunks(tmp_pat
     assert source.verify_source(root)==bound
     assert verified["human_lipsync_approved"] is False
     assert verified["full_ten_minute_neural_video_completed"] is False
+
+
+def test_default_45_hindi_conversation_is_unique_substantive_and_no_spoken_part_prefix(private_studio):
+    script=source.load_project(private_studio)["turns"]
+    dialogues=[turn["text"] for turn in script]
+    assert len(dialogues)==45
+    assert len(set(dialogues))==45
+    assert sum(len(text.split()) for text in dialogues)>=1200
+    assert not any(text.startswith("भाग ") for text in dialogues)
+    assert [sum(turn["speaker"]==name for turn in script) for name in source.SPEAKERS]==[15,15,15]
+    # Script length is NOT a duration guarantee: the production gate
+    # still uses actual recorded/locally generated 16k PCM frame counts.
