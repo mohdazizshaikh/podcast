@@ -22,6 +22,7 @@ def test_local_dashboard_has_no_model_start_or_publish_controls():
     page=web.html_page("f"*64)
     assert "http://127.0.0.1" not in page
     assert "data-action=\"init\"" in page
+    assert "data-action=\"readiness\"" in page
     assert "X-CSRF-Token" in page
     assert "connect-src 'self'" in page
     assert "run-cpu" not in page

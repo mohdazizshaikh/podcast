@@ -56,6 +56,7 @@ def html_page(token:str)->str:
 <button data-action="render-static">Render REAL 720p static presenter MP4 / AAC / SRT</button>
 <button data-action="audit-static">Independently audit original MP4</button>
 <button data-action="progress">Check genuine saved neural previews</button>
+<button data-action="readiness">READINESS — read-only all-stage SHA/video audit and next safe step</button>
 <p><small>Static is NOT lip-sync. Real SadTalker CPU models and one-per-presenter PILOT use the separate explicit-consent Windows launcher.</small></p></section>
 <section class="panel"><h2>Local task log</h2><pre id="status" aria-live="polite">Ready. Nothing running.</pre></section>
 <script>
@@ -101,7 +102,8 @@ def serve(root:Path,port:int=7860):
              "prepare-chunks":lambda:prepare_chunks(root),
              "render-static":lambda:render_static(root),
              "audit-static":lambda:audit_static(root),
-             "progress":lambda:progress(root)}
+             "progress":lambda:progress(root),
+             "readiness":lambda:__import__("podcast_gpt.readiness",fromlist=["inspect"]).inspect(root)}
 
     class Handler(BaseHTTPRequestHandler):
         def _send(self,code:int,payload:bytes,kind="application/json"):
