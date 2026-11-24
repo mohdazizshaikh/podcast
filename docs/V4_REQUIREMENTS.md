@@ -64,3 +64,6 @@ Implemented allowlisted optional app-venv dependency plan/install, private offli
 
 ## Increment 16 — configured media workflow and visual QA
 Implemented explicit configured Kokoro/eSpeak/SadTalker bounded orchestration, private measured action history and offline audio/pilot/final QA forms with bound JSON import. No live ETA or embedded playback. See V4_MEDIA_WORKFLOW.md.
+
+## Increment 17 — audio post-production and partial recovery
+Implemented optional deterministic audio-only peak normalization, looping authorized bed and intro/outro WAV, exact sample audit and private archive of six incomplete-output types lacking receipts. Original master/approvals unchanged; mixed-video export and actual listening acceptance pending. See V4_POST_AUDIO_RECOVERY.md.

@@ -17,3 +17,5 @@ Once every turn is available, finalize the measured timeline and compose master/
 After master composition, complete the human listening workflow and selected static video preview using V4_PREVIEW.md. No lip-sync or production acceptance claim.
 
 Optional saved local paths and eSpeak non-neural multilingual fallback are now available. See V4_MODEL_VOICES_PERSONA.md. Wider natural neural TTS still pending.
+
+An optional separate audio-only normalized/music/intro/outro candidate is now available (V4_POST_AUDIO_RECOVERY.md). It never replaces the original exact master or inherits approval.

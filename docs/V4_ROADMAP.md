@@ -46,3 +46,5 @@ Combined acceptance CI 45461563645 had four core jobs passed at initial check. S
 Acceptance CI passed 6/6 (45461563645); model-config/eSpeak/persona CI 45462475819 passed five core jobs, packaging pending at check. Combined workflow controls implemented (CI pending). Next wider natural voices, actual local pilot, graphical media QA, progress and model asset setup. See V4_WORKFLOW.md.
 
 Model-config/eSpeak/persona CI passed 6/6 (45462475819). Workflow CI 45463360856 had three jobs passed at check. Combined media orchestration, timing and visual QA implemented, CI pending. Next wider natural TTS, recovery, audio processing and research/portrait workflows.
+
+Workflow CI 45463360856 and media workflow CI 45464174884 passed 6/6 each. Audio-only mix and expanded incomplete-output recovery implemented (new CI pending). Next mixed-video integration, wider natural TTS, research/portrait and actual hardware acceptance.

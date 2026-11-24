@@ -167,6 +167,20 @@ def parse(argv=None):
             e.add_argument("--project-id",required=True)
             e.add_argument("--run-local",action="store_true")
             e.add_argument("--max-new",type=int,default=1)
+    mix=subs.add_parser("project-mix-compose")
+    mix.add_argument("--project-id",required=True)
+    for role in ("intro","bed","outro"):mix.add_argument("--"+role,type=Path)
+    mix.add_argument("--speech-peak",type=int,default=22000)
+    mix.add_argument("--bed-peak",type=int,default=3000)
+    mix.add_argument("--acknowledgment",required=True)
+    mixaudit=subs.add_parser("project-mix-audit")
+    mixaudit.add_argument("--project-id",required=True)
+    for name in ("project-incomplete-status","project-incomplete-archive"):
+        p=subs.add_parser(name)
+        p.add_argument("--project-id",required=True)
+        p.add_argument("--kind",choices=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio"),required=True)
+        p.add_argument("--unit")
+        if name=="project-incomplete-archive":p.add_argument("--acknowledgment",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -446,6 +460,17 @@ def execute(a)->dict:
     if action=="project-media-review-visual":
         from . import visual_media_review
         return visual_media_review.create(a.workspace.expanduser().absolute(),a.project_id,kind=a.kind)
+    if action in ("project-mix-compose","project-mix-audit"):
+        from . import v4_post_audio
+        private=a.workspace.expanduser().absolute()
+        if action=="project-mix-audit":return v4_post_audio.inspect(private,a.project_id)
+        return v4_post_audio.compose(private,a.project_id,intro=a.intro,bed=a.bed,outro=a.outro,
+            speech_peak=a.speech_peak,bed_peak=a.bed_peak,acknowledgment=a.acknowledgment)
+    if action in ("project-incomplete-status","project-incomplete-archive"):
+        from . import v4_partial_recovery
+        private=a.workspace.expanduser().absolute()
+        if action=="project-incomplete-status":return v4_partial_recovery.inspect(private,a.project_id,a.kind,a.unit)
+        return v4_partial_recovery.archive(private,a.project_id,a.kind,a.unit,acknowledgment=a.acknowledgment)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

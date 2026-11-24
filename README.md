@@ -304,3 +304,5 @@ V4 saved local model paths, optional eSpeak non-neural multilingual fallback and
 V4 optional dependency setup, offline visual script editor and bounded foreground production runner: [workflow guide](docs/V4_WORKFLOW.md). Actual model acceptance and complete one-click production remain pending.
 
 V4 configured media orchestration, private timing history and visual media QA: [media workflow guide](docs/V4_MEDIA_WORKFLOW.md). No live ETA or automatic approval.
+
+V4 optional audio-only normalization/music/intro/outro mix and safe incomplete-output recovery: [post-production guide](docs/V4_POST_AUDIO_RECOVERY.md). Original speech master remains unchanged; mixed-video export pending.

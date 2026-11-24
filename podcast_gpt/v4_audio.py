@@ -66,7 +66,7 @@ def _read_parts(dest,binding,turns):
     for child in dest.iterdir():
         if child.name==TIMELINE:
             projects._plain(child,directory=False);continue
-        if child.name in ("master","static-preview","neural-clips","neural-export"):
+        if child.name in ("master","static-preview","neural-clips","neural-export","post-audio"):
             projects._plain(child);continue
         if child.name in ("audio-review.json","final-video-review.json"):
             projects._plain(child,directory=False);continue

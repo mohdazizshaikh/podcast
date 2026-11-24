@@ -14,3 +14,5 @@ Outputs are private current audio-version/neural-export/episode.mp4, episode.srt
 The candidate is structurally decoded, not certified for actual mouth movement, face identity, speech fidelity, content rights, or publication. Complete per-turn visual QA, actual model acceptance and full-length Windows production test are still required. Tests inject short synthetic clips with deliberately different model audio; production CLI does not accept test fixture mode.
 
 Full candidate-specific manual review is now available through V4_ACCEPTANCE.md. The immutable export receipt remains separate from human review. No automatic publication.
+
+Optional post-produced audio-only mix is separate from this exporter. The original audited master remains the sole video audio input; mixed-video support is pending (V4_POST_AUDIO_RECOVERY.md).

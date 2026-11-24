@@ -80,3 +80,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Model-config/eSpeak/persona CI 6/6 (45462475819).
 - [ ] Verify workflow and new media CI, actual browser/model/device testing, live ETA, integrated player/dashboard, natural multilingual voices, additional recovery, image generation, audio processing and research discovery.
+
+- [x] Workflow and media workflow CI 6/6 each (45463360856, 45464174884).
+- [ ] Verify new audio post-production/recovery CI, actual listening, mixed audio video integration and shifted subtitles, LUFS/ducking/noise processing, wider natural voices, advanced recovery of corrupted completed media, GUI and real Windows acceptance.
