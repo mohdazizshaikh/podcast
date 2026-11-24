@@ -26,3 +26,6 @@ No command automatically contacts a cloud TTS server or downloads pretrained mod
 - [Kokoro Hindi voice support](https://github.com/OpenTTSGroup/kokoro-open-tts/blob/main/README.md) — example `hf_alpha`, `hf_beta`, `hm_omega`, `hm_psi` voice identifiers.
 
 All automated Kokoro tests use synthetic fake engine output with user-injected test functions only; **no actual ONNX weights or natural Hindi voice quality** are verified by CI.
+### Read-only model setup check
+
+Before generation, the Windows Kokoro launcher now runs `check-kokoro --model PATH --voices PATH`, which hashes local assets, inventories installed Python packages and FFmpeg/eSpeak PATH tools, and reports CPU/RAM. It never imports an inference engine, synthesizes text or downloads anything. Missing packages must be installed manually using the documented optional dependencies. Voice pack contents, DLL loading, model loading and quality still require actual local testing.

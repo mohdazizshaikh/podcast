@@ -16,8 +16,8 @@ CHECKPOINT_SUFFIXES=(".safetensors",".pth",".pt",".tar",".mat",".ckpt")
 
 
 def inspect_sadtalker_installation(model_root:Path,python_executable:Path,*,runner=None)->dict:
-    root=Path(model_root).expanduser()
-    interpreter=Path(python_executable).expanduser()
+    root=Path(model_root).expanduser().absolute()
+    interpreter=Path(python_executable).expanduser().absolute()
     if root.is_symlink() or not root.is_dir():
         raise ValueError("SadTalker model root missing or unsafe symlink")
     inference=root/"inference.py"
@@ -68,7 +68,9 @@ def inspect_sadtalker_installation(model_root:Path,python_executable:Path,*,runn
     if (type(major) is not int or type(minor) is not int
             or major!=3 or not 8<=minor<=13):
         raise ValueError("Selected SadTalker Python is not a supported Python 3 interpreter")
+    from .hardware import report
     return {
+        "hardware":report(),
         "status":"read_only_sadtalker_cpu_installation_structure_checked_not_inference_verified",
         "python_version":f"{major}.{minor}",
         "checkpoint_files_detected":len(weights),

@@ -27,6 +27,9 @@ set "VOICES="
 set /p "VOICES=Local existing voices-v1.0.bin FULL path: "
 set "VOICES=%VOICES:"=%"
 if not exist "%VOICES%" goto :failed
+echo [READ ONLY] Local model assets, package and hardware inventory.
+".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" check-kokoro --model "%MODEL%" --voices "%VOICES%"
+if errorlevel 1 goto :failed
 set "COUNT=3"
 set /p "COUNT=Maximum NEW Hindi WAVs this invocation, 1-5 [default 3]: "
 if not defined COUNT set "COUNT=3"

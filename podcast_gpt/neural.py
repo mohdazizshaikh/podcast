@@ -106,7 +106,7 @@ def pilot_targets(source:dict,done:dict) -> list[str]:
 
 
 def _model_call(root:Path,row:dict,*,sadtalker_root:Path,sadtalker_python:Path,
-                timeout:int,allow_short:bool=False,model_runner=None) -> dict:
+                timeout:int,allow_short:bool=False,model_runner=None,cpu_threads:int|None=None) -> dict:
     """Real SadTalker model runs only after separate explicit owner confirmation.
 
     Injecting a runner exists solely for offline synthetic tests; no CLI route
@@ -129,7 +129,15 @@ def _model_call(root:Path,row:dict,*,sadtalker_root:Path,sadtalker_python:Path,
               "--driven_audio",str(root/"chunks"/(cid+".wav")),
               "--source_image",str(root/"portraits"/(row["speaker"]+".png")),
               "--result_dir",str(scratch),"--still","--preprocess","full","--cpu"]
+        from .hardware import select_threads
+        threads=select_threads(cpu_threads)
         env=os.environ.copy();env["CUDA_VISIBLE_DEVICES"]=""
+        # Bound common native CPU thread pools; external model code can
+        # override these hints, so never claim measured speed or RAM savings.
+        for name in ("OMP_NUM_THREADS","MKL_NUM_THREADS","OPENBLAS_NUM_THREADS",
+                     "NUMEXPR_NUM_THREADS"):
+            env[name]=str(threads)
+        env["OMP_DYNAMIC"]="FALSE"
         # Large CPU models can produce substantial diagnostics. Stream to
         # PRIVATE chunk scratch instead of buffering unbounded stdout/stderr
         # in memory; leave logs intact on failures for the Windows owner.
@@ -175,6 +183,7 @@ def _model_call(root:Path,row:dict,*,sadtalker_root:Path,sadtalker_python:Path,
             "chunk_sha256":row["chunk_sha256"],"portrait_sha256":row["portrait_sha256"],
             "source_binding":bound["source_binding"],"mp4_sha256":digest(clip),
             "actual_cpu_model_seconds":round(time.monotonic()-started,2),
+            "requested_native_cpu_threads":cpu_threads,
             "authorized_portraits_self_attested":True,"human_lipsync_approved":False,
             "full_ten_minute_neural_video_completed":False}
     atomic_json(sidecar,report,new=True)
@@ -186,7 +195,7 @@ def _model_call(root:Path,row:dict,*,sadtalker_root:Path,sadtalker_python:Path,
 def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
             wall_seconds:int=7200,per_chunk_timeout:int=1800,
             sadtalker_root:Path|None=None,sadtalker_python:Path|None=None,
-            allow_short:bool=False,model_runner=None,clock=None) -> dict:
+            allow_short:bool=False,model_runner=None,clock=None,cpu_threads:int|None=None) -> dict:
     """One bounded, serial, foreground opt-in run, always recheck checkpoints."""
     if rights_confirmed is not True:raise ValueError("Explicit human image rights YES required")
     if mode not in ("pilot","batch","session"):raise ValueError("Unsupported CPU session mode")
@@ -196,6 +205,8 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
     if (type(wall_seconds) is not int or not 300<=wall_seconds<=14400
             or type(per_chunk_timeout) is not int or not 120<=per_chunk_timeout<=7200):
         raise ValueError("CPU time budget is outside safe finite bounds")
+    from .hardware import select_threads
+    cpu_threads=select_threads(cpu_threads)
     root=workspace_path(root)
     source,done=verified_previews(root,allow_short=allow_short)
     lock=root/"source"/LOCK
@@ -205,23 +216,35 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
         # Production CLI always preflights user-installed pretrained model
         # assets BEFORE taking a lock or initiating an expensive model run.
         from .model_preflight import inspect_sadtalker_installation
-        inspect_sadtalker_installation(Path(sadtalker_root or ""),
-                                       Path(sadtalker_python or ""))
+        if sadtalker_root is None or sadtalker_python is None:
+            raise ValueError("Explicit local SadTalker root and interpreter required")
+        sadtalker_root=Path(sadtalker_root).expanduser().absolute()
+        sadtalker_python=Path(sadtalker_python).expanduser().absolute()
+        inspect_sadtalker_installation(sadtalker_root,sadtalker_python)
     # Measure the ACTUAL private workspace volume, not the application repo.
     # A real pretrained model can create large temporary frames before its MP4.
     if shutil.disk_usage(root/"previews").free < 6*1024**3:
         raise ValueError("At least 6 GiB free on the private CPU model output drive is required")
     if shutil.disk_usage(root/"voices").free < 3*1024**3:
         raise ValueError("At least 3 GiB free on the original Hindi source drive is required")
+    scratch=root/"scratch"
+    if scratch.is_symlink() or not scratch.is_dir():
+        raise ValueError("Private model scratch directory missing/symlinked")
+    if shutil.disk_usage(scratch).free < 6*1024**3:
+        raise ValueError("At least 6 GiB free on the actual CPU model scratch drive required")
     # Recheck after potentially slow read-only interpreter/model preflight.
     if lock.is_symlink() or lock.exists():
         raise ValueError("Another/orphan CPU session lock exists; manual inspection")
     clock=clock or time.monotonic
-    before=len(done);completed=[];stopped=False
+    completed=[];stopped=False
     lock_marker="LOCAL_CPU_SESSION="+uuid.uuid4().hex+"\n"
     with lock.open("x",encoding="ascii") as f:
         f.write(lock_marker);f.flush();os.fsync(f.fileno())
     try:
+        # A different session may have finished during preflight. Take the
+        # baseline after acquiring the exclusive lock, not before.
+        source,done=verified_previews(root,allow_short=allow_short)
+        before=len(done)
         begin=clock()
         for _ in range(max_new):
             source,done=verified_previews(root,allow_short=allow_short)
@@ -235,7 +258,7 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
             row=next(x for x in source["chunks"] if x["id"]==target[0])
             _model_call(root,row,sadtalker_root=Path(sadtalker_root or ""),
                         sadtalker_python=Path(sadtalker_python or ""),timeout=timeout,
-                        allow_short=allow_short,model_runner=model_runner)
+                        allow_short=allow_short,model_runner=model_runner,cpu_threads=cpu_threads)
             # Independently re-audit before progressing; never trust JSON alone.
             _,confirmed=verified_previews(root,allow_short=allow_short)
             if len(confirmed)!=before+len(completed)+1:raise ValueError("Checkpoint advanced unexpectedly")
@@ -246,6 +269,7 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
         return {**final,"session_new_real_neural_calls":len(completed),
                 "new_chunk_ids":completed,"mode":mode,"stopped_for_budget":stopped,
                 "requested_wall_seconds":wall_seconds,"wall_budget_excludes_cleanup_overhead":True,
+                "requested_native_cpu_threads":cpu_threads,
                 "background_autorun":False,"publication_approved":False}
     finally:
         # We created this exclusive local file; do not accidentally remove a

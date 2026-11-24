@@ -44,6 +44,10 @@ parser.add_argument('--preprocess',required=True)
 args=parser.parse_args()
 if not args.cpu or not args.still or args.preprocess!='full':
     raise SystemExit(17)
+if os.environ.get('CUDA_VISIBLE_DEVICES') != '' or not os.environ.get('OMP_NUM_THREADS','').isdigit():
+    raise SystemExit(18)
+if os.environ['OMP_NUM_THREADS'] != os.environ.get('MKL_NUM_THREADS'):
+    raise SystemExit(18)
 if os.environ.get('PODCAST_FAKE_SADTALKER_FAIL_TEST_ONLY')=='1':
     print('TEST-ONLY-MISSING-DEPS-NOT-REAL-INFERENCE',file=sys.stderr)
     raise SystemExit(19)
@@ -84,6 +88,7 @@ def test_real_external_process_cli_three_presenter_pilot_and_resume(chunk_studio
                         sadtalker_root=fake,sadtalker_python=Path(sys.executable),
                         allow_short=True)
     assert done["new_chunk_ids"]==["001-001","002-001","003-001"]
+    assert done["requested_native_cpu_threads"]>=1
     assert done["session_new_real_neural_calls"]==3
     assert done["three_presenter_samples_ready"] is True
     assert done["full_ten_minute_neural_video_completed"] is False
@@ -95,6 +100,7 @@ def test_real_external_process_cli_three_presenter_pilot_and_resume(chunk_studio
         assert mp4.is_file()
         assert receipt["mp4_sha256"]==source.digest(mp4)
         assert receipt["actual_cpu_model_seconds"]>=0
+        assert receipt["requested_native_cpu_threads"]==done["requested_native_cpu_threads"]
         assert receipt["human_lipsync_approved"] is False
         assert receipt["full_ten_minute_neural_video_completed"] is False
     # Resumed pilot never silently regenerates verified existing samples.

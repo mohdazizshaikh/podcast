@@ -26,6 +26,9 @@ def parse(argv=None):
     preflight=subs.add_parser("check-sadtalker",help="READ ONLY local SadTalker CPU installation check; NO inference")
     preflight.add_argument("--sadtalker-root",type=Path,required=True)
     preflight.add_argument("--sadtalker-python",type=Path,required=True)
+    kokoro_check=subs.add_parser("check-kokoro",help="Read-only local Kokoro assets and dependency inventory")
+    kokoro_check.add_argument("--model",type=Path,required=True)
+    kokoro_check.add_argument("--voices",type=Path,required=True)
     cpu=subs.add_parser("run-cpu",help="Genuine local SadTalker CPU; requires explicit rights")
     cpu.add_argument("--mode",choices=("pilot","batch","session"),required=True)
     cpu.add_argument("--max-new",type=int,default=3)
@@ -34,6 +37,7 @@ def parse(argv=None):
     cpu.add_argument("--sadtalker-root",type=Path,required=True)
     cpu.add_argument("--sadtalker-python",type=Path,required=True)
     cpu.add_argument("--rights-confirmed",action="store_true")
+    cpu.add_argument("--cpu-threads",type=int,help="Native CPU thread pool hint; default leaves one CPU free when possible, capped at four")
     review=subs.add_parser("record-pilot")
     for name in ("aarav","meera","kabir"):
         review.add_argument("--"+name,choices=("PASS","FAIL"),required=True)
@@ -60,7 +64,8 @@ def doctor(root:Path) -> dict:
     while not parent.exists() and parent!=parent.parent:
         parent=parent.parent
     free_gib=round(shutil.disk_usage(parent).free/(1024**3),2)
-    return {"version":__version__,"workspace":str(root.resolve()),
+    from .hardware import report
+    return {"hardware":report(),"version":__version__,"workspace":str(root.resolve()),
             "workspace_disk_free_gib":free_gib,"source_minimum_free_gib_for_render":3,
             "neural_minimum_free_gib_for_render":6,
             "ffmpeg":bool(media["ffmpeg"]),"ffprobe":bool(media["ffprobe"]),
@@ -165,10 +170,13 @@ def execute(a)->dict:
     if action=="check-sadtalker":
         from .model_preflight import inspect_sadtalker_installation
         return inspect_sadtalker_installation(a.sadtalker_root,a.sadtalker_python)
+    if action=="check-kokoro":
+        from .kokoro_preflight import inspect
+        return inspect(a.model,a.voices)
     if action=="run-cpu":return neural.run_cpu(root,mode=a.mode,
             rights_confirmed=a.rights_confirmed,max_new=a.max_new,
             wall_seconds=a.wall_seconds,per_chunk_timeout=a.per_chunk_timeout,
-            sadtalker_root=a.sadtalker_root,sadtalker_python=a.sadtalker_python)
+            sadtalker_root=a.sadtalker_root,sadtalker_python=a.sadtalker_python,cpu_threads=a.cpu_threads)
     if action=="review-pilot":return review.review_pilot(root)
     if action=="record-pilot":return review.record_pilot(root,
            {name:getattr(a,name) for name in source.SPEAKERS},a.acknowledgment)

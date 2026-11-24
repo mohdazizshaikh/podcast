@@ -18,11 +18,11 @@ set /p "STROOT=Full path to your installed SadTalker root (inference.py): "
 set "STROOT=%STROOT:"=%"
 if not exist "%STROOT%\inference.py" goto :failed
 set "STPY=%STROOT%\.venv38\Scripts\python.exe"
-if not exist "%STPY%" (
- set "STPY="
- set /p "STPY=Full path to existing SadTalker Python executable: "
- set "STPY=%STPY:"=%"
-)
+if exist "%STPY%" goto :python_ok
+set "STPY="
+set /p "STPY=Full path to existing SadTalker Python executable: "
+set "STPY=%STPY:"=%"
+:python_ok
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" check-sadtalker --sadtalker-root "%STROOT%" --sadtalker-python "%STPY%"
 if errorlevel 1 goto :failed
 echo [PASS] STRUCTURAL ONLY. This is NOT a trained-model runtime, lipsync

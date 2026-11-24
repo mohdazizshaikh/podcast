@@ -27,13 +27,24 @@ set "COUNT=3"
 if /I "%MODE%"=="batch" set "COUNT=1"
 if /I "%MODE%"=="session" set "COUNT=3"
 if /I not "%MODE%"=="pilot" set /p "COUNT=Number of NEW samples for this ONE call [default 1 batch/3 session]: "
-if not defined COUNT goto :failed
+rem Reject nonnumeric input before any percent expansion into a command.
+setlocal EnableDelayedExpansion
+set "BAD=!COUNT!"
+for %%D in (0 1 2 3 4 5 6 7 8 9) do set "BAD=!BAD:%%D=!"
+if defined BAD (endlocal & goto :failed)
+if not defined COUNT (endlocal & goto :failed)
+endlocal
 set "STROOT="
 set /p "STROOT=Existing legitimate SadTalker root containing inference.py: "
 set "STROOT=%STROOT:"=%"
 if not exist "%STROOT%\inference.py" goto :failed
 set "STPY=%STROOT%\.venv38\Scripts\python.exe"
+if exist "%STPY%" goto :python_ok
+set "STPY="
+set /p "STPY=Full path to existing SadTalker Python executable: "
+set "STPY=%STPY:"=%"
 if not exist "%STPY%" goto :failed
+:python_ok
 echo.
 echo [READ ONLY] Checking local SadTalker CLI, pretrained checkpoint files
 echo and Python interpreter before asking to run any AI model.
@@ -47,7 +58,9 @@ echo CPU/RAM heavy. No GPU required but very slow on some computers.
 echo Existing clips are reverified; models are NOT downloaded or faked.
 set "YESNO="
 set /p "YESNO=Type EXACTLY YES to authorize this session: "
-if not "%YESNO%"=="YES" goto :cancel
+setlocal EnableDelayedExpansion
+if not "!YESNO!"=="YES" (endlocal & goto :cancel)
+endlocal
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" run-cpu --mode "%MODE%" --max-new "%COUNT%" --wall-seconds 7200 --per-chunk-timeout 1800 --sadtalker-root "%STROOT%" --sadtalker-python "%STPY%" --rights-confirmed
 if errorlevel 1 goto :failed
 echo [PASS] Saved real model previews; manual Hindi lip-sync inspection still required.
