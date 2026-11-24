@@ -332,3 +332,5 @@ V4 measured loudness-target static gain, per-turn audio diagnostics and explicit
 V4 expanded dashboard WAV/studio/continuity authoring, explicitly consented free-policy cloud drafting, Mandarin frontend and broad test matrix: [batch 29 guide](docs/V4_BATCH29.md). Real browser/model acceptance pending.
 
 V4 optional speech compression: [batch 30 guide](docs/V4_BATCH30.md). Actual model/device acceptance pending.
+
+Batch 30 adds CLI/browser voice preflight and read-only device checklist, plus browser per-turn audio diagnostics. New CI pending. Real model inference, physical acceptance and browser interaction remain pending. See V4_BATCH30.md.

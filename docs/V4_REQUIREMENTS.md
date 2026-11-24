@@ -108,3 +108,5 @@ Batch 27 and 28 CI each 6/6. Implemented Mandarin candidate presets and frontend
 
 ## Increment 30 — speech compression
 Optional deterministic speech compressor integrated with exact mix audit, ducking and static target gain; 135 tests authored, CI pending. See V4_BATCH30.md. No dynamic true-peak limiting or denoising.
+
+Batch 30 adds CLI/browser voice preflight and read-only device checklist, plus browser per-turn audio diagnostics. New CI pending. Real model inference, physical acceptance and browser interaction remain pending. See V4_BATCH30.md.

@@ -196,6 +196,9 @@ def parse(argv=None):
     diagnostic.add_argument("--kind",choices=("master","mix"),default="master")
     diagnostic.add_argument("--per-turn",action="store_true")
     subs.add_parser("model-setup-plan")
+    for name in ("project-voice-preflight","project-device-acceptance"):
+        pre=subs.add_parser(name)
+        pre.add_argument("--project-id",required=True)
     mix.add_argument("--acknowledgment",required=True)
     mixaudit=subs.add_parser("project-mix-audit")
     mixaudit.add_argument("--project-id",required=True)
@@ -611,6 +614,10 @@ def execute(a)->dict:
         private=a.workspace.expanduser().absolute()
         if action=="project-continuity-status":return continuity.inspect(private,a.project_id)
         return continuity.enable(private,a.project_id,a.prior_project_id,a.turn_id,acknowledgment=a.acknowledgment)
+    if action in ("project-voice-preflight","project-device-acceptance"):
+        from . import voice_preflight,device_acceptance
+        module=voice_preflight if action=="project-voice-preflight" else device_acceptance
+        return module.inspect(a.workspace.expanduser().absolute(),a.project_id)
     if action=="model-setup-plan":
         from . import model_setup_plan
         return model_setup_plan.inspect(a.workspace.expanduser().absolute())

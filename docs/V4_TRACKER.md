@@ -65,6 +65,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Browser authorized turn WAV, studio settings, continuity snapshot and one-action free-policy cloud drafting | Implemented | New CI pending; real browser/cloud acceptance pending |
 | Expanded 159-case compatibility/regression coverage | Authored | CI 45494573255 five core jobs passed at check |
 | Optional deterministic speech compression and exact mix audit | Implemented | New CI pending; 135 test cases authored; no dynamic true-peak limiter/denoising |
+| Static project voice preflight, device acceptance checklist and browser per-turn diagnostics | Implemented | New CI pending; no physical certification |
 | Full dashboard, automatic/manual orchestration, ETA | Partial | Overview/playback, authoring, explicit bounded local inference, research and live task status; review import and cooperative stop; explicit free-policy cloud drafting (keys CLI-only); live model ETA pending |
 | Real Windows model run and acceptance | Not verified | Local user hardware required |
 | V4 production release | Not released | Pending actual acceptance |

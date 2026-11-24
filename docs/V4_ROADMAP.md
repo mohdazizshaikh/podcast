@@ -76,3 +76,5 @@ Prior CI 45491404566 had three core jobs passed at initial check. Bounded measur
 CI 45491404566 and 45492395979 passed 6/6 each. Batch 29 expanded authoring and consented drafting plus Mandarin and regression matrix implemented; new CI pending. Next Japanese resource preflight, real device acceptance, portrait inference and dynamic audio processing.
 
 Batch 29 CI 45494573255 five core jobs passed at check. Batch 30 optional speech compressor implemented, new CI pending. Continue graphical mixing, preflight and actual device acceptance.
+
+Batch 30 adds CLI/browser voice preflight and read-only device checklist, plus browser per-turn audio diagnostics. New CI pending. Real model inference, physical acceptance and browser interaction remain pending. See V4_BATCH30.md.

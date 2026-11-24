@@ -7,3 +7,6 @@ Example:
 .venv\Scripts\python.exe -m podcast_gpt project-mix-compose --project-id PROJECT_ID --compress-ratio 4 --compress-threshold 8000 --acknowledgment I_HAVE_RIGHTS_TO_ALL_ADDED_AUDIO_AND_AUTHORIZE_LOCAL_MIX
 ```
 135 test cases authored (125 signed compression parameter combinations, 8 invalid settings, release/legacy and synthetic mix audit). New CI pending; not 135 separate features. Actual listening, real model/device acceptance pending. Batch 29 CI five core jobs passed; packaging running at check.
+
+## Static voice and device preflight
+CLI `project-voice-preflight --project-id PROJECT_ID` and `project-device-acceptance --project-id PROJECT_ID`, plus browser buttons. Reports static preset/language mismatch, duplicates, saved path status, unsupported engines, current readiness, measured audio duration when available and remaining physical-device checks. eSpeak static check is not an installed inventory. Browser per-turn PCM diagnostics also exposed. No engine execution, automatic physical acceptance or production approval. Three more regression tests authored; CI pending.

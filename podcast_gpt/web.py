@@ -110,6 +110,10 @@ def html_page(token:str)->str:
 <p id="v4ReviewDeclaration"></p>
 <button id="v4ReviewImport">Import selected completed JSON</button>
 <small>Review all current media and criteria yourself before recording. No automatic PASS; existing review receipts cannot be overwritten.</small>
+<h3>Voice and device preflight</h3>
+<button id="v4VoicePreflight">Check voice selections and saved paths</button>
+<button id="v4DeviceAcceptance">Inspect device acceptance checklist</button>
+<button id="v4TurnDiagnostics">Measure individual master dialogue levels</button>
 <h3>Voice import and studio settings</h3>
 <label>Approved script turn ID <input id="v4TurnId" maxlength="4"></label>
 <label>Matching local mono PCM16 16 kHz WAV <input id="v4TurnWav" type="file" accept=".wav"></label>
@@ -247,6 +251,9 @@ onAuthor('v4CastAssign',()=>{if(castPid!==currentPid())throw new Error('Load cas
 async function authorFile(kind,id,file,rights=false,extra=''){if(!file)throw new Error('Select a local file first');authorConsent();out.textContent=JSON.stringify(await send('/api/author-file?kind='+encodeURIComponent(kind)+'&id='+encodeURIComponent(id)+'&name='+encodeURIComponent(file.name)+'&consent=YES'+extra,file,rights),null,2);await refresh()}
 onAuthor('v4PortraitAttach',()=>{if(!field('v4PortraitRights').checked)throw new Error('Confirm portrait rights');field('v4PortraitRights').checked=false;return authorFile('portrait',val('v4CharId').trim(),field('v4Portrait').files[0],true)});
 onAuthor('v4SourceImport',()=>authorFile('source',currentPid(),field('v4SourceFile').files[0]));
+onAuthor('v4VoicePreflight',()=>author('voice-preflight',{project_id:currentPid()}));
+onAuthor('v4DeviceAcceptance',()=>author('device-acceptance',{project_id:currentPid()}));
+onAuthor('v4TurnDiagnostics',()=>author('turn-diagnostics',{project_id:currentPid()}));
 onAuthor('v4TurnImport',()=>{if(!field('v4TurnRights').checked)throw new Error('Confirm matching dialogue and rights');field('v4TurnRights').checked=false;return authorFile('audio-turn',currentPid(),field('v4TurnWav').files[0],true,'&unit='+encodeURIComponent(val('v4TurnId').trim()))});
 onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout');if(!file)return author('studio-configure',{project_id:currentPid(),layout},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout))});
 onAuthor('v4StudioStatus',()=>author('studio-status',{project_id:currentPid()}));

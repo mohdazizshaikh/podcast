@@ -3,12 +3,12 @@ import json
 import re
 import tempfile
 from pathlib import Path
-from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script, continuity, studio_preview, v4_audio, dashboard_cloud
+from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script, continuity, studio_preview, v4_audio, dashboard_cloud, voice_preflight, device_acceptance, audio_diagnostics
 
 JSON_LIMIT=32768
-READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status")
+READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status","voice-preflight","device-acceptance","turn-diagnostics")
 ACTIONS=("character-list","character-show","character-create","cast-assign","cast-status","cast-choices",
-         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft")
+         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft","voice-preflight","device-acceptance","turn-diagnostics")
 UPLOADS={"portrait":characters.MAX_PORTRAIT,"source":ingestion.MAX_FILE,"audio-turn":v4_audio.MAX_WAV,"studio-background":characters.MAX_PORTRAIT}
 ACK="I_AUTHORIZE_THIS_LOCAL_AUTHORING_ACTION"
 
@@ -55,6 +55,12 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
     if action in ("continuity-status","studio-status"):
         _keys(data,("project_id",))
         return continuity.inspect(root,data["project_id"]) if action=="continuity-status" else studio_preview.inspect_settings(root,data["project_id"])
+    if action in ("voice-preflight","device-acceptance","turn-diagnostics"):
+        _keys(data,("project_id",))
+        pid=data["project_id"]
+        if action=="voice-preflight":return voice_preflight.inspect(root,pid)
+        if action=="device-acceptance":return device_acceptance.inspect(root,pid)
+        return audio_diagnostics.inspect(root,pid,kind="master",per_turn=True)
     if acknowledgment!=ACK:raise ValueError("Explicit local authoring consent required")
     if action=="continuity-enable":
         _keys(data,("project_id","prior_project_id","turn_ids","local_only_consent"))
