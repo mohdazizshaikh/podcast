@@ -116,6 +116,12 @@ def parse(argv=None):
     for name in ("project-neural-compose","project-neural-audit"):
         e=subs.add_parser(name)
         e.add_argument("--project-id",required=True)
+    for name in ("project-final-review-template","project-final-review-record","project-final-review-status",
+                 "project-neural-recovery-status","project-neural-archive","project-readiness"):
+        q=subs.add_parser(name)
+        q.add_argument("--project-id",required=True)
+        if name in ("project-final-review-record","project-neural-archive"):q.add_argument("--acknowledgment",required=True)
+        if name=="project-neural-archive":q.add_argument("--chunk-id",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -352,6 +358,16 @@ def execute(a)->dict:
         from . import v4_export
         fn=v4_export.compose if action=="project-neural-compose" else v4_export.inspect
         return fn(a.workspace.expanduser().absolute(),a.project_id)
+    if action in ("project-final-review-template","project-final-review-record","project-final-review-status",
+                  "project-neural-recovery-status","project-neural-archive","project-readiness"):
+        from . import v4_final_review,v4_recovery,v4_readiness
+        private=a.workspace.expanduser().absolute()
+        if action=="project-final-review-template":return v4_final_review.template(private,a.project_id)
+        if action=="project-final-review-record":return v4_final_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
+        if action=="project-final-review-status":return v4_final_review.inspect(private,a.project_id)
+        if action=="project-neural-recovery-status":return v4_recovery.inspect(private,a.project_id)
+        if action=="project-neural-archive":return v4_recovery.archive(private,a.project_id,a.chunk_id,acknowledgment=a.acknowledgment)
+        return v4_readiness.inspect(private,a.project_id)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

@@ -16,3 +16,5 @@ Repeat pilot until every presenter has a saved clip; watch every clip and fill e
 The current clips are raw model output, not composed into an episode or selected video aspect ratio. Short chunks may not be supported by actual SadTalker; genuine Windows pilot must confirm. Tests only use synthetic FFmpeg clips, marked fixture-only; production runs cannot mix those with real invocation receipts. Human pilot PASS is self-attestation, not publication approval. Final neural composition with original master audio, pauses, selected aspect ratio, synchronized subtitles and full episode QA remains pending.
 
 Complete reviewed clips now feed selected-format candidate composition and audit (V4_EXPORT.md). Production CLI rejects fixture-only exports. Full human video QA and dedicated failure recovery remain pending.
+
+Stopped current-binding missing-chunk scratch can now be archived explicitly through V4_ACCEPTANCE.md. Partial committed clips and orphan locks still need manual inspection.

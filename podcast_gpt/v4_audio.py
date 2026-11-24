@@ -68,7 +68,7 @@ def _read_parts(dest,binding,turns):
             projects._plain(child,directory=False);continue
         if child.name in ("master","static-preview","neural-clips","neural-export"):
             projects._plain(child);continue
-        if child.name=="audio-review.json":
+        if child.name in ("audio-review.json","final-video-review.json"):
             projects._plain(child,directory=False);continue
         projects._plain(child)
         if child.name not in by_id:raise ValueError("Unknown or interrupted audio turn directory")

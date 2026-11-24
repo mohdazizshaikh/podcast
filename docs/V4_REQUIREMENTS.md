@@ -52,3 +52,6 @@ Implemented exact sample chunk planning, explicit local SadTalker CPU invocation
 
 ## Increment 12 — selected-format neural candidate export
 Implemented cumulative PCM-derived 25 fps frame plan, normalized facial clip composition, static pause cards, master-only audio mux, measured UTF-8 SRT, full structural audit and fixture-only export rejection from production CLI. Full human video QA, actual Windows model acceptance, polished studio layouts and broader features remain pending. See V4_EXPORT.md.
+
+## Increment 13 — combined acceptance, recovery and readiness
+Implemented immutable full candidate per-turn/global human review, non-destructive stopped current neural scratch archive, and read-only staged project readiness with dashboard selection. No automatic publication, orphan-process detection, lock deletion, generalized failure recovery or measured ETA. See V4_ACCEPTANCE.md.

@@ -22,7 +22,8 @@ from .media import render_static,audit_static
 from .neural import progress
 from .readiness import inspect as inspect_readiness
 from .setup_wizard import inspect as inspect_setup
-from .projects import list_projects
+from .projects import list_projects,ID_RE
+from .v4_readiness import inspect as inspect_v4_readiness
 
 STYLE="""body{font:16px system-ui;background:#121b2b;color:#f4f7ff;margin:auto;max-width:1100px;padding:28px}
 header{padding:18px;border-bottom:1px solid #53627c}.panel{padding:18px;margin:18px 0;border:1px solid #4c5a70;border-radius:12px}
@@ -45,6 +46,8 @@ def html_page(token:str)->str:
 <p><small>For selecting existing local AI model files and explicitly probing a trusted model interpreter, run SMART_SETUP_WINDOWS.bat. No model downloads or external executable paths are accepted over HTTP.</small></p></section>
 <section class="panel"><h2>V4 personal projects</h2>
 <button data-action="project-list">List private V4 projects</button>
+<label>Project ID <input id="v4ProjectId" maxlength="32" autocomplete="off"></label>
+<button id="v4Readiness">Check selected V4 project readiness (read-only)</button>
 <small>Use project-create and project-plan CLI for creating and planning. API keys are managed only in the local CLI, not the browser.</small></section>
 <section class="panel"><h2>1. Original 45-turn episode</h2>
 <button data-action="init">Create NEW original 45-turn project</button>
@@ -80,13 +83,14 @@ async function refresh(){
  out.textContent=JSON.stringify(status,null,2);
  if(status.phase==='running')setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
 }
-async function action(name){try{
+async function action(name,pid=null){try{
  out.textContent='Starting '+name+'...';
- let receipt=await send('/api/action?cmd='+encodeURIComponent(name));
+ let receipt=await send('/api/action?cmd='+encodeURIComponent(name)+(pid===null?'':'&project_id='+encodeURIComponent(pid)));
  out.textContent=JSON.stringify(receipt,null,2);
  await refresh();
 }catch(e){out.textContent='BLOCKED: '+e.message}}
 document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>action(b.dataset.action)));
+document.getElementById('v4Readiness').addEventListener('click',()=>{let pid=document.getElementById('v4ProjectId').value.trim();if(!/^[0-9a-f]{32}$/.test(pid)){out.textContent='Enter a valid project ID from the project list';return}action('project-readiness',pid)});
 async function upload(files,kind){
 if(kind==='portrait'&&!document.getElementById('portraitRights').checked)
   throw new Error('Explicit portrait ownership/written permission required');
@@ -147,7 +151,12 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
             if url.path=="/api/action":
                 if size!=0:return self._json(400,{"error":"Action body must be empty"})
                 command=query.get("cmd",[""])[0]
-                if command not in actions:return self._json(400,{"error":"Unrecognized local action"})
+                if command=="project-readiness":
+                    pid=query.get("project_id",[""])[0]
+                    if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})
+                    selected=lambda:inspect_v4_readiness(root,pid)
+                elif command in actions:selected=actions[command]
+                else:return self._json(400,{"error":"Unrecognized local action"})
                 with state_lock:
                     accepted=lock.acquire(blocking=False)
                     if accepted:
@@ -158,7 +167,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                     phase="blocked"
                     result={"error":"Local task interrupted"}
                     try:
-                        result=actions[command]()
+                        result=selected()
                         phase="complete"
                     except Exception as e:
                         result={"error":str(e)}

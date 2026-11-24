@@ -69,3 +69,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Listening review and static preview CI passed 6/6 (45457590951).
 - [ ] Verify neural pilot CI 45458379123 and new selected-format candidate export CI; implement full video quality review, safe recovery, dynamic layouts and real model acceptance. No production release without genuine Windows pilot/full episode evidence.
+
+- [x] Neural pilot and export CI 6/6 each (45458379123, 45458841874); synthetic only.
+- [ ] Verify combined QA/recovery/readiness CI. Extend recovery to incomplete committed clip/export/TTS/master failures without overwriting verified evidence; actual model and human review tests, broader multilingual voices, portrait generation, research discovery, visual editing, measured ETA, and Windows acceptance remain open.

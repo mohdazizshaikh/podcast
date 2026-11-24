@@ -12,3 +12,5 @@ The composer normalizes each facial clip to a fitted, padded canvas, 25 fps and 
 Outputs are private current audio-version/neural-export/episode.mp4, episode.srt and receipt.json. Existing complete exports are audited, never overwritten. Incomplete output requires manual inspection; safe archive recovery is pending. Pause cards reuse static preview design, so silence may visibly switch from face video to a labeled still. Studio layout polish and smooth transitions remain pending. No burned-in subtitles, automated shorts trimming or multi-format simultaneous export.
 
 The candidate is structurally decoded, not certified for actual mouth movement, face identity, speech fidelity, content rights, or publication. Complete per-turn visual QA, actual model acceptance and full-length Windows production test are still required. Tests inject short synthetic clips with deliberately different model audio; production CLI does not accept test fixture mode.
+
+Full candidate-specific manual review is now available through V4_ACCEPTANCE.md. The immutable export receipt remains separate from human review. No automatic publication.
