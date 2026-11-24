@@ -233,6 +233,12 @@ def parse(argv=None):
         if name=="project-fact-review-record":fact.add_argument("--acknowledgment",required=True)
     portrait=subs.add_parser("character-portrait-brief")
     portrait.add_argument("--character-id",required=True)
+    pl=subs.add_parser("character-portrait-candidates")
+    pl.add_argument("--limit",type=int,default=50)
+    for name in ("character-portrait-candidate-audit","character-portrait-candidate-attach"):
+        pa=subs.add_parser(name)
+        pa.add_argument("--candidate-id",required=True)
+        if name=="character-portrait-candidate-attach":pa.add_argument("--acknowledgment",required=True)
     for name in ("character-portrait-preflight","character-portrait-generate"):
         pg=subs.add_parser(name)
         pg.add_argument("--character-id",required=True)
@@ -584,6 +590,12 @@ def execute(a)->dict:
         if action=="project-fact-review-template":return fact_review.create(private,a.project_id)
         if action=="project-fact-review-record":return fact_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
         return fact_review.inspect(private,a.project_id)
+    if action in ("character-portrait-candidates","character-portrait-candidate-audit","character-portrait-candidate-attach"):
+        from . import portrait_local
+        private=a.workspace.expanduser().absolute()
+        if action=="character-portrait-candidates":return portrait_local.list_candidates(private,limit=a.limit)
+        if action=="character-portrait-candidate-audit":return portrait_local.audit_candidate(private,a.candidate_id)
+        return portrait_local.attach_candidate(private,a.candidate_id,acknowledgment=a.acknowledgment)
     if action in ("character-portrait-preflight","character-portrait-generate"):
         from . import portrait_local
         private=a.workspace.expanduser().absolute()

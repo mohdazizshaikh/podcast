@@ -6,9 +6,9 @@ from pathlib import Path
 from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script, continuity, studio_preview, v4_audio, dashboard_cloud, voice_preflight, device_acceptance, audio_diagnostics, research_coverage, portrait_local, dashboard_portrait, japanese_resources
 
 JSON_LIMIT=32768
-READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","japanese-resources")
+READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","japanese-resources","portrait-candidates")
 ACTIONS=("character-list","character-show","character-create","cast-assign","cast-status","cast-choices",
-         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","portrait-generate","portrait-candidate-attach","japanese-resources")
+         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","portrait-generate","portrait-candidate-attach","japanese-resources","portrait-candidates")
 UPLOADS={"portrait":characters.MAX_PORTRAIT,"source":ingestion.MAX_FILE,"audio-turn":v4_audio.MAX_WAV,"studio-background":characters.MAX_PORTRAIT}
 ACK="I_AUTHORIZE_THIS_LOCAL_AUTHORING_ACTION"
 
@@ -55,6 +55,9 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
     if action=="portrait-preflight":
         _keys(data,("character_id","model"))
         return portrait_local.inspect(root,data["character_id"],_local_path(data["model"]))
+    if action=="portrait-candidates":
+        _keys(data,())
+        return portrait_local.list_candidates(root)
     if action=="portrait-candidate":
         _keys(data,("candidate_id",))
         return portrait_local.audit_candidate(root,data["candidate_id"])

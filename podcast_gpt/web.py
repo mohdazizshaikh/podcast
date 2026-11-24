@@ -71,6 +71,7 @@ def html_page(token:str)->str:
 <button id="v4PortraitPreflight">Check local portrait model</button>
 <label><input id="v4PortraitConsent" type="checkbox"> I trust this local model and authorize CPU generation and have usage rights</label>
 <button id="v4PortraitGenerate">Generate one portrait candidate</button>
+<button id="v4PortraitCandidates">List local portrait attempts</button>
 <label>Candidate ID <input id="v4PortraitCandidate" maxlength="32"></label><button id="v4PortraitAudit">Audit candidate and show local file path</button>
 <label><input id="v4CandidateRights" type="checkbox"> I inspected this exact local PNG and have usage rights</label><button id="v4CandidateAttach">Attach candidate as new character version</button>
 <button id="v4JapaneseResources">Check Japanese local dictionary resources</button>
@@ -274,6 +275,7 @@ onAuthor('v4CharShow',()=>author('character-show',{character_id:val('v4CharId').
 onAuthor('v4PortraitBrief',()=>author('portrait-brief',{character_id:val('v4CharId').trim()}));
 onAuthor('v4PortraitPreflight',()=>author('portrait-preflight',{character_id:val('v4CharId').trim(),model:val('v4PortraitModel')}));
 onAuthor('v4PortraitGenerate',()=>{if(!field('v4PortraitConsent').checked)throw new Error('Confirm model trust and usage rights');field('v4PortraitConsent').checked=false;return author('portrait-generate',{character_id:val('v4CharId').trim(),model:val('v4PortraitModel'),seed:Number(val('v4PortraitSeed')),steps:Number(val('v4PortraitSteps')),model_consent:true},true)});
+onAuthor('v4PortraitCandidates',()=>author('portrait-candidates',{}));
 onAuthor('v4PortraitAudit',()=>author('portrait-candidate',{candidate_id:val('v4PortraitCandidate').trim()}));
 onAuthor('v4CandidateAttach',()=>{if(!field('v4CandidateRights').checked)throw new Error('Inspect exact candidate and confirm rights');field('v4CandidateRights').checked=false;return author('portrait-candidate-attach',{candidate_id:val('v4PortraitCandidate').trim(),rights:true},true)});
 onAuthor('v4JapaneseResources',()=>author('japanese-resources',{}));

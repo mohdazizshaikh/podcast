@@ -120,3 +120,5 @@ Batch 31 adds 17 allowlisted Wikipedia discovery editions, exact citation covera
 Batch 31 adds optional deterministic per-dialogue DC correction and low-level soft gate, CLI/browser settings and exact mix audit; new CI pending. AI/spectral denoising, dynamic true-peak limiting and real listening acceptance remain pending. See V4_BATCH31.md.
 
 Batch 31 combined CI 45498392552 passed 6/6. Batch 32 adds guarded Japanese neural frontend/resource status, graphical isolated local portrait worker and candidate audit/attachment. Actual Japanese dictionary/model inference and real browser/device acceptance remain pending; new CI pending. See V4_BATCH32.md.
+
+Batch 32 also adds bounded portrait attempt listing, candidate provenance validation and CLI candidate audit/attachment. 68 new regression cases authored across the two commits, not 68 independent features. New CI pending; real model and browser acceptance remain open. See V4_BATCH32.md.

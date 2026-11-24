@@ -33,6 +33,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Explicit selected reviewed prior-episode continuity snapshot for local drafting | Implemented | 6/6 CI 45492395979; no automatic memory capture or real quality verification |
 | Explicit local CPU Stable Diffusion portrait candidate generation | Implemented | 6/6 CI 45498392552; fake renderer only, real model setup/quality pending |
 | Browser portrait worker, preflight, candidate audit and explicit attachment | Implemented | New CI pending; real browser/CPU model pending |
+| Bounded portrait candidate library, provenance validation and CLI attachment | Implemented | New CI pending; incomplete attempts isolated, no automatic deletion |
 | Automatic longitudinal memory | Not implemented in V4 | Pending |
 | V4 local Hindi Kokoro adapter with preset/model provenance | Done | 6/6 CI run 45456602766 (fake model fixture) |
 | V4 local CPU SadTalker pilot, source-bound clips and reviewed batch | Done | 6/6 CI 45458379123 (synthetic model runner) |
