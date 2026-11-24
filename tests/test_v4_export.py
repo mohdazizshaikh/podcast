@@ -50,6 +50,25 @@ def test_export_fixture_gate_and_audit(tmp_path,monkeypatch,fmt):
     assert result["export"]["measured_streams"]["decoded_video_frames"]==56
     assert export.inspect(root,pid,allow_fixture=True)==result
     assert export.compose(root,pid,allow_fixture=True)==result
+    if fmt=="square":
+        from podcast_gpt import v4_post_audio as mix,v4_mixed_video as mixed
+        from test_v4_master_tts import wav
+        mix.compose(root,pid,intro=wav(tmp_path/"intro.wav",500),outro=wav(tmp_path/"outro.wav",700),acknowledgment=mix.ACK)
+        p=Path(mixed.qa(root,pid,"mix","template")["template_path"])
+        value=source.read_json(p)
+        for row in (value["turns"],value["criteria"]):
+            for k in row:row[k]="PASS"
+        p.write_text(json.dumps(value),encoding="utf-8")
+        mixed.qa(root,pid,"mix","record",acknowledgment=mixed.MIX_ACK)
+        with pytest.raises(ValueError,match="fixture"):mixed.compose(root,pid)
+        candidate=mixed.compose(root,pid,allow_fixture=True)
+        assert candidate["export"]["scene_plan"]["total_video_frames"]==106
+        assert mixed.inspect(root,pid,allow_fixture=True)==candidate
+        assert export.inspect(root,pid,allow_fixture=True)==result
+        mixed_srt=neural._context(root,pid)[1]/mixed.FOLDER/mixed.SRT
+        assert "00:00:01,000 --> 00:00:02,000" in mixed_srt.read_text(encoding="utf-8")
+        mixed_srt.write_text("changed",encoding="utf-8")
+        with pytest.raises(ValueError,match="subtitle"):mixed.inspect(root,pid,allow_fixture=True)
     path=neural._context(root,pid)[1]/export.FOLDER/export.SRT
     assert "पहला संवाद" in path.read_text(encoding="utf-8")
     path.write_text("tampered",encoding="utf-8")

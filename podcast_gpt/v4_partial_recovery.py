@@ -2,10 +2,10 @@
 import uuid
 from . import projects, source, v4_audio as audio, v4_master as master
 from . import v4_preview as preview, v4_neural as neural, v4_export as export
-from . import v4_recovery as recovery, v4_post_audio as mix
+from . import v4_recovery as recovery, v4_post_audio as mix, v4_mixed_video as mixed
 
 ACK="I_STOPPED_ALL_PRODUCTION_PROCESSES_AND_AUTHORIZE_INCOMPLETE_OUTPUT_ARCHIVE"
-KINDS=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio")
+KINDS=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio","mixed-export")
 ARCHIVE="incomplete-output-archive"
 
 
@@ -32,6 +32,7 @@ def _locate(root,pid,kind,unit):
     elif kind=="post-audio":
         if unit is not None:raise ValueError("Unit ID not required")
         mix._ctx(root,pid)
+        _refuse_dependencies(dest,(mixed.FOLDER,mixed.MIX_REVIEW,mixed.VIDEO_REVIEW))
         path=dest/mix.FOLDER;allowed={mix.WAV,"intro.wav","bed.wav","outro.wav"}
     elif kind=="static-preview":
         if unit is not None:raise ValueError("Unit ID not required")
@@ -40,8 +41,13 @@ def _locate(root,pid,kind,unit):
     elif kind=="neural-export":
         if unit is not None:raise ValueError("Unit ID not required")
         export._context(root,pid)
-        _refuse_dependencies(dest,("final-video-review.json",))
+        _refuse_dependencies(dest,("final-video-review.json",mixed.FOLDER,mixed.VIDEO_REVIEW))
         path=dest/export.FOLDER;allowed={export.VIDEO,export.SRT}
+    elif kind=="mixed-export":
+        if unit is not None:raise ValueError("Unit ID not required")
+        mixed._context(root,pid)
+        _refuse_dependencies(dest,(mixed.VIDEO_REVIEW,))
+        path=dest/mixed.FOLDER;allowed={mixed.VIDEO,mixed.SRT}
     else:
         _,_,nb,rows,targets=neural._context(root,pid)
         if unit not in {r["id"] for r in rows}:raise ValueError("Select current neural chunk ID")

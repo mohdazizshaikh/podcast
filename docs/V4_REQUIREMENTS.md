@@ -67,3 +67,6 @@ Implemented explicit configured Kokoro/eSpeak/SadTalker bounded orchestration, p
 
 ## Increment 17 — audio post-production and partial recovery
 Implemented optional deterministic audio-only peak normalization, looping authorized bed and intro/outro WAV, exact sample audit and private archive of six incomplete-output types lacking receipts. Original master/approvals unchanged; mixed-video export and actual listening acceptance pending. See V4_POST_AUDIO_RECOVERY.md.
+
+## Increment 18 — mixed video and fresh review gates
+Fixed CLI parser shadowing regression (45478604299). Implemented separate mix listening review, selected-format mixed video with static intro/outro cards, exact shifted SRT and fresh complete mixed video QA, plus incomplete mixed export recovery. CI pending; actual acceptance unverified. See V4_MIXED_VIDEO.md.

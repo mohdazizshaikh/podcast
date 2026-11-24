@@ -306,3 +306,5 @@ V4 optional dependency setup, offline visual script editor and bounded foregroun
 V4 configured media orchestration, private timing history and visual media QA: [media workflow guide](docs/V4_MEDIA_WORKFLOW.md). No live ETA or automatic approval.
 
 V4 optional audio-only normalization/music/intro/outro mix and safe incomplete-output recovery: [post-production guide](docs/V4_POST_AUDIO_RECOVERY.md). Original speech master remains unchanged; mixed-video export pending.
+
+V4 optional mixed audio/video candidate with static intro/outro, shifted subtitles, fresh review gates and incomplete-output recovery: [mixed video guide](docs/V4_MIXED_VIDEO.md). Actual model acceptance pending.

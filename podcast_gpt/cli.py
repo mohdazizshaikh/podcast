@@ -176,11 +176,18 @@ def parse(argv=None):
     mixaudit=subs.add_parser("project-mix-audit")
     mixaudit.add_argument("--project-id",required=True)
     for name in ("project-incomplete-status","project-incomplete-archive"):
-        p=subs.add_parser(name)
-        p.add_argument("--project-id",required=True)
-        p.add_argument("--kind",choices=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio"),required=True)
-        p.add_argument("--unit")
-        if name=="project-incomplete-archive":p.add_argument("--acknowledgment",required=True)
+        recover4=subs.add_parser(name)
+        recover4.add_argument("--project-id",required=True)
+        recover4.add_argument("--kind",choices=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio","mixed-export"),required=True)
+        recover4.add_argument("--unit")
+        if name=="project-incomplete-archive":recover4.add_argument("--acknowledgment",required=True)
+    for name in ("project-mix-review-template","project-mix-review-record","project-mix-review-status",
+                 "project-mixed-video-compose","project-mixed-video-audit","project-mixed-review-template",
+                 "project-mixed-review-record","project-mixed-review-status"):
+        mixed=subs.add_parser(name)
+        mixed.add_argument("--project-id",required=True)
+        if name in ("project-mix-review-record","project-mixed-review-record"):
+            mixed.add_argument("--acknowledgment",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -471,6 +478,15 @@ def execute(a)->dict:
         private=a.workspace.expanduser().absolute()
         if action=="project-incomplete-status":return v4_partial_recovery.inspect(private,a.project_id,a.kind,a.unit)
         return v4_partial_recovery.archive(private,a.project_id,a.kind,a.unit,acknowledgment=a.acknowledgment)
+    if action in ("project-mix-review-template","project-mix-review-record","project-mix-review-status",
+                  "project-mixed-video-compose","project-mixed-video-audit","project-mixed-review-template",
+                  "project-mixed-review-record","project-mixed-review-status"):
+        from . import v4_mixed_video as mixed
+        private=a.workspace.expanduser().absolute()
+        if action=="project-mixed-video-compose":return mixed.compose(private,a.project_id)
+        if action=="project-mixed-video-audit":return mixed.inspect(private,a.project_id)
+        return mixed.qa(private,a.project_id,"mix" if action.startswith("project-mix-review-") else "video",
+                        action.rsplit("-",1)[1],acknowledgment=getattr(a,"acknowledgment",None))
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

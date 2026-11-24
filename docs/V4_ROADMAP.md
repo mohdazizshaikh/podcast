@@ -48,3 +48,5 @@ Acceptance CI passed 6/6 (45461563645); model-config/eSpeak/persona CI 454624758
 Model-config/eSpeak/persona CI passed 6/6 (45462475819). Workflow CI 45463360856 had three jobs passed at check. Combined media orchestration, timing and visual QA implemented, CI pending. Next wider natural TTS, recovery, audio processing and research/portrait workflows.
 
 Workflow CI 45463360856 and media workflow CI 45464174884 passed 6/6 each. Audio-only mix and expanded incomplete-output recovery implemented (new CI pending). Next mixed-video integration, wider natural TTS, research/portrait and actual hardware acceptance.
+
+Audio post-production CI 45478604299 failed four matrix jobs at CLI doctor due parser shadowing. Fixed parser, added regression test and mixed-video candidate/QA (new CI pending). Next wider neural voices, research/portrait and dashboard; physical Windows acceptance mandatory.

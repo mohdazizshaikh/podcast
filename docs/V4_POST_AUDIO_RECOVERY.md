@@ -21,3 +21,5 @@ Only current-version directories with no completion receipt and a strict known f
 ```
 
 Stop every external producer first; lock absence is not evidence that all processes have stopped. An exclusive project lock protects archive, symlinks/reparse points and unexpected files are refused. Move original directory intact to unique private archive, never delete or overwrite. A separate explicit command retries the operation. If archive metadata write fails after rename, bytes remain in the archive. Stale locks, arbitrary scratch, corrupted completed artifacts and recovery involving reviewed downstream media remain manual. Synthetic tests verify sample processing and limited recovery cases, not perceptual audio quality or actual Windows model acceptance.
+
+Separate mix listening review, mixed video export and shifted subtitles are now implemented in V4_MIXED_VIDEO.md; older audio-only limitation applies to earlier increment. Recovery now includes mixed-export. CI 45478604299 failed a CLI parser shadowing regression; fix/retest pending in subsequent increment.

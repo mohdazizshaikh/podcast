@@ -15,8 +15,9 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Version-bound authorized PCM imports and measured audio timeline | Done | 6/6 CI run 45455331211 (synthetic WAVs) |
 | Exact PCM master audio composition and audit | Done | 6/6 CI run 45456602766 (synthetic PCM) |
 | Version-bound human listening review | Done | 6/6 CI run 45457590951 (synthetic fixtures) |
-| Audio-only peak normalization, background bed, intro/outro mix | Implemented | New CI pending; synthetic PCM; mixed video export pending |
-| Safe incomplete-output archive (six types) | Implemented | New CI pending; existing receipts and dependencies protected |
+| Audio-only peak normalization, background bed, intro/outro mix | Implemented | CI 45478604299 failed CLI parser regression; fix included; retest pending |
+| Mixed audio listening review, intro/outro video, shifted SRT and fresh video QA | Implemented | New CI pending; synthetic fixture only |
+| Safe incomplete-output archive (seven types) | Implemented | CI 45478604299 failed CLI parser regression; corrected parser and added mixed export; retest pending |
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
 | Automatic research discovery, semantic claim verification and human fact-checking | Not implemented | Pending |
 | Reusable character profiles, authorized PNG library and cast binding | Done | 6/6 CI run 45453165135 (synthetic PNGs) |
@@ -42,7 +43,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify audio post-production/recovery CI. Next wider natural neural TTS, actual model setup/pilot, mixed-audio video integration, research/portrait workflows and dashboard. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+P0 verify CLI regression fix and audio/mixed-video/recovery CI. Next wider natural neural TTS, actual model setup/pilot, research/portrait workflows and dashboard. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

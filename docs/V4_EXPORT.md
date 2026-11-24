@@ -16,3 +16,5 @@ The candidate is structurally decoded, not certified for actual mouth movement, 
 Full candidate-specific manual review is now available through V4_ACCEPTANCE.md. The immutable export receipt remains separate from human review. No automatic publication.
 
 Optional post-produced audio-only mix is separate from this exporter. The original audited master remains the sole video audio input; mixed-video support is pending (V4_POST_AUDIO_RECOVERY.md).
+
+Optional separate mixed-audio candidate with intro/outro visuals, shifted SRT and independent fresh QA: V4_MIXED_VIDEO.md. Original exporter unchanged.
