@@ -17,7 +17,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Version-bound human listening review | Done | 6/6 CI run 45457590951 (synthetic fixtures) |
 | Audio-only peak normalization, background bed, intro/outro mix | Done | Corrective CI 45479131328 6/6 passed; synthetic PCM |
 | Mixed audio listening review, intro/outro video, shifted SRT and fresh video QA | Done | 6/6 CI 45479131328; synthetic fixture |
-| Safe incomplete-output archive (ten types) | Implemented | Prior nine types CI 45483234208 6/6; tenth type mixed studio pending new CI |
+| Safe incomplete-output archive (ten types) | Implemented | 6/6 CI 45484813520; synthetic tests, not all failure modes |
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
 | Explicit Wikipedia candidate discovery and source-bound optional human factual review | Implemented | 6/6 CI 45481266847 (offline fixtures) |
 | Broad web search, automated semantic claim verification and corroboration | Not implemented | Pending |
@@ -45,16 +45,17 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Configured TTS/neural foreground orchestration | Done | 6/6 CI 45464174884 (mock inference) |
 | Persistent media action timing history | Done | 6/6 CI 45464174884; historical only |
 | Offline audio/pilot/final visual QA and JSON import | Done | 6/6 CI 45464174884; browser interaction pending |
-| Selected-project dashboard overview and hash-checked local browser playback | Implemented | CI 45484187245: three jobs passed at check; browser interaction pending |
-| Browser project creation and explicit local non-inference production actions | Implemented | New CI pending; browser interaction pending |
-| Mixed neural studio export, shifted SRT, separate QA and recovery | Implemented | New CI pending; synthetic only |
-| Historical neural-stage ETA with matched completed timings | Implemented | CI 45484187245: three jobs passed at check; no live subprocess progress |
-| Full dashboard, automatic/manual orchestration, ETA | Partial | Overview/playback, project creation, bounded non-inference actions, offline forms and CLI runner; full GUI and live ETA pending |
+| Selected-project dashboard overview and hash-checked local browser playback | Implemented | 6/6 CI 45484187245; browser interaction pending |
+| Browser project creation and explicit local non-inference production actions | Done | 6/6 CI 45484813520; browser interaction pending |
+| Browser character profiles, cast assignment, source imports and local model configuration | Implemented | New CI pending; browser interaction pending |
+| Mixed neural studio export, shifted SRT, separate QA and recovery | Done | 6/6 CI 45484813520; synthetic only |
+| Historical neural-stage ETA with matched completed timings | Implemented | 6/6 CI 45484187245; no live subprocess progress |
+| Full dashboard, automatic/manual orchestration, ETA | Partial | Overview/playback, authoring and bounded non-inference actions; model execution and review recording CLI-only; live ETA pending |
 | Real Windows model run and acceptance | Not verified | Local user hardware required |
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify overview/playback/estimate and new dashboard/mixed studio CI. Next actual model setup/pilot, CJK frontends, local portrait inference, full dashboard authoring and measured live progress. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify graphical authoring CI. Next actual model setup/pilot, CJK frontends, local portrait inference, browser inference controls with explicit consent and measured live progress. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

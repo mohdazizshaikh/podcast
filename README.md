@@ -318,3 +318,5 @@ V4 separate neural studio composition, fresh full review, studio recovery and po
 V4 dashboard overview, historical neural-stage estimate and verified local playback: [production overview guide](docs/V4_PRODUCTION_OVERVIEW.md). No media HTTP endpoint, live ETA or automatic publication.
 
 V4 dashboard project creation, bounded local non-inference controls and mixed neural studio: [workflow guide](docs/V4_DASHBOARD_MIXED_STUDIO.md). Actual browser and model acceptance pending.
+
+V4 browser character and cast management, private source imports and saved local model paths: [graphical authoring guide](docs/V4_DASHBOARD_AUTHORING.md). Real browser and model acceptance pending.

@@ -24,7 +24,7 @@ from .readiness import inspect as inspect_readiness
 from .setup_wizard import inspect as inspect_setup
 from .projects import list_projects,ID_RE
 from .v4_readiness import inspect as inspect_v4_readiness
-from . import production_overview, dashboard_actions, projects
+from . import production_overview, dashboard_actions, dashboard_authoring, projects
 
 STYLE="""body{font:16px system-ui;background:#121b2b;color:#f4f7ff;margin:auto;max-width:1100px;padding:28px}
 header{padding:18px;border-bottom:1px solid #53627c}.panel{padding:18px;margin:18px 0;border:1px solid #4c5a70;border-radius:12px}
@@ -61,6 +61,40 @@ def html_page(token:str)->str:
 <button id="v4Readiness">Check selected V4 project readiness (read-only)</button>
 <button id="v4Overview">Production overview / historical estimate</button>
 <div id="v4Summary" aria-live="polite"></div>
+<h3>Character library and cast</h3>
+<button id="v4CharList">List characters</button>
+<label>Character ID / optional parent <input id="v4CharId" maxlength="32"></label><button id="v4CharShow">Load profile</button>
+<label>Name <input id="v4CharName" maxlength="80"></label>
+<label>Personality <input id="v4CharPersonality" maxlength="600"></label>
+<label>Speaking style <input id="v4CharStyle" maxlength="600"></label>
+<label>Appearance <input id="v4CharAppearance" maxlength="1000"></label>
+<label>Voice engine <select id="v4CharEngine"><option>undecided</option><option>imported</option><option>kokoro</option><option>espeak</option><option>edge</option></select></label>
+<label>Voice language <input id="v4CharLanguage" value="Hindi" maxlength="80"></label>
+<label>Voice preset <input id="v4CharPreset" maxlength="100"></label>
+<label>Voice notes <input id="v4CharNotes" maxlength="400"></label>
+<button id="v4CharCreate">Create new character version</button>
+<label>Authorized portrait PNG <input id="v4Portrait" type="file" accept=".png"></label>
+<label><input id="v4PortraitRights" type="checkbox"> I have rights to this portrait</label>
+<button id="v4PortraitAttach">Attach portrait as new version</button>
+<button id="v4CastLoad">Load selected project cast and choices</button><div id="v4CastRows"></div>
+<button id="v4CastAssign">Assign immutable cast</button>
+<h3>Project source input</h3>
+<label>Local PDF, DOCX, TXT or MD <input id="v4SourceFile" type="file" accept=".pdf,.docx,.txt,.md"></label>
+<button id="v4SourceImport">Import selected local source</button>
+<label>Public HTTPS URL <input id="v4SourceUrl" maxlength="2048"></label>
+<label><input id="v4WebConsent" type="checkbox"> Retrieve this public URL over the internet</label>
+<button id="v4SourceWeb">Capture URL source</button>
+<h3>Local model path configuration</h3>
+<button id="v4ModelStatus">Check saved configurations</button>
+<label>Engine <select id="v4ModelEngine"><option>kokoro</option><option>sadtalker</option><option>espeak</option></select></label>
+<label>Model file / directory <input id="v4ModelPath" maxlength="2048"></label>
+<label>Voices file <input id="v4VoicesPath" maxlength="2048"></label>
+<label>Python executable <input id="v4PythonPath" maxlength="2048"></label>
+<label>eSpeak executable <input id="v4ExePath" maxlength="2048"></label>
+<label><input id="v4ModelReplace" type="checkbox"> Explicitly replace previous configuration</label>
+<button id="v4ModelSave">Save selected paths (no execution)</button>
+<p><label><input id="v4AuthorConsent" type="checkbox"> I authorize the selected local authoring or import action</label></p>
+<small>Selected files go only to this localhost application. Use trusted sources and model paths. No AI inference or dependency install here.</small>
 <h3>Explicit local production actions</h3>
 <label><input type="checkbox" id="v4ProcessConsent"> I authorize the selected local processing action. No AI inference or approval is authorized here.</label>
 <select id="v4Process"><option value="project-safe-step">One eligible non-inference production step</option><option value="project-script-visual-edit">Create offline script editor</option><option value="project-script-visual-review">Create script review page</option><option value="project-audio-visual-review">Create audio review page</option><option value="project-pilot-visual-review">Create pilot review page</option><option value="project-final-visual-review">Create final review page</option><option value="project-static-render">Render static preview</option><option value="project-studio-render">Render static studio</option><option value="project-neural-studio-compose">Compose neural studio from saved clips</option><option value="project-mixed-studio-compose">Compose mixed neural studio</option></select>
@@ -71,7 +105,7 @@ def html_page(token:str)->str:
 <p id="v4MediaInfo">Audit first, then select the matching local file (128 MiB maximum for browser hash check).</p>
 <input type="file" id="v4LocalMedia" accept=".wav,.mp4" disabled><video id="v4Player" controls preload="none" style="max-width:100%;display:none"></video>
 <p><small>File bytes stay in this browser tab; no upload or HTTP media endpoint. Large files: use the displayed local path in your own player.</small></p>
-<small>Source imports, model inference, cloud consent, API keys and recorded human approvals remain CLI-only.</small></section>
+<small>Research pack capture, model inference, cloud AI consent, API keys and recorded human approvals remain CLI-only.</small></section>
 <section class="panel"><h2>1. Original 45-turn episode</h2>
 <button data-action="init">Create NEW original 45-turn project</button>
 <button data-action="doctor">Check tools</button>
@@ -102,11 +136,17 @@ if(portraitRights)opt.headers['X-Portrait-Rights-Confirmed']='YES';
 if(data instanceof File){opt.body=data;opt.headers['Content-Type']='application/octet-stream'}
 else if(data!==undefined&&data!==null){opt.body=JSON.stringify(data);opt.headers['Content-Type']='application/json'}
 let r=await fetch(endpoint,opt);let j=await r.json();if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
-let manifest=null,blobUrl=null;
+let manifest=null,blobUrl=null,castPid=null;
 function clearMedia(){manifest=null;let p=document.getElementById('v4Player');p.pause();p.removeAttribute('src');p.load();p.style.display='none';if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}let i=document.getElementById('v4LocalMedia');i.value='';i.disabled=true}
 function showResult(status){
  if(status.phase!=='complete'||!status.result)return;
  let data=status.result;
+ if(status.command==='author-character-create'||status.command==='author-portrait'){if(data.character_id)document.getElementById('v4CharId').value=data.character_id}
+ if(status.command==='author-character-show'&&data.profile){let p=data.profile,v=p.voice_preferences;for(const [id,value] of Object.entries({v4CharName:p.name,v4CharPersonality:p.personality,v4CharStyle:p.speaking_style,v4CharAppearance:p.appearance,v4CharEngine:v.engine,v4CharLanguage:v.language,v4CharPreset:v.preset,v4CharNotes:v.style_notes}))document.getElementById(id).value=value}
+ if(status.command==='author-cast-choices'&&data.project_id===document.getElementById('v4ProjectId').value.trim()){
+  castPid=data.project_id;const area=document.getElementById('v4CastRows');area.replaceChildren();
+  for(const speaker of data.presenters){const label=document.createElement('label');label.textContent=speaker+' ';const select=document.createElement('select');select.dataset.speaker=speaker;const empty=document.createElement('option');empty.value='';empty.textContent='Choose character';select.append(empty);for(const c of data.characters){const o=document.createElement('option');o.value=c.character_id;o.textContent=c.name+' — '+c.character_id+(c.portrait_present?'':' (no portrait)');select.append(o)}label.append(select);area.append(label)}
+ }
  if(status.command==='project-create'&&data.project_id){document.getElementById('v4ProjectId').value=data.project_id;clearMedia();document.getElementById('v4Summary').replaceChildren()}
  if(status.command==='project-production-overview'){
   if(data.project_id!==document.getElementById('v4ProjectId').value.trim())return;
@@ -146,6 +186,26 @@ document.getElementById('v4Run').addEventListener('click',()=>{
   action(document.getElementById('v4Process').value,currentPid(),null,true);
  }catch(e){out.textContent='BLOCKED: '+e.message}
 });
+const field=id=>document.getElementById(id);
+const val=id=>field(id).value;
+function authorConsent(){if(!field('v4AuthorConsent').checked)throw new Error('Explicit local authoring consent required');field('v4AuthorConsent').checked=false}
+async function author(action,data,write=false){
+ if(write)authorConsent();
+ out.textContent=JSON.stringify(await send('/api/author?cmd='+encodeURIComponent(action)+(write?'&consent=YES':''),data),null,2);await refresh();
+}
+function onAuthor(id,fn){field(id).addEventListener('click',async()=>{try{await fn()}catch(e){out.textContent='BLOCKED: '+e.message}})}
+onAuthor('v4CharList',()=>author('character-list',{}));
+onAuthor('v4CharShow',()=>author('character-show',{character_id:val('v4CharId').trim()}));
+onAuthor('v4CharCreate',()=>author('character-create',{parent_id:val('v4CharId').trim()||null,profile:{name:val('v4CharName'),personality:val('v4CharPersonality'),speaking_style:val('v4CharStyle'),appearance:val('v4CharAppearance'),voice_preferences:{engine:val('v4CharEngine'),language:val('v4CharLanguage'),preset:val('v4CharPreset'),style_notes:val('v4CharNotes')}}},true));
+onAuthor('v4CastLoad',()=>author('cast-choices',{project_id:currentPid()}));
+onAuthor('v4CastAssign',()=>{if(castPid!==currentPid())throw new Error('Load cast choices for selected project');const mapping=Object.fromEntries(Array.from(field('v4CastRows').querySelectorAll('select'),s=>[s.dataset.speaker,s.value]));return author('cast-assign',{project_id:currentPid(),mapping},true)});
+async function authorFile(kind,id,file,rights=false){if(!file)throw new Error('Select a local file first');authorConsent();out.textContent=JSON.stringify(await send('/api/author-file?kind='+encodeURIComponent(kind)+'&id='+encodeURIComponent(id)+'&name='+encodeURIComponent(file.name)+'&consent=YES',file,rights),null,2);await refresh()}
+onAuthor('v4PortraitAttach',()=>{if(!field('v4PortraitRights').checked)throw new Error('Confirm portrait rights');field('v4PortraitRights').checked=false;return authorFile('portrait',val('v4CharId').trim(),field('v4Portrait').files[0],true)});
+onAuthor('v4SourceImport',()=>authorFile('source',currentPid(),field('v4SourceFile').files[0]));
+onAuthor('v4SourceWeb',()=>{if(!field('v4WebConsent').checked)throw new Error('Explicit internet retrieval consent required');field('v4WebConsent').checked=false;return author('source-url',{project_id:currentPid(),url:val('v4SourceUrl').trim(),allow_web_fetch:true},true)});
+onAuthor('v4ModelStatus',()=>author('model-status',{}));
+onAuthor('v4ModelSave',()=>{const engine=val('v4ModelEngine'),paths=engine==='kokoro'?{model:val('v4ModelPath'),voices:val('v4VoicesPath')}:engine==='sadtalker'?{model:val('v4ModelPath'),python:val('v4PythonPath')}:{executable:val('v4ExePath')};const replace=field('v4ModelReplace').checked;field('v4ModelReplace').checked=false;return author('model-configure',{engine,paths,replace},true)});
+field('v4ProjectId').addEventListener('input',()=>{castPid=null;field('v4CastRows').replaceChildren()});
 document.getElementById('v4Overview').addEventListener('click',()=>{try{action('project-production-overview',currentPid())}catch(e){out.textContent=e.message}});
 document.getElementById('v4MediaCheck').addEventListener('click',()=>{try{clearMedia();document.getElementById('v4MediaInfo').textContent='Auditing current candidate...';action('project-media-check',currentPid(),document.getElementById('v4MediaKind').value)}catch(e){out.textContent=e.message}});
 for(const id of ['v4ProjectId','v4MediaKind'])document.getElementById(id).addEventListener('input',()=>{clearMedia();document.getElementById('v4MediaInfo').textContent='Audit the current selection first.';document.getElementById('v4Summary').replaceChildren()});
@@ -220,8 +280,36 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
             size_str=self.headers.get("Content-Length","")
             if not size_str.isdecimal():return self._json(411,{"error":"Content-Length required"})
             size=int(size_str);url=urlsplit(self.path);query=parse_qs(url.query)
-            if url.path in ("/api/action","/api/project-create"):
-                if url.path=="/api/project-create":
+            if url.path in ("/api/action","/api/project-create","/api/author","/api/author-file"):
+                if url.path in ("/api/author","/api/author-file"):
+                    is_file=url.path=="/api/author-file"
+                    kind=query.get("kind",[""])[0]
+                    action=query.get("cmd",[""])[0]
+                    limit=dashboard_authoring.UPLOADS.get(kind,0) if is_file else dashboard_authoring.JSON_LIMIT
+                    mime="application/octet-stream" if is_file else "application/json"
+                    if not 1<=size<=limit or self.headers.get("Content-Type")!=mime:
+                        return self._json(400,{"error":"Invalid bounded authoring request"})
+                    if not is_file and action not in dashboard_authoring.ACTIONS:
+                        return self._json(400,{"error":"Unknown authoring action"})
+                    consent=dashboard_authoring.ACK if query.get("consent",[""])[0]=="YES" else None
+                    if (is_file or action not in dashboard_authoring.READ_ONLY) and consent is None:
+                        return self._json(403,{"error":"Explicit authoring consent required"})
+                    try:
+                        self.connection.settimeout(20)
+                        raw=self.rfile.read(size)
+                        if len(raw)!=size:raise ValueError("Incomplete authoring request")
+                        if is_file:
+                            identifier=query.get("id",[""])[0];name=query.get("name",[""])[0]
+                            if not ID_RE.fullmatch(identifier):raise ValueError("Invalid target ID")
+                            rights=self.headers.get("X-Portrait-Rights-Confirmed")=="YES"
+                            command="author-"+kind
+                            selected=lambda:dashboard_authoring.upload(root,kind,identifier,name,raw,acknowledgment=consent,rights=rights)
+                        else:
+                            data=dashboard_authoring.parse(raw)
+                            command="author-"+action
+                            selected=lambda:dashboard_authoring.run(root,action,data,acknowledgment=consent)
+                    except (ValueError,OSError) as err:return self._json(400,{"error":str(err)})
+                elif url.path=="/api/project-create":
                     if not 1<=size<=dashboard_actions.CREATE_LIMIT or self.headers.get("Content-Type")!="application/json":return self._json(400,{"error":"Bounded JSON project request required"})
                     try:
                         raw=self.rfile.read(size)
@@ -232,7 +320,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                 else:
                     if size!=0:return self._json(400,{"error":"Action body must be empty"})
                     command=query.get("cmd",[""])[0]
-                if url.path=="/api/project-create":pass
+                if url.path in ("/api/project-create","/api/author","/api/author-file"):pass
                 elif command in dashboard_actions.ACTIONS:
                     pid=query.get("project_id",[""])[0]
                     if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})

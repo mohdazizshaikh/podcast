@@ -99,3 +99,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Neural studio CI 45483234208 6/6 passed (synthetic).
 - [ ] Verify overview CI and combined dashboard/mixed studio CI. Real browser interaction, actual model acceptance, full authoring/inference UI, live progress, CJK and portrait inference remain pending.
+
+- [x] Dashboard overview and mixed studio CI 6/6 each (45484187245, 45484813520).
+- [ ] Verify graphical authoring CI and browser/device operation. Real inference, full acceptance, research pack UI, browser inference and approval recording, CJK and image synthesis remain open.

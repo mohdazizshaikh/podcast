@@ -35,3 +35,5 @@ Optional eSpeak profile engine and opt-in cast personality prompt snapshots are 
 Local profile-bound portrait brief generation is available (V4_STUDIO_ENGLISH.md). This prepares prompts only, not real AI image generation.
 
 Authorized portrait attachment can create a new character version directly from an existing profile ID; see V4_NEURAL_STUDIO.md. No image inference or cast reassignment.
+
+The localhost dashboard supports character profile creation/revision, authorized portrait attachment and immutable cast selection; see V4_DASHBOARD_AUTHORING.md.

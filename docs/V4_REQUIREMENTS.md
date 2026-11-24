@@ -85,3 +85,6 @@ Implemented selected-project read-only dashboard overview, allowlisted structura
 
 ## Increment 23 — dashboard project creation and mixed studio
 Implemented bounded JSON project creation, explicit non-inference dashboard actions, independent mixed neural studio export/QA, playback manifest and tenth incomplete-output archive type. Original candidates remain immutable; browser inference/approval, real model and full GUI acceptance pending. See V4_DASHBOARD_MIXED_STUDIO.md.
+
+## Increment 24 — graphical local authoring
+Implemented browser character profile/revision creation, authorized portrait attachment, immutable cast selection, bounded local source upload and explicit public URL capture, and local model path configuration. DOCX XML restricted to UTF-8. Browser inference, research pack capture and approval recording remain CLI-only. CI pending; see V4_DASHBOARD_AUTHORING.md.

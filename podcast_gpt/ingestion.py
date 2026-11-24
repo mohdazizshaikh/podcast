@@ -66,9 +66,12 @@ def _docx(raw):
             if len(names)!=len(set(names)) or "word/document.xml" not in names:
                 raise ValueError("Invalid DOCX document package")
             xml=z.read("word/document.xml")
-            if len(xml)>4_000_000 or re.search(br"<!\s*(?:DOCTYPE|ENTITY)",xml,re.I):
-                raise ValueError("Unsafe or oversized DOCX XML")
-            root=ElementTree.fromstring(xml)
+            if len(xml)>4_000_000:raise ValueError("Unsafe or oversized DOCX XML")
+            try:text=xml.decode("utf-8-sig")
+            except UnicodeError:raise ValueError("DOCX XML must be UTF-8") from None
+            if "\x00" in text or re.search(r"<!\s*(?:DOCTYPE|ENTITY)",text,re.I):
+                raise ValueError("Unsafe DOCX XML")
+            root=ElementTree.fromstring(text)
     except (zipfile.BadZipFile,ElementTree.ParseError,RuntimeError,KeyError):
         raise ValueError("Unable to parse DOCX text") from None
     ns="{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
