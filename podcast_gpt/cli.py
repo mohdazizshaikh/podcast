@@ -24,6 +24,14 @@ def parse(argv=None):
             cmd.add_argument("--port",type=int,default=7860)
             cmd.add_argument("--open-browser",action="store_true",
                              help="Open default browser only after successful local server bind")
+    subs.add_parser("ai-provider-status",help="Local key presence and strict free provider policy; no calls")
+    planner=subs.add_parser("plan-episode",help="V4 topic-based episode outline, not media generation")
+    planner.add_argument("--request",type=Path,required=True)
+    planner.add_argument("--allow-cloud-text",action="store_true")
+    planner.add_argument("--confirm-gemini-free-project",action="store_true")
+    planner.add_argument("--offline-only",action="store_true")
+    planner.add_argument("--ollama-model")
+    planner.add_argument("--prompt-keys",action="store_true",help="Optional session-only override; never store keys")
     setup=subs.add_parser("setup-wizard",help="Unified V4 hardware and local model setup inventory")
     setup.add_argument("--interactive",action="store_true")
     setup.add_argument("--kokoro-model",type=Path)
@@ -162,6 +170,25 @@ def execute(a)->dict:
     root=a.workspace.expanduser().resolve()
     action=a.operation
     if action=="doctor":return doctor(root)
+    if action=="ai-provider-status":
+        from .ai_providers import inventory
+        return inventory()
+    if action=="plan-episode":
+        from . import ai_providers,episode_plan
+        credentials=ai_providers.Credentials.environment()
+        if a.prompt_keys:
+            if not a.allow_cloud_text or a.offline_only:
+                raise ValueError("Session cloud keys require explicit cloud text consent")
+            import getpass
+            try:
+                router=getpass.getpass("OpenRouter free API key (Enter to retain environment default): ")
+                gemini=getpass.getpass("Gemini free API key (Enter to retain environment default): ") if a.confirm_gemini_free_project else ""
+            except (EOFError,KeyboardInterrupt):
+                raise ValueError("AI key input cancelled")
+            credentials=ai_providers.Credentials(router or credentials.openrouter,gemini or credentials.gemini)
+        return episode_plan.plan(episode_plan.load_request(a.request),credentials=credentials,
+            allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
+            offline_only=a.offline_only,local_model=a.ollama_model)
     if action=="setup-wizard":
         from . import setup_wizard
         if a.interactive:

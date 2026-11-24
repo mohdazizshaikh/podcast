@@ -270,3 +270,7 @@ After all required CI jobs pass, the Windows packaging job builds and verifies a
 ### V4 Smart setup (development milestone 1)
 
 Stable V3 remains on [stable-v3.7](https://github.com/mohdazizshaikh/podcast/tree/stable-v3.7). Run SMART_SETUP_WINDOWS.bat after installing the application with START_PODCAST_WINDOWS.bat --setup-only, or use python -m podcast_gpt setup-wizard. The dashboard offers a read-only hardware/package inventory. Local model selection and explicit trusted interpreter probing are CLI only. No model installs or downloads occur. See [V4 roadmap](docs/V4_ROADMAP.md).
+
+### V4 free AI planning
+
+The first generalized planning increment supports topic-based outlines for 1–10 presenters and 1–60 target minutes. See [confirmed requirements](docs/V4_REQUIREMENTS.md) and [free AI provider setup](docs/AI_PROVIDERS.md). Cloud text is opt-in, Gemini requires a confirmed unbilled Free Tier project, and Ollama is limited to known installed under-3B models. No general V4 media rendering or research claim yet.
