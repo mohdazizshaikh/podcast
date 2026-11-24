@@ -83,7 +83,7 @@ def parse(argv=None):
     overview.add_argument("--project-id",required=True)
     checkmedia=subs.add_parser("project-media-check")
     checkmedia.add_argument("--project-id",required=True)
-    checkmedia.add_argument("--kind",choices=("master","preview","neural","mix","mixed","studio-preview","neural-studio"),required=True)
+    checkmedia.add_argument("--kind",choices=("master","preview","neural","mix","mixed","studio-preview","neural-studio","mixed-neural-studio"),required=True)
     prog=subs.add_parser("project-production-progress")
     prog.add_argument("--project-id",required=True)
     qa=subs.add_parser("project-media-review-visual")
@@ -183,7 +183,7 @@ def parse(argv=None):
     for name in ("project-incomplete-status","project-incomplete-archive"):
         recover4=subs.add_parser(name)
         recover4.add_argument("--project-id",required=True)
-        recover4.add_argument("--kind",choices=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio","mixed-export","studio-preview","neural-studio"),required=True)
+        recover4.add_argument("--kind",choices=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio","mixed-export","studio-preview","neural-studio","mixed-neural-studio"),required=True)
         recover4.add_argument("--unit")
         if name=="project-incomplete-archive":recover4.add_argument("--acknowledgment",required=True)
     for name in ("project-mix-review-template","project-mix-review-record","project-mix-review-status",
@@ -222,6 +222,10 @@ def parse(argv=None):
         ns=subs.add_parser(name)
         ns.add_argument("--project-id",required=True)
         if name=="project-neural-studio-review-record":ns.add_argument("--acknowledgment",required=True)
+    for name in ("project-mixed-studio-compose","project-mixed-studio-audit","project-mixed-studio-review-template","project-mixed-studio-review-record","project-mixed-studio-review-status"):
+        ms=subs.add_parser(name)
+        ms.add_argument("--project-id",required=True)
+        if name=="project-mixed-studio-review-record":ms.add_argument("--acknowledgment",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -558,6 +562,12 @@ def execute(a)->dict:
         if action=="project-neural-studio-compose":return studio_neural.compose(private,a.project_id)
         if action=="project-neural-studio-audit":return studio_neural.inspect(private,a.project_id)
         return studio_neural.qa(private,a.project_id,action.rsplit("-",1)[1],acknowledgment=getattr(a,"acknowledgment",None))
+    if action in ("project-mixed-studio-compose","project-mixed-studio-audit","project-mixed-studio-review-template","project-mixed-studio-review-record","project-mixed-studio-review-status"):
+        from . import v4_mixed_video as mixed
+        private=a.workspace.expanduser().absolute()
+        if action=="project-mixed-studio-compose":return mixed.compose(private,a.project_id,studio=True)
+        if action=="project-mixed-studio-audit":return mixed.inspect(private,a.project_id,studio=True)
+        return mixed.qa(private,a.project_id,"studio",action.rsplit("-",1)[1],acknowledgment=getattr(a,"acknowledgment",None))
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

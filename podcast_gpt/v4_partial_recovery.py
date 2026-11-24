@@ -6,7 +6,7 @@ from . import v4_recovery as recovery, v4_post_audio as mix, v4_mixed_video as m
 from . import studio_preview as studio, studio_neural as sn
 
 ACK="I_STOPPED_ALL_PRODUCTION_PROCESSES_AND_AUTHORIZE_INCOMPLETE_OUTPUT_ARCHIVE"
-KINDS=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio","mixed-export","studio-preview","neural-studio")
+KINDS=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio","mixed-export","studio-preview","neural-studio","mixed-neural-studio")
 ARCHIVE="incomplete-output-archive"
 
 
@@ -23,17 +23,17 @@ def _locate(root,pid,kind,unit):
     folder,dest,binding,turns,req,cast=audio._context(root,pid)
     if kind=="audio-turn":
         if unit not in {t["id"] for t in turns}:raise ValueError("Select current script turn ID")
-        _refuse_dependencies(dest,(audio.TIMELINE,master.FOLDER,preview.FOLDER,studio.FOLDER,sn.FOLDER,sn.REVIEW,neural.FOLDER,export.FOLDER,mix.FOLDER,"audio-review.json","final-video-review.json"))
+        _refuse_dependencies(dest,(audio.TIMELINE,master.FOLDER,preview.FOLDER,studio.FOLDER,sn.FOLDER,sn.REVIEW,mixed.STUDIO_FOLDER,mixed.STUDIO_REVIEW,neural.FOLDER,export.FOLDER,mix.FOLDER,"audio-review.json","final-video-review.json"))
         path=dest/unit;allowed={"speech.wav"}
     elif kind=="master":
         if unit is not None:raise ValueError("Unit ID not required")
         master._context(root,pid)
-        _refuse_dependencies(dest,(preview.FOLDER,studio.FOLDER,sn.FOLDER,sn.REVIEW,neural.FOLDER,export.FOLDER,mix.FOLDER,"audio-review.json","final-video-review.json"))
+        _refuse_dependencies(dest,(preview.FOLDER,studio.FOLDER,sn.FOLDER,sn.REVIEW,mixed.STUDIO_FOLDER,mixed.STUDIO_REVIEW,neural.FOLDER,export.FOLDER,mix.FOLDER,"audio-review.json","final-video-review.json"))
         path=dest/master.FOLDER;allowed={master.WAV}
     elif kind=="post-audio":
         if unit is not None:raise ValueError("Unit ID not required")
         mix._ctx(root,pid)
-        _refuse_dependencies(dest,(mixed.FOLDER,mixed.MIX_REVIEW,mixed.VIDEO_REVIEW))
+        _refuse_dependencies(dest,(mixed.FOLDER,mixed.MIX_REVIEW,mixed.VIDEO_REVIEW,mixed.STUDIO_FOLDER,mixed.STUDIO_REVIEW))
         path=dest/mix.FOLDER;allowed={mix.WAV,"intro.wav","bed.wav","outro.wav"}
     elif kind=="static-preview":
         if unit is not None:raise ValueError("Unit ID not required")
@@ -46,13 +46,18 @@ def _locate(root,pid,kind,unit):
     elif kind=="neural-studio":
         if unit is not None:raise ValueError("Unit ID not required")
         sn._context(root,pid)
-        _refuse_dependencies(dest,(sn.REVIEW,))
+        _refuse_dependencies(dest,(sn.REVIEW,mixed.STUDIO_FOLDER,mixed.STUDIO_REVIEW))
         path=dest/sn.FOLDER;allowed={sn.VIDEO,sn.SRT}
     elif kind=="neural-export":
         if unit is not None:raise ValueError("Unit ID not required")
         export._context(root,pid)
         _refuse_dependencies(dest,("final-video-review.json",mixed.FOLDER,mixed.VIDEO_REVIEW))
         path=dest/export.FOLDER;allowed={export.VIDEO,export.SRT}
+    elif kind=="mixed-neural-studio":
+        if unit is not None:raise ValueError("Unit ID not required")
+        mixed._context(root,pid,studio=True)
+        _refuse_dependencies(dest,(mixed.STUDIO_REVIEW,))
+        path=dest/mixed.STUDIO_FOLDER;allowed={mixed.VIDEO,mixed.SRT}
     elif kind=="mixed-export":
         if unit is not None:raise ValueError("Unit ID not required")
         mixed._context(root,pid)
@@ -61,7 +66,7 @@ def _locate(root,pid,kind,unit):
     else:
         _,_,nb,rows,targets=neural._context(root,pid)
         if unit not in {r["id"] for r in rows}:raise ValueError("Select current neural chunk ID")
-        _refuse_dependencies(dest,(export.FOLDER,"final-video-review.json",sn.FOLDER,sn.REVIEW))
+        _refuse_dependencies(dest,(export.FOLDER,"final-video-review.json",sn.FOLDER,sn.REVIEW,mixed.STUDIO_FOLDER,mixed.STUDIO_REVIEW))
         if unit in targets and _exists(dest/neural.FOLDER/neural.REVIEW):
             raise ValueError("Reviewed pilot cannot be archived")
         projects._plain(dest/neural.FOLDER)

@@ -60,9 +60,6 @@ def test_export_fixture_gate_and_audit(tmp_path,monkeypatch,fmt):
         assert studio_neural.inspect(root,pid,allow_fixture=True)==studio
         assert export.inspect(root,pid,allow_fixture=True)==result
         with pytest.raises(ValueError,match="fixture"):studio_neural.qa(root,pid,"template")
-        path=neural._context(root,pid)[1]/studio_neural.FOLDER/studio_neural.SRT
-        path.write_text("tampered",encoding="utf-8")
-        with pytest.raises(ValueError,match="subtitles"):studio_neural.inspect(root,pid,allow_fixture=True)
         from podcast_gpt import v4_post_audio as mix,v4_mixed_video as mixed
         from test_v4_master_tts import wav
         mix.compose(root,pid,intro=wav(tmp_path/"intro.wav",500),outro=wav(tmp_path/"outro.wav",700),acknowledgment=mix.ACK)
@@ -77,6 +74,17 @@ def test_export_fixture_gate_and_audit(tmp_path,monkeypatch,fmt):
         assert candidate["export"]["scene_plan"]["total_video_frames"]==106
         assert mixed.inspect(root,pid,allow_fixture=True)==candidate
         assert export.inspect(root,pid,allow_fixture=True)==result
+        with pytest.raises(ValueError,match="fixture"):mixed.compose(root,pid,studio=True)
+        mixed_studio=mixed.compose(root,pid,studio=True,allow_fixture=True)
+        assert mixed_studio["export"]["binding"]["variant"]=="neural-studio"
+        assert mixed_studio["export"]["scene_plan"]["total_video_frames"]==106
+        assert mixed.inspect(root,pid,studio=True,allow_fixture=True)==mixed_studio
+        assert studio_neural.inspect(root,pid,allow_fixture=True)==studio
+        assert mixed.inspect(root,pid,allow_fixture=True)==candidate
+        with pytest.raises(ValueError,match="fixture"):mixed.qa(root,pid,"studio","template")
+        studio_srt=neural._context(root,pid)[1]/studio_neural.FOLDER/studio_neural.SRT
+        studio_srt.write_text("tampered",encoding="utf-8")
+        with pytest.raises(ValueError,match="subtitles"):mixed.inspect(root,pid,studio=True,allow_fixture=True)
         mixed_srt=neural._context(root,pid)[1]/mixed.FOLDER/mixed.SRT
         assert "00:00:01,000 --> 00:00:02,000" in mixed_srt.read_text(encoding="utf-8")
         mixed_srt.write_text("changed",encoding="utf-8")

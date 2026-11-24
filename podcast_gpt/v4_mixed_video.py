@@ -14,6 +14,9 @@ FOLDER="mixed-export"
 VIDEO="episode-mixed.mp4"
 SRT="episode-mixed.srt"
 RECEIPT="receipt.json"
+STUDIO_FOLDER="mixed-neural-studio"
+STUDIO_REVIEW="mixed-neural-studio-review.json"
+STUDIO_ACK="I_WATCHED_THE_ENTIRE_CURRENT_MIXED_NEURAL_STUDIO"
 MIX_REVIEW="mix-listening-review.json"
 VIDEO_REVIEW="mixed-video-review.json"
 MIX_ACK="I_LISTENED_TO_THE_ENTIRE_CURRENT_MIX"
@@ -54,7 +57,7 @@ def _validate(value,receipt,timeline,kind):
 
 
 def _review_file(dest,kind):
-    return dest/(MIX_REVIEW if kind=="mix" else VIDEO_REVIEW)
+    return dest/{"mix":MIX_REVIEW,"video":VIDEO_REVIEW,"studio":STUDIO_REVIEW}[kind]
 
 
 def _read_review(dest,receipt,timeline,kind):
@@ -62,7 +65,7 @@ def _read_review(dest,receipt,timeline,kind):
     if not path.exists() and not path.is_symlink():return None,False
     projects._plain(path,directory=False)
     data=source.read_json(path,2_000_000)
-    ack=MIX_ACK if kind=="mix" else VIDEO_ACK
+    ack={"mix":MIX_ACK,"video":VIDEO_ACK,"studio":STUDIO_ACK}[kind]
     if set(data)!={"observations","sha256","acknowledgment"} or data["acknowledgment"]!=ack or data["sha256"]!=source.json_digest(data["observations"]):
         raise ValueError("Review receipt differs")
     return data,_validate(data["observations"],receipt,timeline,kind)
@@ -96,17 +99,26 @@ def shifted_subtitles(timeline,turns,offset):
     return preview.subtitles({**timeline,"rows":rows},turns)
 
 
-def _context(root,pid,*,allow_fixture=False):
+def _context(root,pid,*,allow_fixture=False,studio=False):
     folder,dest,timeline,record=_mix_context(root,pid)
     reviewed,passed=_read_review(dest,record,timeline,"mix")
     if not passed:raise ValueError("Current mix requires explicit listening PASS")
-    _,base_dest,base_timeline,turns,cast,rows,done,bound=export._context(root,pid,allow_fixture=allow_fixture)
-    if base_dest!=dest or timeline!=base_timeline:raise ValueError("Mixed video source mismatch")
-    base=export._audit(dest,timeline,turns,bound,export.frame_plan(timeline,rows))
+    if studio:
+        from . import studio_neural as sn
+        _,base_dest,base_timeline,turns,cast,rows,done,bound,settings,background=sn._context(root,pid,allow_fixture=allow_fixture)
+        if base_dest!=dest or timeline!=base_timeline:raise ValueError("Mixed studio source mismatch")
+        base=sn._audit(dest,timeline,turns,bound,export.frame_plan(timeline,rows))
+        fmt=bound["video_format"]
+    else:
+        _,base_dest,base_timeline,turns,cast,rows,done,bound=export._context(root,pid,allow_fixture=allow_fixture)
+        if base_dest!=dest or timeline!=base_timeline:raise ValueError("Mixed video source mismatch")
+        base=export._audit(dest,timeline,turns,bound,export.frame_plan(timeline,rows))
+        fmt=bound["neural_binding"]["preview_inputs"]["video_format"]
     plan=scene_plan(timeline,record)
     seal={"base_export_sha256":source.json_digest(base),"mix_sha256":source.json_digest(record),
-          "mix_review_sha256":source.json_digest(reviewed),"video_format":bound["neural_binding"]["preview_inputs"]["video_format"],
+          "mix_review_sha256":source.json_digest(reviewed),"video_format":fmt,
           "test_fixture_only":base["test_fixture_only"]}
+    if studio:seal["variant"]="neural-studio"
     return folder,dest,timeline,turns,record,plan,seal
 
 
@@ -124,7 +136,7 @@ def _receipt(path,plan,seal,streams):
 
 
 def _audit(dest,timeline,turns,record,plan,seal):
-    out=dest/FOLDER;projects._plain(out)
+    out=dest/(STUDIO_FOLDER if seal.get("variant")=="neural-studio" else FOLDER);projects._plain(out)
     if {p.name for p in out.iterdir()}!={VIDEO,SRT,RECEIPT}:raise ValueError("Incomplete mixed export")
     for name in (VIDEO,SRT,RECEIPT):projects._plain(out/name,directory=False)
     if characters._read_file(out/SRT,2_000_000)!=shifted_subtitles(timeline,turns,plan["speech_offset_samples"]):
@@ -144,12 +156,16 @@ def _card(path,size,label):
     im.save(path,"PNG")
 
 
-def compose(root,pid,*,allow_fixture=False):
+def compose(root,pid,*,allow_fixture=False,studio=False):
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
-        ctx=_context(root,pid,allow_fixture=allow_fixture)
+        ctx=_context(root,pid,allow_fixture=allow_fixture,studio=studio)
         _,dest,timeline,turns,record,plan,seal=ctx
-        out=dest/FOLDER
+        out=dest/(STUDIO_FOLDER if studio else FOLDER)
+        if studio:
+            from . import studio_neural as sn
+            base_path=dest/sn.FOLDER/sn.VIDEO
+        else:base_path=dest/export.FOLDER/export.VIDEO
         if out.exists() or out.is_symlink():return {"project_id":pid,"export":_audit(dest,timeline,turns,record,plan,seal)}
         seconds=record["total_frames"]/export.RATE
         if shutil.disk_usage(folder).free<max(100*1024**2,int(seconds*2_000_000)):raise ValueError("Insufficient private disk space")
@@ -158,7 +174,7 @@ def compose(root,pid,*,allow_fixture=False):
             for kind,count in (("intro",plan["intro_frames"]),("speech",plan["speech_frames"]),("outro",plan["outro_frames"])):
                 if not count:continue
                 target=temp/(kind+".mp4")
-                if kind=="speech":inputs=["-i",str(dest/export.FOLDER/export.VIDEO)]
+                if kind=="speech":inputs=["-i",str(base_path)]
                 else:
                     card=temp/(kind+".png");_card(card,preview.SIZES[seal["video_format"]],kind.upper())
                     inputs=["-loop","1","-framerate","25","-i",str(card)]
@@ -174,7 +190,7 @@ def compose(root,pid,*,allow_fixture=False):
                        "-i",str(dest/mix.FOLDER/mix.WAV),"-map","0:v:0","-map","1:a:0","-c:v","copy",
                        "-c:a","aac","-ar","48000","-b:a","160k","-movflags","+faststart",str(staged)],timeout=max(300,int(seconds*8)))
             streams=_decode(staged,record,plan,seal)
-            if _context(root,pid,allow_fixture=allow_fixture)!=ctx:raise ValueError("Mixed inputs changed during export")
+            if _context(root,pid,allow_fixture=allow_fixture,studio=studio)!=ctx:raise ValueError("Mixed inputs changed during export")
             out.mkdir()
             with staged.open("rb") as inp,(out/VIDEO).open("xb") as handle:shutil.copyfileobj(inp,handle)
             with (out/SRT).open("xb") as handle:handle.write(shifted_subtitles(timeline,turns,plan["speech_offset_samples"]))
@@ -182,8 +198,8 @@ def compose(root,pid,*,allow_fixture=False):
         return {"project_id":pid,"export":_audit(dest,timeline,turns,record,plan,seal)}
 
 
-def inspect(root,pid,*,allow_fixture=False):
-    _,dest,timeline,turns,record,plan,seal=_context(root,pid,allow_fixture=allow_fixture)
+def inspect(root,pid,*,allow_fixture=False,studio=False):
+    _,dest,timeline,turns,record,plan,seal=_context(root,pid,allow_fixture=allow_fixture,studio=studio)
     return {"project_id":pid,"export":_audit(dest,timeline,turns,record,plan,seal)}
 
 
@@ -191,10 +207,11 @@ def _qa_context(root,pid,kind):
     if kind=="mix":
         folder,dest,timeline,receipt=_mix_context(root,pid)
         files=[str(dest/mix.FOLDER/mix.WAV)]
-    elif kind=="video":
-        folder,dest,timeline,turns,record,plan,seal=_context(root,pid)
+    elif kind in ("video","studio"):
+        folder,dest,timeline,turns,record,plan,seal=_context(root,pid,studio=kind=="studio")
         receipt=_audit(dest,timeline,turns,record,plan,seal)
-        files=[str(dest/FOLDER/VIDEO),str(dest/FOLDER/SRT)]
+        out=dest/(STUDIO_FOLDER if kind=="studio" else FOLDER)
+        files=[str(out/VIDEO),str(out/SRT)]
     else:raise ValueError("Unknown review kind")
     return folder,dest,timeline,receipt,files
 
@@ -214,7 +231,7 @@ def qa(root,pid,kind,operation,*,acknowledgment=None):
         if operation=="template":
             source.atomic_json(path,value,new=True)
             return {"project_id":pid,"template_path":str(path),"media_paths":files,"review_status":"UNREVIEWED"}
-        ack=MIX_ACK if kind=="mix" else VIDEO_ACK
+        ack={"mix":MIX_ACK,"video":VIDEO_ACK,"studio":STUDIO_ACK}[kind]
         if acknowledgment!=ack:raise ValueError("Explicit full media review acknowledgment required")
         projects._plain(path,directory=False)
         value=source.read_json(path,2_000_000);passed=_validate(value,receipt,timeline,kind)

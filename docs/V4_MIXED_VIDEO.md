@@ -23,3 +23,5 @@ New private mixed-export/episode-mixed.mp4, episode-mixed.srt and receipt.json b
 Review every turn and global criteria; prior approvals do not transfer. No automatic publication or real device acceptance claim. Incomplete mixed-export without receipt can be archived using project-incomplete-status/archive --kind mixed-export under the existing stopped-process rules. No completed artifact replacement.
 
 Corrective CI 45479131328 passed all six jobs (synthetic media, not real model acceptance).
+
+Mixed neural studio variant reuses the compositor with separate source/receipt/review binding (V4_DASHBOARD_MIXED_STUDIO.md). Original mixed export unchanged.

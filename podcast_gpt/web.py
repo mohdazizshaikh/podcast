@@ -24,7 +24,7 @@ from .readiness import inspect as inspect_readiness
 from .setup_wizard import inspect as inspect_setup
 from .projects import list_projects,ID_RE
 from .v4_readiness import inspect as inspect_v4_readiness
-from . import production_overview
+from . import production_overview, dashboard_actions, projects
 
 STYLE="""body{font:16px system-ui;background:#121b2b;color:#f4f7ff;margin:auto;max-width:1100px;padding:28px}
 header{padding:18px;border-bottom:1px solid #53627c}.panel{padding:18px;margin:18px 0;border:1px solid #4c5a70;border-radius:12px}
@@ -47,17 +47,31 @@ def html_page(token:str)->str:
 <p><small>For selecting existing local AI model files and explicitly probing a trusted model interpreter, run SMART_SETUP_WINDOWS.bat. No model downloads or external executable paths are accepted over HTTP.</small></p></section>
 <section class="panel"><h2>V4 personal projects</h2>
 <button data-action="project-list">List private V4 projects</button>
+<h3>Create private project</h3>
+<label>Topic <textarea id="v4Topic" maxlength="2000" rows="2"></textarea></label>
+<label>Language <input id="v4Language" value="Hindi" maxlength="80"></label>
+<label>Minutes <input id="v4Minutes" type="number" min="1" max="60" value="10"></label>
+<label>Presenter names, comma separated <input id="v4Presenters" value="Aarav, Meera, Kabir" maxlength="810"></label>
+<label>Format <select id="v4Format"><option>landscape</option><option>vertical</option><option>square</option></select></label>
+<label>Workflow <select id="v4Workflow"><option>automatic</option><option>manual</option></select></label>
+<label>Input <select id="v4Input"><option>topic</option><option>url</option><option>pdf</option><option>document</option><option>custom_script</option></select></label>
+<label>Research <select id="v4Research"><option>knowledge</option><option>web</option></select></label>
+<button id="v4Create">Create project (local configuration only)</button>
 <label>Project ID <input id="v4ProjectId" maxlength="32" autocomplete="off"></label>
 <button id="v4Readiness">Check selected V4 project readiness (read-only)</button>
 <button id="v4Overview">Production overview / historical estimate</button>
 <div id="v4Summary" aria-live="polite"></div>
+<h3>Explicit local production actions</h3>
+<label><input type="checkbox" id="v4ProcessConsent"> I authorize the selected local processing action. No AI inference or approval is authorized here.</label>
+<select id="v4Process"><option value="project-safe-step">One eligible non-inference production step</option><option value="project-script-visual-edit">Create offline script editor</option><option value="project-script-visual-review">Create script review page</option><option value="project-audio-visual-review">Create audio review page</option><option value="project-pilot-visual-review">Create pilot review page</option><option value="project-final-visual-review">Create final review page</option><option value="project-static-render">Render static preview</option><option value="project-studio-render">Render static studio</option><option value="project-neural-studio-compose">Compose neural studio from saved clips</option><option value="project-mixed-studio-compose">Compose mixed neural studio</option></select>
+<button id="v4Run">Run selected local action</button>
 <h3>Verified local playback</h3>
-<label>Media type <select id="v4MediaKind"><option value="master">Master WAV</option><option value="preview">Static preview</option><option value="neural">Neural video</option><option value="mix">Audio mix</option><option value="mixed">Mixed video</option><option value="studio-preview">Static studio</option><option value="neural-studio">Neural studio</option></select></label>
+<label>Media type <select id="v4MediaKind"><option value="master">Master WAV</option><option value="preview">Static preview</option><option value="neural">Neural video</option><option value="mix">Audio mix</option><option value="mixed">Mixed video</option><option value="studio-preview">Static studio</option><option value="neural-studio">Neural studio</option><option value="mixed-neural-studio">Mixed neural studio</option></select></label>
 <button id="v4MediaCheck">Audit selected media</button>
 <p id="v4MediaInfo">Audit first, then select the matching local file (128 MiB maximum for browser hash check).</p>
 <input type="file" id="v4LocalMedia" accept=".wav,.mp4" disabled><video id="v4Player" controls preload="none" style="max-width:100%;display:none"></video>
 <p><small>File bytes stay in this browser tab; no upload or HTTP media endpoint. Large files: use the displayed local path in your own player.</small></p>
-<small>Use project-create and project-plan CLI for creating and planning. API keys are managed only in the local CLI, not the browser.</small></section>
+<small>Source imports, model inference, cloud consent, API keys and recorded human approvals remain CLI-only.</small></section>
 <section class="panel"><h2>1. Original 45-turn episode</h2>
 <button data-action="init">Create NEW original 45-turn project</button>
 <button data-action="doctor">Check tools</button>
@@ -86,12 +100,14 @@ def html_page(token:str)->str:
 async function send(endpoint,data,portraitRights=false){let opt={method:'POST',headers:{'X-CSRF-Token':token}};
 if(portraitRights)opt.headers['X-Portrait-Rights-Confirmed']='YES';
 if(data instanceof File){opt.body=data;opt.headers['Content-Type']='application/octet-stream'}
+else if(data!==undefined&&data!==null){opt.body=JSON.stringify(data);opt.headers['Content-Type']='application/json'}
 let r=await fetch(endpoint,opt);let j=await r.json();if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
 let manifest=null,blobUrl=null;
 function clearMedia(){manifest=null;let p=document.getElementById('v4Player');p.pause();p.removeAttribute('src');p.load();p.style.display='none';if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}let i=document.getElementById('v4LocalMedia');i.value='';i.disabled=true}
 function showResult(status){
  if(status.phase!=='complete'||!status.result)return;
  let data=status.result;
+ if(status.command==='project-create'&&data.project_id){document.getElementById('v4ProjectId').value=data.project_id;clearMedia();document.getElementById('v4Summary').replaceChildren()}
  if(status.command==='project-production-overview'){
   if(data.project_id!==document.getElementById('v4ProjectId').value.trim())return;
   let area=document.getElementById('v4Summary');area.replaceChildren();
@@ -107,15 +123,29 @@ async function refresh(){
  out.textContent=JSON.stringify(status,null,2);showResult(status);
  if(status.phase==='running')setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
 }
-async function action(name,pid=null,kind=null){try{
+async function action(name,pid=null,kind=null,consent=false){try{
  out.textContent='Starting '+name+'...';
- let receipt=await send('/api/action?cmd='+encodeURIComponent(name)+(pid===null?'':'&project_id='+encodeURIComponent(pid))+(kind===null?'':'&kind='+encodeURIComponent(kind)));
+ let receipt=await send('/api/action?cmd='+encodeURIComponent(name)+(pid===null?'':'&project_id='+encodeURIComponent(pid))+(kind===null?'':'&kind='+encodeURIComponent(kind))+(consent?'&consent=YES':''));
  out.textContent=JSON.stringify(receipt,null,2);
  await refresh();
 }catch(e){out.textContent='BLOCKED: '+e.message}}
 document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>action(b.dataset.action)));
 document.getElementById('v4Readiness').addEventListener('click',()=>{let pid=document.getElementById('v4ProjectId').value.trim();if(!/^[0-9a-f]{32}$/.test(pid)){out.textContent='Enter a valid project ID from the project list';return}action('project-readiness',pid)});
 function currentPid(){let pid=document.getElementById('v4ProjectId').value.trim();if(!/^[0-9a-f]{32}$/.test(pid))throw new Error('Enter a valid project ID');return pid}
+document.getElementById('v4Create').addEventListener('click',async()=>{
+ try{
+  const get=id=>document.getElementById(id).value;
+  const request={topic:get('v4Topic'),language:get('v4Language'),duration_minutes:Number(get('v4Minutes')),presenters:get('v4Presenters').split(',').map(s=>s.trim()),video_format:get('v4Format'),workflow:get('v4Workflow'),input_kind:get('v4Input'),research_mode:get('v4Research')};
+  out.textContent=JSON.stringify(await send('/api/project-create',request),null,2);await refresh();
+ }catch(e){out.textContent='BLOCKED: '+e.message}
+});
+document.getElementById('v4Run').addEventListener('click',()=>{
+ try{
+  if(!document.getElementById('v4ProcessConsent').checked)throw new Error('Explicit local processing consent required');
+  document.getElementById('v4ProcessConsent').checked=false;
+  action(document.getElementById('v4Process').value,currentPid(),null,true);
+ }catch(e){out.textContent='BLOCKED: '+e.message}
+});
 document.getElementById('v4Overview').addEventListener('click',()=>{try{action('project-production-overview',currentPid())}catch(e){out.textContent=e.message}});
 document.getElementById('v4MediaCheck').addEventListener('click',()=>{try{clearMedia();document.getElementById('v4MediaInfo').textContent='Auditing current candidate...';action('project-media-check',currentPid(),document.getElementById('v4MediaKind').value)}catch(e){out.textContent=e.message}});
 for(const id of ['v4ProjectId','v4MediaKind'])document.getElementById(id).addEventListener('input',()=>{clearMedia();document.getElementById('v4MediaInfo').textContent='Audit the current selection first.';document.getElementById('v4Summary').replaceChildren()});
@@ -168,6 +198,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
             self.send_response(code);self.send_header("Content-Type",kind+"; charset=utf-8")
             self.send_header("Cache-Control","no-store");self.send_header("X-Content-Type-Options","nosniff")
             self.send_header("Referrer-Policy","no-referrer")
+            self.send_header("X-Frame-Options","DENY")
             self.send_header("Content-Security-Policy","default-src 'none'; frame-ancestors 'none'") if kind!="text/html" else None
             self.send_header("Content-Length",str(len(payload)));self.end_headers();self.wfile.write(payload)
         def _json(self,code,obj):self._send(code,json.dumps(obj,ensure_ascii=False,default=str).encode("utf-8"))
@@ -189,10 +220,25 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
             size_str=self.headers.get("Content-Length","")
             if not size_str.isdecimal():return self._json(411,{"error":"Content-Length required"})
             size=int(size_str);url=urlsplit(self.path);query=parse_qs(url.query)
-            if url.path=="/api/action":
-                if size!=0:return self._json(400,{"error":"Action body must be empty"})
-                command=query.get("cmd",[""])[0]
-                if command in ("project-readiness","project-production-overview","project-media-check"):
+            if url.path in ("/api/action","/api/project-create"):
+                if url.path=="/api/project-create":
+                    if not 1<=size<=dashboard_actions.CREATE_LIMIT or self.headers.get("Content-Type")!="application/json":return self._json(400,{"error":"Bounded JSON project request required"})
+                    try:
+                        raw=self.rfile.read(size)
+                        if len(raw)!=size:raise ValueError("Incomplete project request")
+                        request=dashboard_actions.parse_request(raw)
+                    except ValueError as err:return self._json(400,{"error":str(err)})
+                    command="project-create";selected=lambda:projects.create(root,request)
+                else:
+                    if size!=0:return self._json(400,{"error":"Action body must be empty"})
+                    command=query.get("cmd",[""])[0]
+                if url.path=="/api/project-create":pass
+                elif command in dashboard_actions.ACTIONS:
+                    pid=query.get("project_id",[""])[0]
+                    if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})
+                    if query.get("consent",[""])[0]!="YES":return self._json(403,{"error":"Explicit local processing consent required"})
+                    selected=lambda:dashboard_actions.run(root,pid,command,acknowledgment=dashboard_actions.ACK)
+                elif command in ("project-readiness","project-production-overview","project-media-check"):
                     pid=query.get("project_id",[""])[0]
                     if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})
                     if command=="project-readiness":selected=lambda:inspect_v4_readiness(root,pid)

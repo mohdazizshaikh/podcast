@@ -82,3 +82,6 @@ Implemented independent neural focus/grid candidate with active speaker motion a
 
 ## Increment 22 — production overview, local playback and historical estimate
 Implemented selected-project read-only dashboard overview, allowlisted structural media manifests, client-local hash-checked playback and same-scope neural stage timing extrapolation. No HTTP file serving, inference controls, live ETA or approval automation. See V4_PRODUCTION_OVERVIEW.md.
+
+## Increment 23 — dashboard project creation and mixed studio
+Implemented bounded JSON project creation, explicit non-inference dashboard actions, independent mixed neural studio export/QA, playback manifest and tenth incomplete-output archive type. Original candidates remain immutable; browser inference/approval, real model and full GUI acceptance pending. See V4_DASHBOARD_MIXED_STUDIO.md.

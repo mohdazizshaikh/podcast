@@ -17,14 +17,14 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Version-bound human listening review | Done | 6/6 CI run 45457590951 (synthetic fixtures) |
 | Audio-only peak normalization, background bed, intro/outro mix | Done | Corrective CI 45479131328 6/6 passed; synthetic PCM |
 | Mixed audio listening review, intro/outro video, shifted SRT and fresh video QA | Done | 6/6 CI 45479131328; synthetic fixture |
-| Safe incomplete-output archive (nine types) | Implemented | Prior seven types CI 45479131328 6/6; studio CI 45483234208 four jobs passed at check |
+| Safe incomplete-output archive (ten types) | Implemented | Prior nine types CI 45483234208 6/6; tenth type mixed studio pending new CI |
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
 | Explicit Wikipedia candidate discovery and source-bound optional human factual review | Implemented | 6/6 CI 45481266847 (offline fixtures) |
 | Broad web search, automated semantic claim verification and corroboration | Not implemented | Pending |
 | Reusable character profiles, authorized PNG library and cast binding | Done | 6/6 CI run 45453165135 (synthetic PNGs) |
 | Opt-in cast-bound personality-aware dialogue prompts | Done | 6/6 CI 45462475819 (mock provider) |
 | Local profile-based portrait preparation brief | Implemented | 6/6 CI 45482554584; no image synthesis |
-| Authorized portrait attachment as immutable profile revision | Implemented | CI 45483234208 four jobs passed at check; no image inference |
+| Authorized portrait attachment as immutable profile revision | Implemented | 6/6 CI 45483234208; no image inference |
 | AI portrait creation and longitudinal memory | Not implemented in V4 | Pending |
 | V4 local Hindi Kokoro adapter with preset/model provenance | Done | 6/6 CI run 45456602766 (fake model fixture) |
 | V4 local CPU SadTalker pilot, source-bound clips and reviewed batch | Done | 6/6 CI 45458379123 (synthetic model runner) |
@@ -38,21 +38,23 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Read-only staged V4 readiness and dashboard action | Done | 6/6 CI run 45461563645 |
 | Selected landscape/vertical/square static preview and measured SRT | Done | 6/6 CI run 45457590951 (short synthetic previews) |
 | Authorized studio background and static focus/grid preview | Implemented | 6/6 CI 45482554584 |
-| Separate neural focus/grid studio, per-turn switching and fresh QA | Implemented | CI 45483234208: four jobs passed at initial check; static listeners; synthetic only |
+| Separate neural focus/grid studio, per-turn switching and fresh QA | Implemented | 6/6 CI 45483234208; static listeners; synthetic only |
 | Full-length real neural video and dynamic camera layouts | Not implemented in V4 | Pending |
 | Offline visual script editing and review JSON import | Done | 6/6 CI 45463360856; actual browser interaction pending |
 | Bounded foreground orchestration and per-action elapsed timing | Done | 6/6 CI 45463360856 |
 | Configured TTS/neural foreground orchestration | Done | 6/6 CI 45464174884 (mock inference) |
 | Persistent media action timing history | Done | 6/6 CI 45464174884; historical only |
 | Offline audio/pilot/final visual QA and JSON import | Done | 6/6 CI 45464174884; browser interaction pending |
-| Selected-project dashboard overview and hash-checked local browser playback | Implemented | New CI pending; browser interaction pending |
-| Historical neural-stage ETA with matched completed timings | Implemented | New CI pending; no live subprocess progress |
-| Full dashboard, automatic/manual orchestration, ETA | Partial | Read-only overview/playback, offline forms and configured CLI runner; full GUI and live ETA pending |
+| Selected-project dashboard overview and hash-checked local browser playback | Implemented | CI 45484187245: three jobs passed at check; browser interaction pending |
+| Browser project creation and explicit local non-inference production actions | Implemented | New CI pending; browser interaction pending |
+| Mixed neural studio export, shifted SRT, separate QA and recovery | Implemented | New CI pending; synthetic only |
+| Historical neural-stage ETA with matched completed timings | Implemented | CI 45484187245: three jobs passed at check; no live subprocess progress |
+| Full dashboard, automatic/manual orchestration, ETA | Partial | Overview/playback, project creation, bounded non-inference actions, offline forms and CLI runner; full GUI and live ETA pending |
 | Real Windows model run and acceptance | Not verified | Local user hardware required |
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify neural studio and new overview/playback/estimate CI. Next actual model setup/pilot, CJK frontends, local portrait inference, mixed neural studio and full dashboard authoring controls. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify overview/playback/estimate and new dashboard/mixed studio CI. Next actual model setup/pilot, CJK frontends, local portrait inference, full dashboard authoring and measured live progress. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

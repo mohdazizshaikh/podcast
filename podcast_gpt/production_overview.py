@@ -15,6 +15,7 @@ MEDIA={
     "mixed":(v4_mixed_video,"export",v4_mixed_video.VIDEO,"video_sha256"),
     "studio-preview":(studio_preview,"studio",studio_preview.VIDEO,"video_sha256"),
     "neural-studio":(studio_neural,"studio",studio_neural.VIDEO,"video_sha256"),
+    "mixed-neural-studio":(v4_mixed_video,"export",v4_mixed_video.VIDEO,"video_sha256"),
 }
 BROWSER_LIMIT=128*1024*1024
 
@@ -30,8 +31,9 @@ def media_check(root,pid,kind):
     if _locked(folder):raise ValueError("Project operation lock present; inspect after it stops")
     module,key,filename,hash_key=MEDIA[kind]
     _,dest,_,_,_,_=v4_audio._context(root,pid)
-    receipt=module.inspect(root,pid)[key]
-    path=dest/module.FOLDER/filename
+    is_mixed_studio=kind=="mixed-neural-studio"
+    receipt=(module.inspect(root,pid,studio=True) if is_mixed_studio else module.inspect(root,pid))[key]
+    path=dest/(v4_mixed_video.STUDIO_FOLDER if is_mixed_studio else module.FOLDER)/filename
     projects._plain(path,directory=False)
     size=path.stat().st_size
     sha=source.digest(path)
