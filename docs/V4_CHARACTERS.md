@@ -25,3 +25,5 @@ You may omit the portrait when creating a metadata-only profile. To create a rev
 ```
 
 Cast assignment is immutable and binds the request and full profile records. Media preflight is a read-only handoff requiring current script self-attested PASS, complete authorized portraits and distinct portrait hashes. It does not generate audio/video or test actual engines. Different files do not prove different identities. Profiles and cast are not injected into older AI drafts; personality-aware script prompting and longitudinal conversational memory remain pending. No automatic downloads, image generation, cloud requests or paid API calls. Profile/cast files and portraits stay outside Git. Hashes detect ordinary changes, not malicious replacement of all manifests.
+
+The media preflight now feeds V4 authorized WAV import and measured timeline. Voice preferences can be inspected with project-voice-status; real engine compatibility remains unverified. See V4_AUDIO.md.

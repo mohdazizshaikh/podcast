@@ -76,6 +76,14 @@ def parse(argv=None):
     for name in ("project-cast-status","project-media-preflight"):
         c=subs.add_parser(name)
         c.add_argument("--project-id",required=True)
+    audio=subs.add_parser("project-audio-import",help="Import authorized PCM WAV bound to a reviewed script turn")
+    audio.add_argument("--project-id",required=True)
+    audio.add_argument("--turn-id",required=True)
+    audio.add_argument("--file",type=Path,required=True)
+    audio.add_argument("--acknowledgment",required=True)
+    for name in ("project-voice-status","project-audio-status","project-audio-finalize","project-audio-show"):
+        v=subs.add_parser(name)
+        v.add_argument("--project-id",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -275,6 +283,14 @@ def execute(a)->dict:
         if action=="project-cast-assign":return characters.assign_from_file(private,a.project_id,a.mapping)
         if action=="project-cast-status":return characters.status(private,a.project_id)
         return characters.prepare_media_binding(private,a.project_id)
+    if action in ("project-voice-status","project-audio-import","project-audio-status","project-audio-finalize","project-audio-show"):
+        from . import v4_audio
+        private=a.workspace.expanduser().absolute()
+        if action=="project-voice-status":return v4_audio.voice_status(private,a.project_id)
+        if action=="project-audio-import":return v4_audio.import_turn(private,a.project_id,a.turn_id,a.file,acknowledgment=a.acknowledgment)
+        if action=="project-audio-status":return v4_audio.inspect(private,a.project_id)
+        if action=="project-audio-finalize":return v4_audio.finalize(private,a.project_id)
+        return v4_audio.show(private,a.project_id)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

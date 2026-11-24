@@ -286,3 +286,5 @@ V4 source-grounded research: explicit 2–4 public HTTPS pages and source-bound 
 V4 manual script editing, immutable revisions and per-version human approval: [review guide](docs/V4_SCRIPT_REVIEW.md). No generalized media production until subsequent implementation and acceptance.
 
 V4 reusable local characters, authorized PNG portraits, voice identity preferences and cast assignment: [character guide](docs/V4_CHARACTERS.md). The media preflight binds current reviewed text and portrait hashes; actual image/voice generation and generalized rendering remain pending.
+
+V4 authorized speech import, per-turn PCM receipts and measured audio timeline: [audio guide](docs/V4_AUDIO.md). Generalized TTS and video rendering remain pending.

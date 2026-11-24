@@ -55,3 +55,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Research/citation CI completed 6/6 (45451883118); real source and claim review remain pending.
 - [ ] Verify latest script review and character-library CI; test actual authorized portrait assets, voice compatibility, generalized audio timeline, image generation and character-aware prompts. The current media preflight does not invoke any model.
+
+- [x] Script review and character library CI passed 6/6 each (45452467622, 45453165135); physical media assets remain unverified.
+- [ ] Verify V4 PCM import/timeline CI; implement generalized free/local TTS with real language/preset verification, audio composition/normalization, human audio review and dynamic rendering. No actual generated speech proof yet.

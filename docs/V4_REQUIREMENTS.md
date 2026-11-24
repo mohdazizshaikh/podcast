@@ -37,3 +37,6 @@ Implemented editable JSON templates, immutable revision chain, current-version i
 
 ## Increment 7 — reusable character library and voice identity preferences
 Implemented immutable reusable profile versions, explicit authorized PNG import, hash verification, 1–10 presenter cast binding, private profile inspection, and read-only current-approved-script/portrait handoff. Actual image generation, persistent conversational memory, personality-aware script prompting and real multilingual voice compatibility remain pending. See V4_CHARACTERS.md.
+
+## Increment 8 — authorized audio import and measured timeline
+Implemented current approved script/cast-bound PCM WAV import, immutable per-turn receipts, version isolation, missing-turn progress and exact integer sample timeline with fixed gaps and duration tolerance indicator. Voice inventory is metadata only; actual generalized TTS, audio composition, quality review and video rendering remain pending. See V4_AUDIO.md.

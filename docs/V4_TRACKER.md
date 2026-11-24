@@ -11,11 +11,12 @@ Last update: 2026-11-24. Status means implementation or automated verification o
 | Bounded PDF/DOCX/TXT/MD/custom script and HTTPS input | Done | 6/6 run 45448095544 (fixture-only HTTPS) |
 | Persistent model path configuration / guided installs | Partial | Inventory only |
 | Full dialogue drafting and resumable checkpoints | Done | 6/6 CI run 45449334764 (synthetic 60-minute/10-presenter coverage) |
-| Versioned manual script editing and human script review | Implemented | 45452467622: 4 core jobs passed, remaining Windows/packaging pending at check |
-| Measured audio timeline and actual rendering | Not implemented in V4 | Pending |
+| Versioned manual script editing and human script review | Done | 6/6 CI run 45452467622 |
+| Version-bound authorized PCM imports and measured audio timeline | Implemented | New CI pending; synthetic WAV fixtures |
+| Master audio composition, audio QA and generalized rendering | Not implemented in V4 | Pending |
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
 | Automatic research discovery, semantic claim verification and human fact-checking | Not implemented | Pending |
-| Reusable character profiles, authorized PNG library and cast binding | Implemented | New CI pending; synthetic PNG fixtures |
+| Reusable character profiles, authorized PNG library and cast binding | Done | 6/6 CI run 45453165135 (synthetic PNGs) |
 | AI portrait creation, personality-aware prompting and longitudinal memory | Not implemented in V4 | Pending |
 | Multilingual TTS and 1–10 character general source schema | Not implemented in V4 | Pending |
 | 1–60 minute landscape/vertical/square video rendering | Planning metadata only | Pending |
@@ -24,7 +25,7 @@ Last update: 2026-11-24. Status means implementation or automated verification o
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify revision/review and character-library CI, then implement generalized measured audio timeline and voice engine compatibility, personality-aware prompting, automatic source discovery and claim verification, and generalized media rendering. Do not prematurely replace the V3 verified pipeline.
+Verify audio import/timeline CI, then implement actual generalized TTS adapters, audio composition/QA, personality-aware prompting, automatic source discovery and claim verification, and generalized media rendering. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

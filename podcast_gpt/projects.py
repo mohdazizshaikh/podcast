@@ -169,6 +169,10 @@ def inspect(root:Path,pid:str):
     from . import characters
     if (folder/characters.CAST).exists() or (folder/characters.CAST).is_symlink():
         result["cast"]=characters.status(root,pid)
+        if result.get("script_review",{}).get("human_script_self_attested_pass") and result["cast"].get("all_portraits_present"):
+            from . import v4_audio
+            if (folder/v4_audio.FOLDER).exists() or (folder/v4_audio.FOLDER).is_symlink():
+                result["audio"]=v4_audio.inspect(root,pid)
     return result
 
 
