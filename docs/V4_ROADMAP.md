@@ -44,3 +44,5 @@ Neural pilot and candidate export CI completed 6/6 each (45458379123, 4545884187
 Combined acceptance CI 45461563645 had four core jobs passed at initial check. Saved local model paths, eSpeak fallback and character-aware prompts implemented (new CI pending). Next visual editing/review, orchestration, safe installation workflow and wider neural TTS; actual hardware acceptance remains mandatory.
 
 Acceptance CI passed 6/6 (45461563645); model-config/eSpeak/persona CI 45462475819 passed five core jobs, packaging pending at check. Combined workflow controls implemented (CI pending). Next wider natural voices, actual local pilot, graphical media QA, progress and model asset setup. See V4_WORKFLOW.md.
+
+Model-config/eSpeak/persona CI passed 6/6 (45462475819). Workflow CI 45463360856 had three jobs passed at check. Combined media orchestration, timing and visual QA implemented, CI pending. Next wider natural TTS, recovery, audio processing and research/portrait workflows.

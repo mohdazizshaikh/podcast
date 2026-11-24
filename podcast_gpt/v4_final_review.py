@@ -72,15 +72,20 @@ def template(root,pid):
                 "subtitle_path":str(dest/export.FOLDER/export.SRT),"review_status":"UNREVIEWED"}
 
 
-def record(root,pid,*,acknowledgment):
+def record(root,pid,*,acknowledgment,input_file=None):
     if acknowledgment!=ACK:raise ValueError("Explicit full-episode viewing acknowledgment required")
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         _,dest,receipt,turns=_context(root,pid)
         if _read(dest,receipt,turns):raise ValueError("Final review cannot be overwritten")
         path=folder/("final-review-"+source.json_digest(receipt)+".json")
-        projects._plain(path,directory=False)
-        value=_validate(source.read_json(path,2_000_000),receipt,turns)
+        if input_file is None:
+            projects._plain(path,directory=False)
+            data=source.read_json(path,2_000_000)
+        else:
+            from .visual_media_review import read_input
+            data=read_input(input_file,2_000_000)
+        value=_validate(data,receipt,turns)
         saved={"observations":value,"observations_sha256":source.json_digest(value),"acknowledgment":ACK}
         source.atomic_json(dest/RECORD,saved,new=True)
         return _summary(pid,receipt,saved)

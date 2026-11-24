@@ -74,15 +74,20 @@ def template(root,pid):
                 "review_status":"UNREVIEWED"}
 
 
-def record(root,pid,*,acknowledgment):
+def record(root,pid,*,acknowledgment,input_file=None):
     if acknowledgment!=ACK:raise ValueError("Explicit complete listening acknowledgment required")
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         _,dest,timeline,sha=_context(root,pid)
         if _read(dest,timeline,sha) is not None:raise ValueError("Existing audio review cannot be overwritten")
         path=folder/("audio-review-"+sha+".json")
-        projects._plain(path,directory=False)
-        value=_validate(source.read_json(path,300_000),timeline,sha)
+        if input_file is None:
+            projects._plain(path,directory=False)
+            data=source.read_json(path,300_000)
+        else:
+            from .visual_media_review import read_input
+            data=read_input(input_file,300_000)
+        value=_validate(data,timeline,sha)
         saved={"observations":value,"observations_sha256":source.json_digest(value),"acknowledgment":ACK}
         source.atomic_json(dest/REVIEW,saved,new=True)
         return _status(pid,sha,saved)

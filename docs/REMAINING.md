@@ -77,3 +77,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Combined full QA/recovery/readiness CI passed 6/6 (45461563645).
 - [ ] Verify model-config/eSpeak/persona and new workflow CI, real pip installation and actual browser editing/export. Third-party model installation, natural multilingual TTS, full GUI, live ETA, audio/video visual QA, automatic media generation and real Windows model acceptance remain pending.
+
+- [x] Model-config/eSpeak/persona CI 6/6 (45462475819).
+- [ ] Verify workflow and new media CI, actual browser/model/device testing, live ETA, integrated player/dashboard, natural multilingual voices, additional recovery, image generation, audio processing and research discovery.

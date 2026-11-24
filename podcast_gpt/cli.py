@@ -76,6 +76,14 @@ def parse(argv=None):
     auto.add_argument("--acknowledgment")
     auto.add_argument("--max-steps",type=int,default=3)
     auto.add_argument("--allow-local-ai",action="store_true")
+    auto.add_argument("--kokoro-ack")
+    auto.add_argument("--espeak-ack")
+    auto.add_argument("--neural-ack")
+    prog=subs.add_parser("project-production-progress")
+    prog.add_argument("--project-id",required=True)
+    qa=subs.add_parser("project-media-review-visual")
+    qa.add_argument("--project-id",required=True)
+    qa.add_argument("--kind",choices=("audio","pilot","final"),required=True)
     char=subs.add_parser("character-create",help="Save a reusable local character profile and optional authorized PNG")
     char.add_argument("--profile",type=Path,required=True)
     char.add_argument("--portrait",type=Path)
@@ -113,7 +121,9 @@ def parse(argv=None):
                  "project-preview-render","project-preview-audit"):
         r=subs.add_parser(name)
         r.add_argument("--project-id",required=True)
-        if name=="project-audio-review-record":r.add_argument("--acknowledgment",required=True)
+        if name=="project-audio-review-record":
+            r.add_argument("--acknowledgment",required=True)
+            r.add_argument("--file",type=Path)
     neural4=subs.add_parser("project-neural-run",help="Explicit local SadTalker CPU pilot or reviewed batch")
     neural4.add_argument("--project-id",required=True)
     neural4.add_argument("--model",type=Path)
@@ -128,7 +138,9 @@ def parse(argv=None):
     for name in ("project-neural-status","project-neural-pilot-template","project-neural-pilot-record"):
         n=subs.add_parser(name)
         n.add_argument("--project-id",required=True)
-        if name=="project-neural-pilot-record":n.add_argument("--acknowledgment",required=True)
+        if name=="project-neural-pilot-record":
+            n.add_argument("--acknowledgment",required=True)
+            n.add_argument("--file",type=Path)
     for name in ("project-neural-compose","project-neural-audit"):
         e=subs.add_parser(name)
         e.add_argument("--project-id",required=True)
@@ -138,6 +150,7 @@ def parse(argv=None):
         q.add_argument("--project-id",required=True)
         if name in ("project-final-review-record","project-neural-archive"):q.add_argument("--acknowledgment",required=True)
         if name=="project-neural-archive":q.add_argument("--chunk-id",required=True)
+        if name=="project-final-review-record":q.add_argument("--file",type=Path)
     config=subs.add_parser("model-configure")
     config.add_argument("--engine",choices=("kokoro","sadtalker","espeak"),required=True)
     for key in ("model","voices","python","executable"):config.add_argument("--"+key,type=Path)
@@ -376,7 +389,7 @@ def execute(a)->dict:
         from . import v4_audio_review,v4_preview
         private=a.workspace.expanduser().absolute()
         if action=="project-audio-review-template":return v4_audio_review.template(private,a.project_id)
-        if action=="project-audio-review-record":return v4_audio_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
+        if action=="project-audio-review-record":return v4_audio_review.record(private,a.project_id,acknowledgment=a.acknowledgment,input_file=a.file)
         if action=="project-audio-review-status":return v4_audio_review.inspect(private,a.project_id)
         if action=="project-preview-render":return v4_preview.render(private,a.project_id)
         return v4_preview.inspect(private,a.project_id)
@@ -385,7 +398,7 @@ def execute(a)->dict:
         private=a.workspace.expanduser().absolute()
         if action=="project-neural-status":return v4_neural.inspect(private,a.project_id)
         if action=="project-neural-pilot-template":return v4_neural.template(private,a.project_id)
-        if action=="project-neural-pilot-record":return v4_neural.record(private,a.project_id,acknowledgment=a.acknowledgment)
+        if action=="project-neural-pilot-record":return v4_neural.record(private,a.project_id,acknowledgment=a.acknowledgment,input_file=a.file)
         from . import model_config
         paths=model_config.resolve(private,"sadtalker",{"model":a.model,"python":a.python},use_config=a.use_config)
         return v4_neural.generate(private,a.project_id,**paths,mode=a.mode,max_new=a.max_new,
@@ -399,7 +412,7 @@ def execute(a)->dict:
         from . import v4_final_review,v4_recovery,v4_readiness
         private=a.workspace.expanduser().absolute()
         if action=="project-final-review-template":return v4_final_review.template(private,a.project_id)
-        if action=="project-final-review-record":return v4_final_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
+        if action=="project-final-review-record":return v4_final_review.record(private,a.project_id,acknowledgment=a.acknowledgment,input_file=a.file)
         if action=="project-final-review-status":return v4_final_review.inspect(private,a.project_id)
         if action=="project-neural-recovery-status":return v4_recovery.inspect(private,a.project_id)
         if action=="project-neural-archive":return v4_recovery.archive(private,a.project_id,a.chunk_id,acknowledgment=a.acknowledgment)
@@ -425,7 +438,14 @@ def execute(a)->dict:
     if action=="project-auto-step":
         from . import v4_orchestrator
         return v4_orchestrator.run(a.workspace.expanduser().absolute(),a.project_id,execute=a.execute,
-            acknowledgment=a.acknowledgment,max_steps=a.max_steps,allow_local_ai=a.allow_local_ai)
+            acknowledgment=a.acknowledgment,max_steps=a.max_steps,allow_local_ai=a.allow_local_ai,
+            kokoro_ack=a.kokoro_ack,espeak_ack=a.espeak_ack,neural_ack=a.neural_ack)
+    if action=="project-production-progress":
+        from . import v4_progress
+        return v4_progress.inspect(a.workspace.expanduser().absolute(),a.project_id)
+    if action=="project-media-review-visual":
+        from . import visual_media_review
+        return visual_media_review.create(a.workspace.expanduser().absolute(),a.project_id,kind=a.kind)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

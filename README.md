@@ -302,3 +302,5 @@ V4 full episode review, stopped neural scratch archive and selected-project read
 V4 saved local model paths, optional eSpeak non-neural multilingual fallback and opt-in character-aware dialogue: [combined guide](docs/V4_MODEL_VOICES_PERSONA.md). No automatic installation or real model quality certification.
 
 V4 optional dependency setup, offline visual script editor and bounded foreground production runner: [workflow guide](docs/V4_WORKFLOW.md). Actual model acceptance and complete one-click production remain pending.
+
+V4 configured media orchestration, private timing history and visual media QA: [media workflow guide](docs/V4_MEDIA_WORKFLOW.md). No live ETA or automatic approval.

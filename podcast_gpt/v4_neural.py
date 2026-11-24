@@ -172,7 +172,7 @@ def template(root,pid):
                 "pilot_clips":[str(dest/FOLDER/k/"face.mp4") for k in targets]}
 
 
-def record(root,pid,*,acknowledgment):
+def record(root,pid,*,acknowledgment,input_file=None):
     if acknowledgment!=REVIEW_ACK:raise ValueError("Explicit pilot viewing acknowledgment required")
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
@@ -181,8 +181,13 @@ def record(root,pid,*,acknowledgment):
         if _review(dest,binding,targets,done) is not None:raise ValueError("Pilot review cannot be overwritten")
         bound=_pilot_binding(binding,targets,done)
         path=folder/("neural-pilot-"+source.json_digest(bound)+".json")
-        projects._plain(path,directory=False)
-        value=source.read_json(path,300000)
+        if input_file is None:
+            projects._plain(path,directory=False)
+            data=source.read_json(path,300000)
+        else:
+            from .visual_media_review import read_input
+            data=read_input(input_file,300000)
+        value=data
         if set(value)!={"schema","binding","observations"} or value["schema"]!=1 or value["binding"]!=bound:
             raise ValueError("Pilot review template is stale")
         obs=_validate_observations(value["observations"],targets)

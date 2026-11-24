@@ -9,7 +9,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Free provider fallback and outline planner | Done | 6/6 run 45445343089 (mock AI only) |
 | Private project manager and Windows DPAPI | Done | 6/6 run 45447184831 (Windows synthetic DPAPI test) |
 | Bounded PDF/DOCX/TXT/MD/custom script and HTTPS input | Done | 6/6 run 45448095544 (fixture-only HTTPS) |
-| Persistent model path configuration / guided installs | Partial | 45462475819: 5 core jobs passed; explicit optional pip installer implemented, new CI pending; third-party models still manual |
+| Persistent model path configuration / guided installs | Partial | 6/6 CI 45462475819; optional pip installer CI 45463360856: 3 jobs passed at check; third-party models manual |
 | Full dialogue drafting and resumable checkpoints | Done | 6/6 CI run 45449334764 (synthetic 60-minute/10-presenter coverage) |
 | Versioned manual script editing and human script review | Done | 6/6 CI run 45452467622 |
 | Version-bound authorized PCM imports and measured audio timeline | Done | 6/6 CI run 45455331211 (synthetic WAVs) |
@@ -19,11 +19,11 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
 | Automatic research discovery, semantic claim verification and human fact-checking | Not implemented | Pending |
 | Reusable character profiles, authorized PNG library and cast binding | Done | 6/6 CI run 45453165135 (synthetic PNGs) |
-| Opt-in cast-bound personality-aware dialogue prompts | Implemented | 45462475819: 5 core jobs passed; packaging pending at check |
+| Opt-in cast-bound personality-aware dialogue prompts | Done | 6/6 CI 45462475819 (mock provider) |
 | AI portrait creation and longitudinal memory | Not implemented in V4 | Pending |
 | V4 local Hindi Kokoro adapter with preset/model provenance | Done | 6/6 CI run 45456602766 (fake model fixture) |
 | V4 local CPU SadTalker pilot, source-bound clips and reviewed batch | Done | 6/6 CI 45458379123 (synthetic model runner) |
-| Local eSpeak multilingual fallback and installed language inventory | Implemented | 45462475819: 5 core jobs passed; packaging pending at check |
+| Local eSpeak multilingual fallback and installed language inventory | Done | 6/6 CI 45462475819 (fake executable) |
 | Wider neural multilingual TTS and Edge adapter | Not implemented in V4 | Pending |
 | Selected-format neural candidate composition, measured SRT and structural audit | Done | 6/6 CI 45458841874 (short synthetic fixture exports) |
 | Full candidate-specific human video QA | Done | 6/6 CI run 45461563645 |
@@ -31,14 +31,17 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Read-only staged V4 readiness and dashboard action | Done | 6/6 CI run 45461563645 |
 | Selected landscape/vertical/square static preview and measured SRT | Done | 6/6 CI run 45457590951 (short synthetic previews) |
 | Full-length real neural video and dynamic camera layouts | Not implemented in V4 | Pending |
-| Offline visual script editing and review JSON import | Implemented | New CI pending; browser interaction not yet tested |
-| Bounded foreground orchestration and per-action elapsed timing | Implemented | New CI pending; no automatic approval or model media inference |
-| Full dashboard, automatic/manual orchestration, ETA | Partial | Listing/readiness, offline script UI and bounded CLI runner; no live ETA |
+| Offline visual script editing and review JSON import | Implemented | 45463360856: 3 jobs passed at check; browser interaction pending |
+| Bounded foreground orchestration and per-action elapsed timing | Implemented | 45463360856: 3 jobs passed at check |
+| Configured TTS/neural foreground orchestration | Implemented | New CI pending |
+| Persistent media action timing history | Implemented | New CI pending; historical only |
+| Offline audio/pilot/final visual QA and JSON import | Implemented | New CI pending |
+| Full dashboard, automatic/manual orchestration, ETA | Partial | Offline script/media QA and configured CLI runner; no live ETA |
 | Real Windows model run and acceptance | Not verified | Local user hardware required |
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify saved-model/eSpeak/persona and combined workflow CI. Next implement wider natural neural TTS, actual model setup/pilot, graphical media QA, live measured progress, more recovery modes and research/portrait workflows. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify workflow and combined media orchestration/QA CI. Next wider natural neural TTS, actual model setup/pilot, more recovery modes, audio processing and research/portrait workflows. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

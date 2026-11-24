@@ -61,3 +61,6 @@ Implemented private saved Kokoro/SadTalker/eSpeak paths with explicit reuse/repl
 
 ## Increment 15 — combined workflow controls
 Implemented allowlisted optional app-venv dependency plan/install, private offline visual script editor and review JSON export/import, and explicitly bounded foreground orchestration with optional offline AI and measured action durations. Human gates remain mandatory. Third-party models, live ETA, media QA visual UI and real device acceptance remain pending. See V4_WORKFLOW.md.
+
+## Increment 16 — configured media workflow and visual QA
+Implemented explicit configured Kokoro/eSpeak/SadTalker bounded orchestration, private measured action history and offline audio/pilot/final QA forms with bound JSON import. No live ETA or embedded playback. See V4_MEDIA_WORKFLOW.md.
