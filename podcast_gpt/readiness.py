@@ -62,6 +62,17 @@ def inspect(root: Path, *, allow_short: bool=False) -> dict:
         result["all_source_and_media_structurally_verified"]=False
         return result
     mark("original_voice_source_session","clear")
+    from .media import EXPORT_LOCK
+    from .neural import LOCK as CPU_LOCK
+    for key, name in (("media_export_session", EXPORT_LOCK), ("cpu_neural_session", CPU_LOCK)):
+        lock = root / "source" / name
+        if lock.exists() or lock.is_symlink():
+            mark(key, "blocked", reason="Private media session active or interrupted; inspect lock manually", lock_path=str(lock))
+            result["blocked_stages"] = [key]
+            result["next_safe_action"] = "STOP — media session active or interrupted; inspect the private lock before retrying"
+            result["all_source_and_media_structurally_verified"] = False
+            return result
+        mark(key, "clear")
     project_path=root/"project.json"
     if not project_path.exists() and not project_path.is_symlink():
         mark("script","missing")

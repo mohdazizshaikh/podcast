@@ -92,3 +92,17 @@ def test_readiness_refuses_a_half_written_or_crashed_voice_session(private_studi
     report=readiness.inspect(root,allow_short=True)
     assert report["checks"]["original_voice_source_session"]["status"]=="clear"
     assert report["checks"]["original_voice_files"]["status"]=="technically_valid_unbound"
+
+
+
+def test_readiness_stops_during_export_or_cpu_session(private_studio):
+    from podcast_gpt import media, neural
+    with media.export_lock(private_studio):
+        report = readiness.inspect(private_studio, allow_short=True)
+        assert report["blocked_stages"] == ["media_export_session"]
+        assert not report["all_source_and_media_structurally_verified"]
+    lock = private_studio / "source" / neural.LOCK
+    lock.write_text("active or interrupted", encoding="ascii")
+    report = readiness.inspect(private_studio, allow_short=True)
+    assert report["blocked_stages"] == ["cpu_neural_session"]
+    assert lock.exists()

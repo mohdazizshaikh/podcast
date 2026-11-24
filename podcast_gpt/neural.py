@@ -14,7 +14,7 @@ import time
 import uuid
 from pathlib import Path
 
-from .media import FPS, WIDTH, HEIGHT, cmd, streams, full_decode, original_audio, timeline, srt_stamp, subtitle, portrait_card
+from .media import FPS, WIDTH, HEIGHT, cmd, streams, full_decode, original_audio, timeline, srt_stamp, subtitle, portrait_card, export_lock
 from .source import SPEAKERS, CHUNK_RE, atomic_json, digest, json_digest, read_json, verify_chunks, verify_source, workspace_path
 
 LOCK = "cpu-neural-exclusive.lock"
@@ -297,6 +297,12 @@ def _concat_video(chunks:list[Path],tmp:Path, duration:float) -> Path:
 
 def compose_neural(root:Path,*,allow_short:bool=False) -> dict:
     """No model audio in final: exact 45 original Hindi WAVs and pauses."""
+    root=workspace_path(root)
+    with export_lock(root):
+        return _compose_neural_locked(root, allow_short=allow_short)
+
+
+def _compose_neural_locked(root:Path,*,allow_short:bool=False) -> dict:
     root=workspace_path(root);src=verify_source(root,allow_short=allow_short)
     chunks,done=verified_previews(root,allow_short=allow_short)
     if len(done)!=chunks["count"]:raise ValueError("All genuine original face previews must be decoded first")
@@ -383,8 +389,10 @@ def compose_neural(root:Path,*,allow_short:bool=False) -> dict:
         verify_source(root,allow_short=allow_short)
         verified_chunks,again=verified_previews(root,allow_short=allow_short)
         if again!=done:raise ValueError("Neural speaking clips changed while composing")
-        captions.write_text(subtitle(rows),encoding="utf-8")
-        shutil.copyfile(staged,target)
+        with captions.open("x", encoding="utf-8") as handle:
+            handle.write(subtitle(rows))
+        with staged.open("rb") as src_video, target.open("xb") as dst_video:
+            shutil.copyfileobj(src_video, dst_video)
         result={"schema":3,"status":"candidate_full_original_hindi_neural_video_independently_decoded",
                 "source_binding":json_digest(src),"chunks_binding":json_digest(verified_chunks),
                 "verified_preview_sha256":done,"video_sha256":digest(target),

@@ -12,6 +12,8 @@ import shutil
 import subprocess
 import tempfile
 import wave
+import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -20,6 +22,35 @@ from .source import SPEAKERS, RATE, digest, json_digest, load_project, verify_so
 
 FPS=24
 WIDTH, HEIGHT=1280,720
+EXPORT_LOCK = "media-export-exclusive.lock"
+
+
+@contextmanager
+def export_lock(root: Path):
+    """Serialize STATIC and COMPOSE across CLI/browser processes."""
+    root = workspace_path(root)
+    folder = root / "source"
+    if folder.is_symlink() or not folder.is_dir():
+        raise ValueError("Private source directory missing or symlinked; run INIT")
+    lock = folder / EXPORT_LOCK
+    marker = "MEDIA_EXPORT_SESSION=" + uuid.uuid4().hex + "\n"
+    try:
+        with lock.open("x", encoding="ascii") as handle:
+            handle.write(marker)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except FileExistsError as exc:
+        raise ValueError("Another or interrupted media export lock exists; inspect manually") from exc
+    try:
+        yield
+    finally:
+        if lock.is_file() and not lock.is_symlink():
+            try:
+                if lock.read_text(encoding="ascii") == marker:
+                    lock.unlink()
+            except (OSError, UnicodeError):
+                pass
+
 
 
 def tools_ready() -> dict:
@@ -43,25 +74,44 @@ def streams(path: Path) -> dict:
     audio=[x for x in data.get("streams",[]) if x.get("codec_type")=="audio"]
     if len(video)!=1 or len(audio)!=1:
         raise ValueError("Video must have EXACTLY one real video and one audio stream")
-    length=float(data.get("format",{}).get("duration",0))
-    if not math.isfinite(length) or length<=0:
+    if video[0].get("disposition", {}).get("attached_pic"):
+        raise ValueError("Attached cover artwork is not a real video stream")
+    # MP4 container length is not evidence of the actual audio/video coverage.
+    # Never substitute the container duration for an unavailable stream length.
+    try:
+        length = float(data.get("format", {}).get("duration", 0))
+        video_length = float(video[0]["duration"])
+        audio_length = float(audio[0]["duration"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("Video has missing/invalid measured stream duration") from exc
+    if any(not math.isfinite(x) or x <= 0 for x in (length, video_length, audio_length)):
         raise ValueError("Video has invalid measured duration")
     return {"duration":length,"width":int(video[0]["width"]),"height":int(video[0]["height"]),
             "video_codec":video[0]["codec_name"],"audio_codec":audio[0]["codec_name"],
             "audio_rate":int(audio[0].get("sample_rate",0)),
-            "video_duration":float(video[0].get("duration",length)),
-            "audio_duration":float(audio[0].get("duration",length))}
+            "video_duration":video_length,
+            "audio_duration":audio_length}
 
 
 def full_decode(mp4: Path, *, seconds: float, require_720: bool=False) -> dict:
+    if not math.isfinite(seconds) or seconds <= 0:
+        raise ValueError("Invalid signed original PCM duration")
     d=streams(mp4)
     if d["width"] < 200 or d["height"] < 200 or d["video_codec"] not in ("h264", "mpeg4", "vp9", "av1"):
         raise ValueError("Video codec/dimensions unsupported")
     if require_720 and (d["width"], d["height"])!=(WIDTH,HEIGHT):
         raise ValueError("Final exported video is not 1280x720")
-    if abs(d["duration"]-seconds)>max(0.45,seconds*.025):
+    if require_720 and (d["video_codec"], d["audio_codec"], d["audio_rate"]) != ("h264", "aac", 48000):
+        raise ValueError("Final export must be H.264 with 48 kHz AAC")
+    # Final exports have deterministic PCM and CFR timelines: a percentage
+    # tolerance would accept 15+ missing seconds in a ten-minute episode.
+    visual_tolerance = .45 if require_720 else max(.45, seconds*.025)
+    audio_tolerance = .5 if require_720 else max(.5, seconds*.028)
+    if abs(d["duration"]-seconds)>visual_tolerance:
         raise ValueError("Video does not match signed original PCM duration")
-    if abs(d["audio_duration"]-seconds)>max(0.5,seconds*.028):
+    if abs(d["video_duration"]-seconds)>visual_tolerance:
+        raise ValueError("Actual video stream timeline coverage is incomplete")
+    if abs(d["audio_duration"]-seconds)>audio_tolerance:
         raise ValueError("Original Hindi AAC timeline coverage is incomplete")
     cmd(["ffmpeg","-hide_banner","-v","error","-xerror","-i",str(mp4),
          "-map","0:v:0","-f","null","-"],timeout=max(100,math.ceil(seconds*5)))
@@ -144,6 +194,12 @@ def _images_concat(root: Path, rows: list[dict], tmp: Path) -> Path:
 
 def render_static(root: Path, *, allow_short: bool=False) -> dict:
     root=workspace_path(root)
+    with export_lock(root):
+        return _render_static_locked(root, allow_short=allow_short)
+
+
+def _render_static_locked(root: Path, *, allow_short: bool=False) -> dict:
+    root=workspace_path(root)
     src=verify_source(root,allow_short=allow_short)
     target=root/"exports"/"original_hindi_static.mp4"
     report_path=root/"exports"/"original_hindi_static.json"
@@ -175,7 +231,9 @@ def render_static(root: Path, *, allow_short: bool=False) -> dict:
         verify_source(root,allow_short=allow_short)
         target.parent.mkdir(exist_ok=True)
         with captions.open("x",encoding="utf-8") as f:f.write(subtitle(rows))
-        shutil.copyfile(staging,target)
+        # Exclusive creation also refuses an independently introduced target.
+        with staging.open("rb") as src_video, target.open("xb") as dst_video:
+            shutil.copyfileobj(src_video, dst_video)
         result={"schema":3,"status":"original_static_video_structurally_verified_not_lipsync",
                 "source_binding":json_digest(src),"source_seconds":src["original_seconds"],
                 "video_sha256":digest(target),"srt_sha256":digest(captions),
