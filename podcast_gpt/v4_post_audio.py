@@ -68,12 +68,20 @@ def _mix_blocks(dest,timeline,assets,settings):
             samples=assets[role][2];p=max(map(abs,samples))
             yield _bytes(_scale(s,PEAK,p) for s in samples)
     cursor=0;total=timeline["total_frames"]
+    duck=settings.get("duck_percent",0);level=10000;hold=0
+    # Fixed 10 ms attack, 150 ms hold, 250 ms release at 16 kHz.
+    floor=10000-duck*100
     for chunk in master._chunks(dest,timeline):
         samples=_samples(chunk)
         mixed=array.array("h")
         for s in samples:
             voice=_scale(s,speech_target,peak)
             music=0
+            if bed_samples and duck:
+                if abs(voice)>=512:hold=2400
+                if hold:
+                    level=max(floor,level-63);hold-=1
+                else:level=min(10000,level+3)
             if bed_samples:
                 # 0.5-second overall fade, plus loop-edge fades to reduce clicks.
                 j=cursor%len(bed_samples)
@@ -83,6 +91,7 @@ def _mix_blocks(dest,timeline,assets,settings):
                 music=_scale(bed_samples[j],bed_target,bed_peak)
                 music=_scale(music,fade,8000)
                 if edge:music=_scale(music,loopfade,edge)
+                if duck:music=_scale(music,level,10000)
             value=voice+music
             if not -32768<=value<=32767:raise ValueError("Unexpected mix clipping")
             mixed.append(value);cursor+=1
@@ -93,10 +102,13 @@ def _mix_blocks(dest,timeline,assets,settings):
         yield _bytes(_scale(s,PEAK,p) for s in samples)
 
 
-def _settings(speech_peak,bed_peak):
+def _settings(speech_peak,bed_peak,duck_percent=0):
     if type(speech_peak) is not int or not 8000<=speech_peak<=24000 or type(bed_peak) is not int or not 0<=bed_peak<=6000:
         raise ValueError("Speech peak must be 8000–24000 and bed peak 0–6000 PCM units")
-    return {"speech_peak":speech_peak,"bed_peak":bed_peak,"mix_algorithm":"integer_peak_v1"}
+    if type(duck_percent) is not int or not 0<=duck_percent<=90:raise ValueError("Duck percent must be 0–90")
+    result={"speech_peak":speech_peak,"bed_peak":bed_peak,"mix_algorithm":"integer_peak_v1"}
+    if duck_percent:result.update(mix_algorithm="integer_peak_duck_v2",duck_percent=duck_percent)
+    return result
 
 
 def _ctx(root,pid):
@@ -122,7 +134,7 @@ def _audit(dest,binding,timeline,receipt):
     for name in ("receipt.json",WAV):projects._plain(out/name,directory=False)
     saved=source.read_json(out/"receipt.json",32000)
     settings=saved["settings"]
-    if _settings(settings["speech_peak"],settings["bed_peak"])!=settings:raise ValueError("Invalid mix settings")
+    if _settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0))!=settings:raise ValueError("Invalid mix settings")
     roles=saved["assets"]
     if not isinstance(roles,dict) or not set(roles)<=set(ROLES):raise ValueError("Invalid mix asset inventory")
     if {p.name for p in out.iterdir()}!={"receipt.json",WAV,*[r+".wav" for r in roles]}:raise ValueError("Incomplete or unexpected mix files")
@@ -144,15 +156,16 @@ def _audit(dest,binding,timeline,receipt):
     return expected
 
 
-def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,acknowledgment=None):
+def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,acknowledgment=None):
     if acknowledgment!=ACK:raise ValueError("Explicit audio usage rights and mix acknowledgment required")
-    settings=_settings(speech_peak,bed_peak)
+    settings=_settings(speech_peak,bed_peak,duck_percent)
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         _,dest,binding,timeline,receipt=_ctx(root,pid)
         out=dest/FOLDER
         if out.exists() or out.is_symlink():raise ValueError("Mix already exists; audit existing candidate, no overwrite")
         assets={k:_asset(v,k) for k,v in (("intro",intro),("bed",bed),("outro",outro)) if v is not None}
+        if duck_percent and "bed" not in assets:raise ValueError("Ducking requires a background bed")
         total=timeline["total_frames"]+sum(assets[r][1]["frames"] for r in ("intro","outro") if r in assets)
         if shutil.disk_usage(folder).free<total*2+sum(len(v[0]) for v in assets.values())+1024**2:
             raise ValueError("Insufficient private disk space")

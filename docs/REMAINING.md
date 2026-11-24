@@ -108,3 +108,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Verify authoring packaging, inference CI and review/stop/manual script CI; actual browser/device operation, model acceptance, unrestricted custom scripts, force cancellation/process-tree management, cloud consent UI, CJK and local portrait inference remain open.
 
 Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 45487824070 reported three failing tests in Ubuntu matrix: script progress variable shadowed callback, and offline credential isolation was applied to inventory rather than generate_json. Both code regressions corrected in subsequent commit; existing regression tests retained. Corrective CI pending. Actual model/browser acceptance remains unverified.
+
+- [x] Corrective inference/review/stop/manual CI 45488657835 6/6 passed; supersedes 45487824070 and 45488479615 failures.
+- [ ] Verify audio quality/provider/setup CI; actual listening, target LUFS normalization, noise reduction, real model setup, CJK, local portrait inference, cloud consent UI and actual Windows/browser acceptance remain pending.

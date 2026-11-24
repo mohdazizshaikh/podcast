@@ -28,6 +28,10 @@ class ProviderError(RuntimeError):
     pass
 
 
+class ProviderRefusal(ProviderError):
+    """Explicit refusal or safety block must not trigger provider fallback."""
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):
         return None
@@ -75,10 +79,17 @@ def _text_or_error(response,provider):
         if response.get("error"):raise ProviderError("provider_error")
         if provider=="openrouter":
             item=response["choices"][0]
+            if item.get("finish_reason") in ("content_filter","safety") or item.get("message",{}).get("refusal"):
+                raise ProviderRefusal("provider_refused_or_filtered")
             if item.get("finish_reason")!="stop":raise ProviderError("incomplete_output")
             text=item["message"]["content"]
         elif provider=="gemini":
+            feedback=response.get("promptFeedback")
+            if isinstance(feedback,dict) and feedback.get("blockReason") not in (None,"","BLOCK_REASON_UNSPECIFIED"):
+                raise ProviderRefusal("provider_refused_or_filtered")
             item=response["candidates"][0]
+            if item.get("finishReason") in ("SAFETY","RECITATION","BLOCKLIST","PROHIBITED_CONTENT","SPII","IMAGE_SAFETY","MODEL_ARMOR"):
+                raise ProviderRefusal("provider_refused_or_filtered")
             if item.get("finishReason")!="STOP":raise ProviderError("incomplete_output")
             text="".join(p["text"] for p in item["content"]["parts"] if not p.get("thought",False) and isinstance(p.get("text"),str))
         else:
@@ -93,7 +104,9 @@ def _text_or_error(response,provider):
 
 def _local_model(request,preferred):
     listing=request(OLLAMA+"/api/tags",timeout=5)
-    names={row.get("name") for row in listing.get("models",[]) if isinstance(row,dict) and isinstance(row.get("name"),str)}
+    models=listing.get("models") if isinstance(listing,dict) else None
+    if not isinstance(models,list):raise ProviderError("invalid_local_model_inventory")
+    names={row.get("name") for row in models if isinstance(row,dict) and isinstance(row.get("name"),str)}
     candidates=(preferred,) if preferred else LOCAL_MODELS
     # On low available RAM, start with the smallest permitted installed model.
     if not preferred and hardware.report()["low_available_ram_warning"]:
@@ -136,7 +149,7 @@ def generate_json(prompt:str,validator:Callable,*,credentials=None,allow_cloud_t
         raise ValueError("Local model must be an approved explicit under-3B tag")
     if offline_only and allow_cloud_text:
         raise ValueError("Offline-only mode conflicts with cloud text consent")
-    c=Credentials() if offline_only else (credentials or Credentials.environment())
+    c=(credentials or Credentials.environment()) if allow_cloud_text is True and not offline_only else Credentials()
     request=request or _request
     attempts=[]
     cloud=allow_cloud_text is True and not offline_only
@@ -171,6 +184,8 @@ def generate_json(prompt:str,validator:Callable,*,credentials=None,allow_cloud_t
             return {"provider":provider,"requested_model":model,"attempts":attempts,
                     "result":value,"paid_fallback_enabled":False,
                     "billing_tier_independently_verified":False}
+        except ProviderRefusal:
+            raise ProviderRefusal("Provider explicitly refused or filtered the request; no fallback attempted") from None
         except ProviderError as exc:
             # Internal transport only emits sanitized status strings.
             attempts.append({"provider":provider,"model":model,"status":str(exc)})

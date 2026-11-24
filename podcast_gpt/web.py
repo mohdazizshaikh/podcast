@@ -44,6 +44,7 @@ def html_page(token:str)->str:
 <small>Localhost-only. Your portraits, voices and rendered media stay on your computer and are never served over HTTP. V4 local inference requires separate explicit model consent; original V3 neural inference and cloud AI remain CLI-only.</small></header>
 <section class="panel"><h2>0. V4 Smart setup — hardware and model readiness</h2>
 <button data-action="setup-wizard">Inspect hardware, storage and installed app packages</button>
+<button data-action="model-setup-plan">Show guided local model setup plan</button>
 <p><small>For selecting existing local AI model files and explicitly probing a trusted model interpreter, run SMART_SETUP_WINDOWS.bat. No model downloads or external executable paths are accepted over HTTP.</small></p></section>
 <section class="panel"><h2>V4 personal projects</h2>
 <button data-action="project-list">List private V4 projects</button>
@@ -122,6 +123,7 @@ def html_page(token:str)->str:
 <h3>Verified local playback</h3>
 <label>Media type <select id="v4MediaKind"><option value="master">Master WAV</option><option value="preview">Static preview</option><option value="neural">Neural video</option><option value="mix">Audio mix</option><option value="mixed">Mixed video</option><option value="studio-preview">Static studio</option><option value="neural-studio">Neural studio</option><option value="mixed-neural-studio">Mixed neural studio</option></select></label>
 <button id="v4MediaCheck">Audit selected media</button>
+<button id="v4AudioDiagnostics">Measure selected master/mix loudness (read-only)</button>
 <p id="v4MediaInfo">Audit first, then select the matching local file (128 MiB maximum for browser hash check).</p>
 <input type="file" id="v4LocalMedia" accept=".wav,.mp4" disabled><video id="v4Player" controls preload="none" style="max-width:100%;display:none"></video>
 <p><small>File bytes stay in this browser tab; no upload or HTTP media endpoint. Large files: use the displayed local path in your own player.</small></p>
@@ -250,6 +252,7 @@ onAuthor('v4ModelStatus',()=>author('model-status',{}));
 onAuthor('v4ModelSave',()=>{const engine=val('v4ModelEngine'),paths=engine==='kokoro'?{model:val('v4ModelPath'),voices:val('v4VoicesPath')}:engine==='sadtalker'?{model:val('v4ModelPath'),python:val('v4PythonPath')}:{executable:val('v4ExePath')};const replace=field('v4ModelReplace').checked;field('v4ModelReplace').checked=false;return author('model-configure',{engine,paths,replace},true)});
 field('v4ProjectId').addEventListener('input',()=>{castPid=null;field('v4CastRows').replaceChildren()});
 document.getElementById('v4Overview').addEventListener('click',()=>{try{action('project-production-overview',currentPid())}catch(e){out.textContent=e.message}});
+document.getElementById('v4AudioDiagnostics').addEventListener('click',()=>{try{const kind=val('v4MediaKind');if(!['master','mix'].includes(kind))throw new Error('Choose master or mix');action('project-audio-diagnostics',currentPid(),kind)}catch(e){out.textContent=e.message}});
 document.getElementById('v4MediaCheck').addEventListener('click',()=>{try{clearMedia();document.getElementById('v4MediaInfo').textContent='Auditing current candidate...';action('project-media-check',currentPid(),document.getElementById('v4MediaKind').value)}catch(e){out.textContent=e.message}});
 for(const id of ['v4ProjectId','v4MediaKind'])document.getElementById(id).addEventListener('input',()=>{clearMedia();document.getElementById('v4MediaInfo').textContent='Audit the current selection first.';document.getElementById('v4Summary').replaceChildren()});
 document.getElementById('v4LocalMedia').addEventListener('change',async()=>{
@@ -281,6 +284,7 @@ if(!files.length)throw new Error('Select WAVs');await upload(files,'voice')}catc
 
 def serve(root:Path,port:int=7860,*,open_browser:bool=False):
     if type(port)!=int or not 1024<=port<=65535:raise ValueError("Private loopback port 1024..65535")
+    from . import model_setup_plan,audio_diagnostics
     root=workspace_path(root);root.mkdir(parents=True,exist_ok=True)
     token=secrets.token_hex(32)
     status={"phase":"idle","command":None,"result":None,"progress":None,"elapsed_seconds":0}
@@ -290,6 +294,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
     state_lock=threading.Lock()
     actions={"init":lambda:init(root),"doctor":lambda:doctor(root),
              "setup-wizard":lambda:inspect_setup(root),
+             "model-setup-plan":lambda:model_setup_plan.inspect(root),
              "project-list":lambda:list_projects(root),
              "build-source":lambda:build_source(root),
              "prepare-chunks":lambda:prepare_chunks(root),
@@ -395,11 +400,15 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                     if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})
                     if query.get("consent",[""])[0]!="YES":return self._json(403,{"error":"Explicit local processing consent required"})
                     selected=lambda:dashboard_actions.run(root,pid,command,acknowledgment=dashboard_actions.ACK)
-                elif command in ("project-readiness","project-production-overview","project-media-check"):
+                elif command in ("project-readiness","project-production-overview","project-media-check","project-audio-diagnostics"):
                     pid=query.get("project_id",[""])[0]
                     if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})
                     if command=="project-readiness":selected=lambda:inspect_v4_readiness(root,pid)
                     elif command=="project-production-overview":selected=lambda:production_overview.inspect(root,pid)
+                    elif command=="project-audio-diagnostics":
+                        kind=query.get("kind",[""])[0]
+                        if kind not in ("master","mix"):return self._json(400,{"error":"Choose master or mix"})
+                        selected=lambda:audio_diagnostics.inspect(root,pid,kind=kind)
                     else:
                         kind=query.get("kind",[""])[0]
                         if kind not in production_overview.MEDIA:return self._json(400,{"error":"Unknown media kind"})

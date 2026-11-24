@@ -19,3 +19,5 @@ Select Import captured structured script verbatim in dashboard or:
 ```
 
 Source text is limited to the existing 12,000-character ingestion budget. Exactly one minutes object per requested minute, 2–20 turns, 2–30 whole estimated seconds each, sum 60, 60–2500 total dialogue characters per minute, all cast members present in the first minute and no duplicate normalized dialogue. Text must already be trimmed; validated words/order are preserved. Estimates are not measured duration. Creates deterministic outline and source-bound manual_source parts; interrupted valid prefix resumes; rejects conflicting AI outline and changed source/parts. No AI provider call, no script approval. Existing revision and media gates apply. Unstructured raw prose, arbitrary timing/restructuring, repeated identical turns, web-research custom verbatim mode and unrestricted 60-minute input remain pending. Actual browser and real model acceptance are not established by synthetic tests.
+
+Corrective CI 45488657835 passed all six jobs; actual browser interaction and device acceptance remain pending.

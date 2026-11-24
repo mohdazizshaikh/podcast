@@ -324,3 +324,5 @@ V4 browser character and cast management, private source imports and saved local
 V4 explicit browser local inference, research pack management and measured task status: [dashboard inference guide](docs/V4_DASHBOARD_INFERENCE.md). Cloud AI and approval recording remain CLI-only; actual device acceptance pending.
 
 V4 browser review/revision imports, cooperative checkpoint stop and structured verbatim script: [review and custom script guide](docs/V4_REVIEW_STOP_MANUAL.md). Actual browser/model acceptance pending.
+
+V4 optional speech-driven music ducking, read-only LUFS/true-peak diagnostics, guided local model setup and provider refusal hardening: [audio quality and setup guide](docs/V4_AUDIO_QUALITY_SETUP.md). Actual model acceptance and target normalization pending.

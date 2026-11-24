@@ -68,3 +68,5 @@ Authoring CI 45487275746 running at check. Browser local inference, research pac
 Authoring CI 45487275746 five core jobs passed at check; inference CI 45487824070 running. Review/revision imports, checkpoint stop and structured manual script implemented (new CI pending). Next real model acceptance, CJK, image inference and free cloud consent controls.
 
 Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 45487824070 reported three failing tests in Ubuntu matrix: script progress variable shadowed callback, and offline credential isolation was applied to inventory rather than generate_json. Both code regressions corrected in subsequent commit; existing regression tests retained. Corrective CI pending. Actual model/browser acceptance remains unverified.
+
+Corrective CI 45488657835 6/6 passed. Audio ducking/diagnostics, provider hardening and model setup plan implemented (CI pending). Actual model setup and acceptance, loudness-target processing, CJK, local portrait inference and free cloud consent UI remain pending.

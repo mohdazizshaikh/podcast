@@ -180,6 +180,11 @@ def parse(argv=None):
     for role in ("intro","bed","outro"):mix.add_argument("--"+role,type=Path)
     mix.add_argument("--speech-peak",type=int,default=22000)
     mix.add_argument("--bed-peak",type=int,default=3000)
+    mix.add_argument("--duck-percent",type=int,default=0)
+    diagnostic=subs.add_parser("project-audio-diagnostics")
+    diagnostic.add_argument("--project-id",required=True)
+    diagnostic.add_argument("--kind",choices=("master","mix"),default="master")
+    subs.add_parser("model-setup-plan")
     mix.add_argument("--acknowledgment",required=True)
     mixaudit=subs.add_parser("project-mix-audit")
     mixaudit.add_argument("--project-id",required=True)
@@ -521,7 +526,7 @@ def execute(a)->dict:
         private=a.workspace.expanduser().absolute()
         if action=="project-mix-audit":return v4_post_audio.inspect(private,a.project_id)
         return v4_post_audio.compose(private,a.project_id,intro=a.intro,bed=a.bed,outro=a.outro,
-            speech_peak=a.speech_peak,bed_peak=a.bed_peak,acknowledgment=a.acknowledgment)
+            speech_peak=a.speech_peak,bed_peak=a.bed_peak,duck_percent=a.duck_percent,acknowledgment=a.acknowledgment)
     if action in ("project-incomplete-status","project-incomplete-archive"):
         from . import v4_partial_recovery
         private=a.workspace.expanduser().absolute()
@@ -593,6 +598,12 @@ def execute(a)->dict:
         return episode_plan.plan(episode_plan.load_request(a.request),credentials=credentials,
             allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
             offline_only=a.offline_only,local_model=a.ollama_model)
+    if action=="model-setup-plan":
+        from . import model_setup_plan
+        return model_setup_plan.inspect(a.workspace.expanduser().absolute())
+    if action=="project-audio-diagnostics":
+        from . import audio_diagnostics
+        return audio_diagnostics.inspect(a.workspace.expanduser().absolute(),a.project_id,kind=a.kind)
     if action=="setup-wizard":
         from . import setup_wizard
         if a.interactive:

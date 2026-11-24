@@ -96,3 +96,6 @@ Implemented explicitly consented selected-engine bounded local inference, resear
 Implemented ten-kind browser JSON review/revision import with exact declarations, task-ID scoped cooperative stop after current action, and structured verbatim knowledge-mode custom source import with manual provenance and existing timed-unit validation. CI pending; no automatic approval, force kill or unrestricted script input. See V4_REVIEW_STOP_MANUAL.md.
 
 Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 45487824070 reported three failing tests in Ubuntu matrix: script progress variable shadowed callback, and offline credential isolation was applied to inventory rather than generate_json. Both code regressions corrected in subsequent commit; existing regression tests retained. Corrective CI pending. Actual model/browser acceptance remains unverified.
+
+## Increment 27 — audio quality, provider reliability and setup plan
+Corrective CI 45488657835 passed 6/6, superseding failed inference and initial review/stop/manual runs. Optional integer speech-driven music ducking, read-only LUFS/true-peak/PCM report, provider refusal stop and guided saved-model setup plan implemented. CI pending; no target loudness normalization, real model installation or physical acceptance. See V4_AUDIO_QUALITY_SETUP.md.

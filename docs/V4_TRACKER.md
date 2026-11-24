@@ -16,6 +16,9 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Exact PCM master audio composition and audit | Done | 6/6 CI run 45456602766 (synthetic PCM) |
 | Version-bound human listening review | Done | 6/6 CI run 45457590951 (synthetic fixtures) |
 | Audio-only peak normalization, background bed, intro/outro mix | Done | Corrective CI 45479131328 6/6 passed; synthetic PCM |
+| Optional deterministic speech-driven bed ducking and LUFS/true-peak diagnostics | Implemented | New CI pending; actual listening/target normalization pending |
+| Provider refusal stop, malformed local inventory rejection and no-consent key isolation | Implemented | New CI pending; mocks |
+| Guided model setup plan using saved local configuration | Implemented | New CI pending; no installs or model load |
 | Mixed audio listening review, intro/outro video, shifted SRT and fresh video QA | Done | 6/6 CI 45479131328; synthetic fixture |
 | Safe incomplete-output archive (ten types) | Implemented | 6/6 CI 45484813520; synthetic tests, not all failure modes |
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
@@ -48,12 +51,12 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Selected-project dashboard overview and hash-checked local browser playback | Implemented | 6/6 CI 45484187245; browser interaction pending |
 | Browser project creation and explicit local non-inference production actions | Done | 6/6 CI 45484813520; browser interaction pending |
 | Browser character profiles, cast assignment, source imports and local model configuration | Implemented | 6/6 CI 45487275746; browser interaction pending |
-| Explicit browser local Ollama/Kokoro/eSpeak/SadTalker bounded inference | Implemented | CI 45487824070 Ubuntu matrix failed callback/credential regressions; corrected, retest pending; mock inference |
-| Browser Wikipedia discovery and research pack capture/status | Implemented | CI 45487824070 Ubuntu matrix failed callback/credential regressions; corrected, retest pending; offline mocks |
-| Live elapsed task status and verified action checkpoints | Implemented | CI 45487824070 Ubuntu matrix failed callback/credential regressions; corrected, retest pending; no internal model percentage |
-| Browser source-bound review and revision JSON import (ten kinds) | Implemented | New CI pending; human declaration mandatory |
-| Task-ID scoped cooperative stop at action checkpoint | Implemented | New CI pending; no force kill |
-| Structured verbatim timed custom script import | Implemented | New CI pending; knowledge mode and existing size/timing limits |
+| Explicit browser local Ollama/Kokoro/eSpeak/SadTalker bounded inference | Implemented | Corrective CI 45488657835 6/6; mock inference |
+| Browser Wikipedia discovery and research pack capture/status | Implemented | Corrective CI 45488657835 6/6; offline mocks |
+| Live elapsed task status and verified action checkpoints | Implemented | Corrective CI 45488657835 6/6; no internal model percentage |
+| Browser source-bound review and revision JSON import (ten kinds) | Implemented | Corrective CI 45488657835 6/6; human declaration mandatory |
+| Task-ID scoped cooperative stop at action checkpoint | Implemented | Corrective CI 45488657835 6/6; no force kill |
+| Structured verbatim timed custom script import | Implemented | Corrective CI 45488657835 6/6; knowledge mode and existing size/timing limits |
 | Mixed neural studio export, shifted SRT, separate QA and recovery | Done | 6/6 CI 45484813520; synthetic only |
 | Historical neural-stage ETA with matched completed timings | Implemented | 6/6 CI 45484187245; no live subprocess progress |
 | Full dashboard, automatic/manual orchestration, ETA | Partial | Overview/playback, authoring, explicit bounded local inference, research and live task status; review import and cooperative stop; cloud AI CLI-only; live model ETA pending |
@@ -61,7 +64,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify authoring/inference and new review/stop/manual-script CI. Next actual model setup/pilot, CJK frontends, local portrait inference, free cloud consent workflow and real device/browser acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify audio quality/provider/setup CI. Next actual model setup/pilot, CJK frontends, local portrait inference, free cloud consent workflow, true loudness-target normalization and real device/browser acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.
