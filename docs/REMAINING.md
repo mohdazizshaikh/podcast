@@ -85,3 +85,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Verify new audio post-production/recovery CI, actual listening, mixed audio video integration and shifted subtitles, LUFS/ducking/noise processing, wider natural voices, advanced recovery of corrupted completed media, GUI and real Windows acceptance.
 
 - [ ] Verify parser regression fix and audio post-production/mixed-video/recovery tests. CI 45478604299 failed CLI startup; do not mark prior mix/recovery verified. Actual listening, mixed video review, natural voices, dynamic studios, research discovery and real hardware acceptance pending.
+
+- [x] Corrective CI 45479131328 6/6 passed; earlier CLI regression resolved.
+- [ ] Verify combined language/research CI, real installed voice presets, real public API availability, English/CJK/Edge frontends, independent source corroboration, portrait/studio workflows, complete GUI and physical Windows acceptance.

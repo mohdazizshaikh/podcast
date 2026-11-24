@@ -7,15 +7,15 @@ from podcast_gpt import v4_audio as audio, v4_master as master, v4_tts as tts, c
 from PIL import Image
 
 
-def ready(tmp_path,monkeypatch,engine="imported",video_format="square"):
+def ready(tmp_path,monkeypatch,engine="imported",video_format="square",language="Hindi",presets=("hm_omega","hf_alpha")):
     root=tmp_path/"private"
-    req={"topic":"Science","language":"Hindi","duration_minutes":1,"presenters":["A","B"],
+    req={"topic":"Science","language":language,"duration_minutes":1,"presenters":["A","B"],
          "video_format":video_format,"workflow":"manual","input_kind":"topic","research_mode":"knowledge"}
     pid=projects.create(root,req)["project_id"];ids={}
-    for name,color,preset in (("A","red","hm_omega"),("B","blue","hf_alpha")):
+    for name,color,preset in (("A","red",presets[0]),("B","blue",presets[1])):
         p=tmp_path/(name+".png");Image.new("RGB",(200,200),color).save(p)
         profile={"name":name,"personality":"Curious","speaking_style":"Friendly","appearance":"Fictional",
-                 "voice_preferences":{"engine":engine,"language":"Hindi","preset":preset,"style_notes":""}}
+                 "voice_preferences":{"engine":engine,"language":language,"preset":preset,"style_notes":""}}
         ids[name]=characters.create(root,profile,portrait=p,acknowledgment=characters.ACK)["character_id"]
     characters.assign(root,pid,ids)
     current={"version_sha256":"a"*64,"turns":[{"id":"0001","speaker":"A","text":"पहला संवाद"},

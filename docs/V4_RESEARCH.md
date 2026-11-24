@@ -14,3 +14,5 @@ The private pack is immutable, timestamped and hash-bound to the request, outlin
 Cloud text consent still applies separately and transmits primary input text, research excerpts and prior dialogue to eligible providers. Small local context windows may not fit combined sources; shorten the sources or use an explicitly consented free cloud provider. Automatic discovery/search, source ranking, cross-source claim comparison, comprehensive citation coverage and human review remain pending. No real website or model calls are made by synthetic CI fixtures.
 
 Research-backed scripts can now be manually revised and reviewed. Exact source quote matching is retained for every edit; human review is separate from independent claim verification. See V4_SCRIPT_REVIEW.md.
+
+Explicit English Wikipedia candidate discovery and optional source-bound human factual review now available through V4_LANGUAGE_RESEARCH.md. Candidate search is not broad web research or independent verification.

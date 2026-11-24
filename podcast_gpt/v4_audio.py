@@ -90,6 +90,16 @@ def _read_parts(dest,binding,turns):
                 raise ValueError("Invalid local speech provenance")
             expected.pop("rights_and_text_match_self_attested")
             expected.update(origin="local_kokoro_hindi",generation=extra,model_usage_rights_self_attested=True)
+        if saved.get("origin")=="local_kokoro_multilingual":
+            from .kokoro_languages import PRESETS
+            extra=saved.get("generation")
+            if (not isinstance(extra,dict) or set(extra)!={"voice_preset","model_sha256","voices_sha256","language"}
+                    or not isinstance(extra["language"],str) or extra["language"] not in PRESETS or extra["language"]=="hi"
+                    or not isinstance(extra["voice_preset"],str) or extra["voice_preset"] not in PRESETS[extra["language"]]
+                    or any(not isinstance(extra[k],str) or len(extra[k])!=64 or any(c not in "0123456789abcdef" for c in extra[k]) for k in ("model_sha256","voices_sha256"))):
+                raise ValueError("Invalid multilingual Kokoro provenance")
+            expected.pop("rights_and_text_match_self_attested")
+            expected.update(origin="local_kokoro_multilingual",generation=extra,model_usage_rights_self_attested=True)
         if saved.get("origin")=="local_espeak":
             from .v4_espeak import PRESET
             extra=saved.get("generation")
@@ -139,7 +149,7 @@ def _summary(pid,dest,binding,turns,items,req):
     missing=[t["id"] for t in turns if t["id"] not in items]
     return {"project_id":pid,"binding":binding,"total_turns":len(turns),"imported_turns":len(items),
             "missing_turn_ids":missing,"measured_imported_speech_seconds":sum(v["frames"] for v in items.values() if v["origin"]=="authorized_import")/RATE,
-            "completed_audio_turns":len(items),"generated_turns":sum(v["origin"] in ("local_kokoro_hindi","local_espeak") for v in items.values()),
+            "completed_audio_turns":len(items),"generated_turns":sum(v["origin"] in ("local_kokoro_hindi","local_kokoro_multilingual","local_espeak") for v in items.values()),
             "measured_total_speech_seconds":sum(v["frames"] for v in items.values())/RATE,
             "timeline_finalized":saved is not None,"measured_audio_seconds":saved["measured_audio_seconds"] if saved else None,
             "within_target_10_percent":saved["within_target_10_percent"] if saved else None,
@@ -153,13 +163,16 @@ def inspect(root,pid):
 
 def voice_status(root,pid):
     cast=characters.status(root,pid)
+    from .kokoro_languages import ALIASES,PRESETS
     rows=[]
     for item in cast.get("presenters",[]):
         voice=item["voice_preferences"];engine=voice["engine"]
+        code=ALIASES.get(voice["language"].casefold().strip())
         rows.append({"speaker":item["speaker"],"preferences":voice,
                      "status":"authorized_wav_import_supported" if engine=="imported" else
                               "select_import_or_future_tts" if engine=="undecided" else
-                              "local_hindi_kokoro_candidate" if engine=="kokoro" and voice["language"].casefold() in ("hindi","hi","hi-in","हिन्दी","हिंदी") else
+                              "local_hindi_kokoro_candidate" if engine=="kokoro" and code=="hi" and voice["preset"] in PRESETS[code] else
+                              "local_multilingual_kokoro_candidate" if engine=="kokoro" and code in PRESETS and voice["preset"] in PRESETS[code] else
                               "local_espeak_inventory_required" if engine=="espeak" else
                               "generalized_tts_adapter_pending",
                      "actual_language_voice_compatibility_verified":False})

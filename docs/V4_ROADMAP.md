@@ -50,3 +50,5 @@ Model-config/eSpeak/persona CI passed 6/6 (45462475819). Workflow CI 45463360856
 Workflow CI 45463360856 and media workflow CI 45464174884 passed 6/6 each. Audio-only mix and expanded incomplete-output recovery implemented (new CI pending). Next mixed-video integration, wider natural TTS, research/portrait and actual hardware acceptance.
 
 Audio post-production CI 45478604299 failed four matrix jobs at CLI doctor due parser shadowing. Fixed parser, added regression test and mixed-video candidate/QA (new CI pending). Next wider neural voices, research/portrait and dashboard; physical Windows acceptance mandatory.
+
+Corrective audio/mixed-video/recovery CI 45479131328 passed 6/6. Combined Kokoro language expansion, Wikipedia candidate discovery and optional factual review implemented (CI pending). Next English/CJK voices, local pilot, portrait/studio controls and dashboard; actual device acceptance mandatory.

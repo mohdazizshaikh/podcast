@@ -106,7 +106,7 @@ def parse(argv=None):
     for name in ("project-voice-status","project-audio-status","project-audio-finalize","project-audio-show"):
         v=subs.add_parser(name)
         v.add_argument("--project-id",required=True)
-    tts=subs.add_parser("project-tts-kokoro",help="Explicit local Hindi Kokoro generation")
+    tts=subs.add_parser("project-tts-kokoro",help="Explicit local Kokoro generation for supported language presets")
     tts.add_argument("--project-id",required=True)
     tts.add_argument("--model",type=Path)
     tts.add_argument("--voices",type=Path)
@@ -188,6 +188,16 @@ def parse(argv=None):
         mixed.add_argument("--project-id",required=True)
         if name in ("project-mix-review-record","project-mixed-review-record"):
             mixed.add_argument("--acknowledgment",required=True)
+    discover=subs.add_parser("project-research-discover")
+    discover.add_argument("--project-id",required=True)
+    discover.add_argument("--query")
+    discover.add_argument("--limit",type=int,default=5)
+    discover.add_argument("--allow-web-search",action="store_true")
+    subs.add_parser("kokoro-language-catalog")
+    for name in ("project-fact-review-template","project-fact-review-record","project-fact-review-status"):
+        fact=subs.add_parser(name)
+        fact.add_argument("--project-id",required=True)
+        if name=="project-fact-review-record":fact.add_argument("--acknowledgment",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -487,6 +497,18 @@ def execute(a)->dict:
         if action=="project-mixed-video-audit":return mixed.inspect(private,a.project_id)
         return mixed.qa(private,a.project_id,"mix" if action.startswith("project-mix-review-") else "video",
                         action.rsplit("-",1)[1],acknowledgment=getattr(a,"acknowledgment",None))
+    if action=="kokoro-language-catalog":
+        from . import kokoro_languages
+        return kokoro_languages.catalog()
+    if action=="project-research-discover":
+        from . import research_discovery
+        return research_discovery.discover(a.workspace.expanduser().absolute(),a.project_id,query=a.query,limit=a.limit,allow_web_search=a.allow_web_search)
+    if action in ("project-fact-review-template","project-fact-review-record","project-fact-review-status"):
+        from . import fact_review
+        private=a.workspace.expanduser().absolute()
+        if action=="project-fact-review-template":return fact_review.create(private,a.project_id)
+        if action=="project-fact-review-record":return fact_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
+        return fact_review.inspect(private,a.project_id)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

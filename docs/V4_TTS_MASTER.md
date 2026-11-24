@@ -19,3 +19,5 @@ After master composition, complete the human listening workflow and selected sta
 Optional saved local paths and eSpeak non-neural multilingual fallback are now available. See V4_MODEL_VOICES_PERSONA.md. Wider natural neural TTS still pending.
 
 An optional separate audio-only normalized/music/intro/outro candidate is now available (V4_POST_AUDIO_RECOVERY.md). It never replaces the original exact master or inherits approval.
+
+V4 Kokoro adapter now also accepts explicit Spanish, French, Italian and Brazilian Portuguese candidate presets. See V4_LANGUAGE_RESEARCH.md for limits and setup. Existing Hindi receipts preserved.

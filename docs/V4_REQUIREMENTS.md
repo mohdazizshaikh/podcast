@@ -70,3 +70,6 @@ Implemented optional deterministic audio-only peak normalization, looping author
 
 ## Increment 18 — mixed video and fresh review gates
 Fixed CLI parser shadowing regression (45478604299). Implemented separate mix listening review, selected-format mixed video with static intro/outro cards, exact shifted SRT and fresh complete mixed video QA, plus incomplete mixed export recovery. CI pending; actual acceptance unverified. See V4_MIXED_VIDEO.md.
+
+## Increment 19 — combined voice and research expansion
+Corrective CI 45479131328 passed 6/6. Implemented explicit local Kokoro Spanish/French/Italian/Brazilian Portuguese candidate presets, free opt-in Wikipedia discovery and current-script/research-bound human factual review. No automatic claim verification, broad search, mandatory new media gate, English/CJK neural frontend or real model acceptance. See V4_LANGUAGE_RESEARCH.md.
