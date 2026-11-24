@@ -66,3 +66,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Verify listening review and three-format preview CI; actual human listening/visual acceptance and real model generation remain pending. Implement generalized CPU neural pilot and resumable clips, wider TTS, audio processing, graphical workflows, recovery and full production acceptance.
 
 - [ ] Verify preview CI 45457590951 and new neural pilot/batch CI; genuine local model and human pilot remain untested. Implement final selected-format neural composition using exact master audio/pauses, synchronized SRT, full QA, recovery, and actual physical Windows acceptance.
+
+- [x] Listening review and static preview CI passed 6/6 (45457590951).
+- [ ] Verify neural pilot CI 45458379123 and new selected-format candidate export CI; implement full video quality review, safe recovery, dynamic layouts and real model acceptance. No production release without genuine Windows pilot/full episode evidence.

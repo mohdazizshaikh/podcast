@@ -49,3 +49,6 @@ Implemented immutable master-specific per-turn and global listening self-attesta
 
 ## Increment 11 — generalized CPU neural clips and pilot gate
 Implemented exact sample chunk planning, explicit local SadTalker CPU invocation, clip receipts, resume, per-presenter pilot self-attestation and reviewed batch gate. No final neural episode composition or genuine model acceptance yet. See V4_NEURAL.md.
+
+## Increment 12 — selected-format neural candidate export
+Implemented cumulative PCM-derived 25 fps frame plan, normalized facial clip composition, static pause cards, master-only audio mux, measured UTF-8 SRT, full structural audit and fixture-only export rejection from production CLI. Full human video QA, actual Windows model acceptance, polished studio layouts and broader features remain pending. See V4_EXPORT.md.

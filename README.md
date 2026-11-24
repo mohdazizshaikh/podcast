@@ -294,3 +294,5 @@ V4 local Hindi Kokoro adapter and exact PCM master WAV composition/audit: [TTS a
 V4 human listening review, selected three-format static preview and measured SRT: [preview guide](docs/V4_PREVIEW.md). Static previews are explicitly not lip-sync; real generalized neural media remains pending.
 
 V4 source-bound local SadTalker CPU pilot, resumable clips and human pilot batch gate: [neural guide](docs/V4_NEURAL.md). Full neural episode composition and physical Windows model acceptance remain pending.
+
+V4 selected-format neural candidate composition and structural audit: [export guide](docs/V4_EXPORT.md). Requires complete reviewed source-bound facial clips, preserves original master as sole audio input, and emits synchronized SRT. Genuine model and full human QA remain pending.

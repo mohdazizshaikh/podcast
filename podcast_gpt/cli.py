@@ -113,6 +113,9 @@ def parse(argv=None):
         n=subs.add_parser(name)
         n.add_argument("--project-id",required=True)
         if name=="project-neural-pilot-record":n.add_argument("--acknowledgment",required=True)
+    for name in ("project-neural-compose","project-neural-audit"):
+        e=subs.add_parser(name)
+        e.add_argument("--project-id",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -345,6 +348,10 @@ def execute(a)->dict:
         if action=="project-neural-pilot-record":return v4_neural.record(private,a.project_id,acknowledgment=a.acknowledgment)
         return v4_neural.generate(private,a.project_id,model=a.model,python=a.python,mode=a.mode,max_new=a.max_new,
             timeout=a.timeout,cpu_threads=a.cpu_threads,run_local=a.run_local,acknowledgment=a.acknowledgment)
+    if action in ("project-neural-compose","project-neural-audit"):
+        from . import v4_export
+        fn=v4_export.compose if action=="project-neural-compose" else v4_export.inspect
+        return fn(a.workspace.expanduser().absolute(),a.project_id)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()
