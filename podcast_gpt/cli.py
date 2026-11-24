@@ -24,6 +24,21 @@ def parse(argv=None):
             cmd.add_argument("--port",type=int,default=7860)
             cmd.add_argument("--open-browser",action="store_true",
                              help="Open default browser only after successful local server bind")
+    create=subs.add_parser("project-create",help="Create separate private V4 planning project")
+    create.add_argument("--request",type=Path,required=True)
+    subs.add_parser("project-list",help="List private V4 planning projects")
+    show=subs.add_parser("project-show")
+    show.add_argument("--project-id",required=True)
+    outline=subs.add_parser("project-plan")
+    outline.add_argument("--project-id",required=True)
+    outline.add_argument("--allow-cloud-text",action="store_true")
+    outline.add_argument("--confirm-gemini-free-project",action="store_true")
+    outline.add_argument("--offline-only",action="store_true")
+    outline.add_argument("--ollama-model")
+    for name in ("key-store","key-remove","key-status"):
+        k=subs.add_parser(name)
+        k.add_argument("--project-id")
+        if name!="key-status":k.add_argument("--provider",choices=("openrouter","gemini"),required=True)
     subs.add_parser("ai-provider-status",help="Local key presence and strict free provider policy; no calls")
     planner=subs.add_parser("plan-episode",help="V4 topic-based episode outline, not media generation")
     planner.add_argument("--request",type=Path,required=True)
@@ -170,6 +185,20 @@ def execute(a)->dict:
     root=a.workspace.expanduser().resolve()
     action=a.operation
     if action=="doctor":return doctor(root)
+    if action in ("project-create","project-list","project-show","project-plan","key-store","key-remove","key-status"):
+        from . import projects,episode_plan,credentials
+        # Use unresolved user path so project manager can reject reparse points.
+        private=a.workspace.expanduser().absolute()
+        if action=="project-create":return projects.create(private,episode_plan.load_request(a.request))
+        if action=="project-list":return projects.list_projects(private)
+        if action=="project-show":return projects.inspect(private,a.project_id)
+        if action=="key-status":return credentials.status(private,pid=a.project_id)
+        if action=="key-store":return credentials.store(private,a.provider,credentials.prompt_key(a.provider),pid=a.project_id)
+        if action=="key-remove":return credentials.remove(private,a.provider,pid=a.project_id)
+        keys=credentials.resolve(private,pid=a.project_id) if a.allow_cloud_text and not a.offline_only else None
+        return projects.generate_outline(private,a.project_id,credentials=keys,
+            allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
+            offline_only=a.offline_only,local_model=a.ollama_model)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

@@ -19,3 +19,6 @@ User-approved scope: personal only; all engine-supported languages; 1–10 chara
 7. Actual Windows pilot, then longer real episodes and final QA. No V4 production claim before acceptance.
 
 The fixed V3 pipeline and stable-v3.7 branch remain supported. AI text engines are not themselves proof of image, voice or lip-sync availability in every language.
+
+## Increment 2 — private projects and keys
+Implemented isolated immutable topic request/outline storage, project inventory, CLI planning, dashboard listing, Windows current-user DPAPI default and per-project encrypted keys, with environment fallback. Persistent cloud consent is forbidden. Generalized script/media and non-topic input ingestion are still pending. See V4_PROJECTS.md.
