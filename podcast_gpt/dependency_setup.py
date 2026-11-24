@@ -5,14 +5,15 @@ import subprocess
 import sys
 
 ACK="I_AUTHORIZE_INSTALLING_FREE_OPTIONAL_PYTHON_PACKAGES"
-GROUPS={"documents":("pypdf>=5,<8",),"kokoro":("kokoro-onnx>=0.4,<1","misaki>=0.9,<1")}
+GROUPS={"documents":("pypdf>=5,<8",),"kokoro":("kokoro-onnx>=0.4,<1","misaki>=0.9,<1"),
+        "kokoro-english":("kokoro-onnx>=0.4,<1","misaki[en]>=0.9,<1")}
 
 
 def plan(group):
     if group not in GROUPS:raise ValueError("Select a supported optional dependency group")
     packages=[]
     for spec in GROUPS[group]:
-        name=spec.split(">=")[0]
+        name=spec.split(">=")[0].split("[")[0]
         try:version=importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:version=None
         packages.append({"requirement":spec,"installed_version":version})

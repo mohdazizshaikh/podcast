@@ -88,3 +88,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Corrective CI 45479131328 6/6 passed; earlier CLI regression resolved.
 - [ ] Verify combined language/research CI, real installed voice presets, real public API availability, English/CJK/Edge frontends, independent source corroboration, portrait/studio workflows, complete GUI and physical Windows acceptance.
+
+- [ ] Verify language/research packaging and English/studio CI. Actual English extras and voice assets, CJK, local portrait synthesis, animated neural studio, incomplete studio recovery, graphical dashboard and full physical Windows acceptance remain open.

@@ -22,12 +22,12 @@ def _locate(root,pid,kind,unit):
     folder,dest,binding,turns,req,cast=audio._context(root,pid)
     if kind=="audio-turn":
         if unit not in {t["id"] for t in turns}:raise ValueError("Select current script turn ID")
-        _refuse_dependencies(dest,(audio.TIMELINE,master.FOLDER,preview.FOLDER,neural.FOLDER,export.FOLDER,mix.FOLDER,"audio-review.json","final-video-review.json"))
+        _refuse_dependencies(dest,(audio.TIMELINE,master.FOLDER,preview.FOLDER,"studio-preview",neural.FOLDER,export.FOLDER,mix.FOLDER,"audio-review.json","final-video-review.json"))
         path=dest/unit;allowed={"speech.wav"}
     elif kind=="master":
         if unit is not None:raise ValueError("Unit ID not required")
         master._context(root,pid)
-        _refuse_dependencies(dest,(preview.FOLDER,neural.FOLDER,export.FOLDER,mix.FOLDER,"audio-review.json","final-video-review.json"))
+        _refuse_dependencies(dest,(preview.FOLDER,"studio-preview",neural.FOLDER,export.FOLDER,mix.FOLDER,"audio-review.json","final-video-review.json"))
         path=dest/master.FOLDER;allowed={master.WAV}
     elif kind=="post-audio":
         if unit is not None:raise ValueError("Unit ID not required")

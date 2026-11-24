@@ -12,7 +12,9 @@ def test_language_catalog_and_mismatch():
     assert cli.parse(["doctor"]).operation=="doctor"
     assert langs.language("Brazilian Portuguese")=="pt-br"
     assert langs.preset({"engine":"kokoro","language":"Spanish","preset":"ef_dora"},"es")=="ef_dora"
-    with pytest.raises(ValueError):langs.language("English")
+    assert langs.language("English")=="en-us"
+    assert langs.language("British English")=="en-gb"
+    with pytest.raises(ValueError):langs.language("Japanese")
     with pytest.raises(ValueError):langs.preset({"engine":"kokoro","language":"French","preset":"ef_dora"},"fr-fr")
 
 

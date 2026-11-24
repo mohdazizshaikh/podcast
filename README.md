@@ -310,3 +310,5 @@ V4 optional audio-only normalization/music/intro/outro mix and safe incomplete-o
 V4 optional mixed audio/video candidate with static intro/outro, shifted subtitles, fresh review gates and incomplete-output recovery: [mixed video guide](docs/V4_MIXED_VIDEO.md). Actual model acceptance pending.
 
 V4 expanded local Kokoro language presets, opt-in Wikipedia candidate discovery and source-bound factual review: [language and research guide](docs/V4_LANGUAGE_RESEARCH.md). Actual voice and independent fact verification remain pending.
+
+V4 English voice frontend, portrait preparation briefs and static background/focus/grid studio preview: [studio and English guide](docs/V4_STUDIO_ENGLISH.md). Real image generation and animated neural studio remain pending.

@@ -17,3 +17,5 @@ The project video_format selects landscape 1280x720, vertical 720x1280 or square
 Output lives in the private current audio version's static-preview folder. Audit checks hashes, exact SRT, dimensions, codecs, absolute stream-duration tolerance and full FFmpeg decode. AAC is lossy; structural decode does not establish perceptual voice fidelity or visual identity. Review and preview receipts do not modify the master. Synthetic fixture tests use color images and tone PCM, not genuine speech or portraits. Physical Windows acceptance, neural pilot, generalized TTS, normalization/mixing, graphical dashboard and full rendering remain pending.
 
 The reviewed master now also feeds the separate V4 local SadTalker pilot/clip pipeline (V4_NEURAL.md). Static preview is not neural rendering and is optional for that pipeline.
+
+Optional independent static studio preview supports an authorized background and focus/grid layouts (V4_STUDIO_ENGLISH.md). Original preview and neural export unchanged.

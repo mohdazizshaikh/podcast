@@ -68,7 +68,7 @@ def parse(argv=None):
     visual.add_argument("--mode",choices=("edit","review"),required=True)
     for name in ("dependency-plan","dependency-install"):
         dep=subs.add_parser(name)
-        dep.add_argument("--group",choices=("documents","kokoro"),required=True)
+        dep.add_argument("--group",choices=("documents","kokoro","kokoro-english"),required=True)
         if name=="dependency-install":dep.add_argument("--acknowledgment",required=True)
     auto=subs.add_parser("project-auto-step")
     auto.add_argument("--project-id",required=True)
@@ -198,6 +198,16 @@ def parse(argv=None):
         fact=subs.add_parser(name)
         fact.add_argument("--project-id",required=True)
         if name=="project-fact-review-record":fact.add_argument("--acknowledgment",required=True)
+    portrait=subs.add_parser("character-portrait-brief")
+    portrait.add_argument("--character-id",required=True)
+    studio=subs.add_parser("project-studio-configure")
+    studio.add_argument("--project-id",required=True)
+    studio.add_argument("--layout",choices=("focus","grid"),required=True)
+    studio.add_argument("--background",type=Path)
+    studio.add_argument("--acknowledgment")
+    for name in ("project-studio-status","project-studio-render","project-studio-audit"):
+        st=subs.add_parser(name)
+        st.add_argument("--project-id",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -509,6 +519,16 @@ def execute(a)->dict:
         if action=="project-fact-review-template":return fact_review.create(private,a.project_id)
         if action=="project-fact-review-record":return fact_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
         return fact_review.inspect(private,a.project_id)
+    if action=="character-portrait-brief":
+        from . import portrait_brief
+        return portrait_brief.create(a.workspace.expanduser().absolute(),a.character_id)
+    if action in ("project-studio-configure","project-studio-status","project-studio-render","project-studio-audit"):
+        from . import studio_preview
+        private=a.workspace.expanduser().absolute()
+        if action=="project-studio-configure":return studio_preview.configure(private,a.project_id,layout=a.layout,background=a.background,acknowledgment=a.acknowledgment)
+        if action=="project-studio-status":return studio_preview.inspect_settings(private,a.project_id)
+        if action=="project-studio-render":return studio_preview.render(private,a.project_id)
+        return studio_preview.inspect(private,a.project_id)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

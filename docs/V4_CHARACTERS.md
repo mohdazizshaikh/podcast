@@ -31,3 +31,5 @@ The media preflight now feeds V4 authorized WAV import and measured timeline. Vo
 Hindi Kokoro presets now feed an explicit local TTS adapter for compatible Hindi requests. Other voice preferences remain metadata or authorized import. See V4_TTS_MASTER.md.
 
 Optional eSpeak profile engine and opt-in cast personality prompt snapshots are now available. See V4_MODEL_VOICES_PERSONA.md. Cross-episode memory and realistic portrait generation remain pending.
+
+Local profile-bound portrait brief generation is available (V4_STUDIO_ENGLISH.md). This prepares prompts only, not real AI image generation.
