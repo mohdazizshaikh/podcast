@@ -72,11 +72,14 @@ def _mix_blocks(dest,timeline,assets,settings):
     duck=settings.get("duck_percent",0);level=10000;hold=0
     # Fixed 10 ms attack, 150 ms hold, 250 ms release at 16 kHz.
     floor=10000-duck*100
+    from .speech_compressor import step
+    compressor=settings.get('compressor');envelope=0
     for chunk in master._chunks(dest,timeline):
         samples=_samples(chunk)
         mixed=array.array("h")
         for s in samples:
             voice=_scale(s,speech_target,peak)
+            if compressor is not None:voice,envelope=step(voice,envelope,compressor)
             music=0
             if bed_samples and duck:
                 if abs(voice)>=512:hold=2400
@@ -103,12 +106,15 @@ def _mix_blocks(dest,timeline,assets,settings):
         yield _bytes(_scale(s,PEAK,p) for s in samples)
 
 
-def _settings(speech_peak,bed_peak,duck_percent=0):
+def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_threshold=12000):
     if type(speech_peak) is not int or not 8000<=speech_peak<=24000 or type(bed_peak) is not int or not 0<=bed_peak<=6000:
         raise ValueError("Speech peak must be 8000–24000 and bed peak 0–6000 PCM units")
     if type(duck_percent) is not int or not 0<=duck_percent<=90:raise ValueError("Duck percent must be 0–90")
     result={"speech_peak":speech_peak,"bed_peak":bed_peak,"mix_algorithm":"integer_peak_v1"}
     if duck_percent:result.update(mix_algorithm="integer_peak_duck_v2",duck_percent=duck_percent)
+    from .speech_compressor import settings as compressor_settings
+    comp=compressor_settings(compress_ratio,compress_threshold)
+    if comp is not None:result["compressor"]=comp
     return result
 
 
@@ -136,7 +142,9 @@ def _audit(dest,binding,timeline,receipt):
     saved=source.read_json(out/"receipt.json",32000)
     settings=saved["settings"]
     from . import loudness_gain as gain
-    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0))
+    comp=settings.get("compressor",{})
+    if not isinstance(comp,dict):raise ValueError("Invalid compressor settings")
+    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000))
     normalization=settings.get("normalization")
     if normalization is not None:base_settings["normalization"]=gain.validate(normalization)
     if base_settings!=settings:raise ValueError("Invalid mix settings")
@@ -201,9 +209,9 @@ def _stage_normalized(dest,timeline,assets,settings,target_lufs,temp):
     return candidate,pcm_sha
 
 
-def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,acknowledgment=None):
+def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,acknowledgment=None):
     if acknowledgment!=ACK:raise ValueError("Explicit audio usage rights and mix acknowledgment required")
-    settings=_settings(speech_peak,bed_peak,duck_percent)
+    settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold)
     if target_lufs is not None:
         from .loudness_gain import target
         target(target_lufs)

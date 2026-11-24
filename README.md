@@ -330,3 +330,5 @@ V4 optional speech-driven music ducking, read-only LUFS/true-peak diagnostics, g
 V4 measured loudness-target static gain, per-turn audio diagnostics and explicit local cross-episode continuity: [normalization and continuity guide](docs/V4_NORMALIZATION_CONTINUITY.md). Real model/device acceptance and dynamic limiting remain pending.
 
 V4 expanded dashboard WAV/studio/continuity authoring, explicitly consented free-policy cloud drafting, Mandarin frontend and broad test matrix: [batch 29 guide](docs/V4_BATCH29.md). Real browser/model acceptance pending.
+
+V4 optional speech compression: [batch 30 guide](docs/V4_BATCH30.md). Actual model/device acceptance pending.

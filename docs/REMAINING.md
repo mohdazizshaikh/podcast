@@ -116,3 +116,5 @@ Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 
 
 - [x] Batch 27/28 CI 12/12 passed (45491404566, 45492395979).
 - [ ] Verify batch 29 tests, real browser and Mandarin model setup, free account eligibility, Japanese dictionary setup, local portrait inference, dynamic audio processing and full Windows acceptance. No 100–200 feature completion claim.
+
+- [ ] Verify batch 29 packaging and batch 30 CI. Graphical mix controls, device preflight, actual model inference, noise reduction and dynamic true-peak limiting remain pending.

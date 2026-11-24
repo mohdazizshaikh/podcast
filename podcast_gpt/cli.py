@@ -189,6 +189,8 @@ def parse(argv=None):
     mix.add_argument("--bed-peak",type=int,default=3000)
     mix.add_argument("--duck-percent",type=int,default=0)
     mix.add_argument("--target-lufs",type=int)
+    mix.add_argument("--compress-ratio",type=int,default=1)
+    mix.add_argument("--compress-threshold",type=int,default=12000)
     diagnostic=subs.add_parser("project-audio-diagnostics")
     diagnostic.add_argument("--project-id",required=True)
     diagnostic.add_argument("--kind",choices=("master","mix"),default="master")
@@ -535,7 +537,7 @@ def execute(a)->dict:
         private=a.workspace.expanduser().absolute()
         if action=="project-mix-audit":return v4_post_audio.inspect(private,a.project_id)
         return v4_post_audio.compose(private,a.project_id,intro=a.intro,bed=a.bed,outro=a.outro,
-            speech_peak=a.speech_peak,bed_peak=a.bed_peak,duck_percent=a.duck_percent,target_lufs=a.target_lufs,acknowledgment=a.acknowledgment)
+            speech_peak=a.speech_peak,bed_peak=a.bed_peak,duck_percent=a.duck_percent,target_lufs=a.target_lufs,compress_ratio=a.compress_ratio,compress_threshold=a.compress_threshold,acknowledgment=a.acknowledgment)
     if action in ("project-incomplete-status","project-incomplete-archive"):
         from . import v4_partial_recovery
         private=a.workspace.expanduser().absolute()
