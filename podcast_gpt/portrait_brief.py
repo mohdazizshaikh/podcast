@@ -15,3 +15,11 @@ def create(root,cid):
             "recommended_dimensions":[768,768],"required_import_format":"single-frame PNG, 200–4096 pixels per side, max 12 MP and 12 MB",
             "next_action":"Create or obtain a portrait independently; import as a new authorized character profile version before cast assignment.",
             "image_generated":False,"provider_calls":0,"publication_approved":False}
+
+
+def attach(root,cid,*,portrait,acknowledgment):
+    """Import an authorized portrait without copying a profile by hand."""
+    old=characters.read(root,cid)
+    result=characters.create(root,old["profile"],portrait=portrait,acknowledgment=acknowledgment,parent_id=cid)
+    return {**result,"original_profile_preserved":True,"existing_cast_assignments_changed":False,
+            "image_generated":False}

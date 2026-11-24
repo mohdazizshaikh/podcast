@@ -178,7 +178,7 @@ def parse(argv=None):
     for name in ("project-incomplete-status","project-incomplete-archive"):
         recover4=subs.add_parser(name)
         recover4.add_argument("--project-id",required=True)
-        recover4.add_argument("--kind",choices=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio","mixed-export"),required=True)
+        recover4.add_argument("--kind",choices=("audio-turn","master","static-preview","neural-clip","neural-export","post-audio","mixed-export","studio-preview","neural-studio"),required=True)
         recover4.add_argument("--unit")
         if name=="project-incomplete-archive":recover4.add_argument("--acknowledgment",required=True)
     for name in ("project-mix-review-template","project-mix-review-record","project-mix-review-status",
@@ -208,6 +208,15 @@ def parse(argv=None):
     for name in ("project-studio-status","project-studio-render","project-studio-audit"):
         st=subs.add_parser(name)
         st.add_argument("--project-id",required=True)
+    attach=subs.add_parser("character-portrait-attach")
+    attach.add_argument("--character-id",required=True)
+    attach.add_argument("--portrait",type=Path,required=True)
+    attach.add_argument("--acknowledgment",required=True)
+    for name in ("project-neural-studio-compose","project-neural-studio-audit","project-neural-studio-review-template",
+                 "project-neural-studio-review-record","project-neural-studio-review-status"):
+        ns=subs.add_parser(name)
+        ns.add_argument("--project-id",required=True)
+        if name=="project-neural-studio-review-record":ns.add_argument("--acknowledgment",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -529,6 +538,16 @@ def execute(a)->dict:
         if action=="project-studio-status":return studio_preview.inspect_settings(private,a.project_id)
         if action=="project-studio-render":return studio_preview.render(private,a.project_id)
         return studio_preview.inspect(private,a.project_id)
+    if action=="character-portrait-attach":
+        from . import portrait_brief
+        return portrait_brief.attach(a.workspace.expanduser().absolute(),a.character_id,portrait=a.portrait,acknowledgment=a.acknowledgment)
+    if action in ("project-neural-studio-compose","project-neural-studio-audit","project-neural-studio-review-template",
+                  "project-neural-studio-review-record","project-neural-studio-review-status"):
+        from . import studio_neural
+        private=a.workspace.expanduser().absolute()
+        if action=="project-neural-studio-compose":return studio_neural.compose(private,a.project_id)
+        if action=="project-neural-studio-audit":return studio_neural.inspect(private,a.project_id)
+        return studio_neural.qa(private,a.project_id,action.rsplit("-",1)[1],acknowledgment=getattr(a,"acknowledgment",None))
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

@@ -76,3 +76,6 @@ Corrective CI 45479131328 passed 6/6. Implemented explicit local Kokoro Spanish/
 
 ## Increment 20 — English frontend and static studio preparation
 Implemented US/UK Kokoro non-transformer English phonemization and optional dependency group, local profile-derived portrait briefs, immutable authorized background and focus/grid static studio preview with measured subtitles and structural audit. No image generation or animated neural studio. CJK and physical model acceptance remain pending. See V4_STUDIO_ENGLISH.md.
+
+## Increment 21 — neural studio, fresh review and portrait attachment
+Implemented independent neural focus/grid candidate with active speaker motion and static listeners, exact frame plan/master/SRT, immutable full review, two new studio recovery types and authorized immutable portrait attachment. No genuine model acceptance, local portrait inference, mixed studio or continuous camera motion. See V4_NEURAL_STUDIO.md.

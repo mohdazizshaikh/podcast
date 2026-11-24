@@ -54,3 +54,5 @@ Audio post-production CI 45478604299 failed four matrix jobs at CLI doctor due p
 Corrective audio/mixed-video/recovery CI 45479131328 passed 6/6. Combined Kokoro language expansion, Wikipedia candidate discovery and optional factual review implemented (CI pending). Next English/CJK voices, local pilot, portrait/studio controls and dashboard; actual device acceptance mandatory.
 
 Language/research CI 45481266847 had five core jobs passed, packaging pending at check. English/studio/portrait preparation implemented (new CI pending). Next actual Windows model tests, CJK frontend, neural studio composition, local portrait generation, integrated dashboard and ETA.
+
+Language/research CI 45481266847 passed 6/6. English/static studio CI 45482554584 had three jobs passed at check. Neural studio composition, separate QA, expanded recovery and portrait attachment implemented (new CI pending). Next actual model pilot, CJK, local portrait inference, integrated dashboard and mixed studio.

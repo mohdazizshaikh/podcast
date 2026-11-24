@@ -30,3 +30,5 @@ Bounded foreground production orchestration is now available through V4_WORKFLOW
 Offline graphical audio/pilot/final QA forms with explicit JSON file imports are available through V4_MEDIA_WORKFLOW.md. All original review gates remain mandatory.
 
 Current incomplete output directories without completion receipts can now be explicitly archived under strict conditions; see V4_POST_AUDIO_RECOVERY.md. Existing reviewed or completed evidence is not automatically moved.
+
+Independent neural studio candidate review and two additional incomplete studio output archive types are documented in V4_NEURAL_STUDIO.md. Prior review receipts do not transfer.

@@ -66,7 +66,26 @@ def _context(root,pid):
     return folder,dest,timeline,turns,cast,bound,settings,raw
 
 
-def card(portraits,active,size,layout,background=None):
+def geometry(indices,active,size,layout):
+    w,h=size
+    chosen=list(indices) if layout=="grid" else [active]
+    n=len(chosen)
+    if not 1<=n<=10 or active not in chosen:raise ValueError("Invalid studio cast geometry")
+    cols=(min(4,math.ceil(math.sqrt(n))) if w>=h else min(2,n)) if layout=="grid" else 1
+    rows=math.ceil(n/cols);margin=20;top=70;bottom=h-52
+    cellw=(w-margin*(cols+1))//cols
+    cellh=(bottom-top-margin*(rows-1))//rows
+    return {index:(margin+(i%cols)*(cellw+margin),top+(i//cols)*(cellh+margin),cellw,cellh)
+            for i,index in enumerate(chosen)}
+
+
+def active_rect(indices,active,size,layout):
+    x,y,w,h=geometry(indices,active,size,layout)[active]
+    # All video bounds are even for 4:2:0 encoding and inside the card.
+    return ((x+9)//2*2,(y+7)//2*2,(w-16)//2*2,(h-36)//2*2)
+
+
+def card(portraits,active,size,layout,background=None,*,neural=False,pause=False):
     w,h=size
     if background is not None:
         with Image.open(io.BytesIO(background)) as im:
@@ -75,24 +94,17 @@ def card(portraits,active,size,layout,background=None):
     else:canvas=Image.new("RGB",size,(19,29,45))
     draw=ImageDraw.Draw(canvas)
     draw.text((w//2,22),"PODCAST STUDIO",anchor="mt",font=ImageFont.load_default(size=25),fill="white")
-    chosen=list(portraits) if layout=="grid" else [active]
-    n=len(chosen)
-    cols=(min(4,math.ceil(math.sqrt(n))) if w>=h else min(2,n)) if layout=="grid" else 1
-    rows=math.ceil(n/cols)
-    margin=20;top=70;bottom=h-52
-    cellw=(w-margin*(cols+1))//cols
-    cellh=(bottom-top-margin*(rows-1))//rows
-    for i,index in enumerate(chosen):
-        row,col=divmod(i,cols);x=margin+col*(cellw+margin);y=top+row*(cellh+margin)
+    for index,(x,y,cellw,cellh) in geometry(portraits,active,size,layout).items():
         selected=index==active
         draw.rounded_rectangle((x,y,x+cellw,y+cellh),radius=10,fill=(12,18,30),
             outline=(102,220,180) if selected else (120,135,155),width=5 if selected else 2)
-        with Image.open(io.BytesIO(portraits[index])) as im:
-            pic=ImageOps.contain(im.convert("RGB"),(cellw-16,cellh-36),method=Image.Resampling.LANCZOS)
-            canvas.paste(pic,(x+(cellw-pic.width)//2,y+6+(cellh-36-pic.height)//2))
-        draw.text((x+cellw//2,y+cellh-8),f"Presenter {index:02}"+(" - speaking" if selected else ""),
+        if not (neural and selected and not pause):
+            with Image.open(io.BytesIO(portraits[index])) as im:
+                pic=ImageOps.contain(im.convert("RGB"),(cellw-16,cellh-36),method=Image.Resampling.LANCZOS)
+                canvas.paste(pic,(x+(cellw-pic.width)//2,y+6+(cellh-36-pic.height)//2))
+        draw.text((x+cellw//2,y+cellh-8),f"Presenter {index:02}"+((" - pause" if pause else " - speaking") if selected else ""),
             anchor="mb",font=ImageFont.load_default(size=14 if cellw<300 else 20),fill="white")
-    draw.text((w//2,h-12),"STATIC STUDIO PREVIEW - NOT LIP SYNC",anchor="mb",
+    draw.text((w//2,h-12),("NEURAL STUDIO - STATIC LISTENERS" if neural else "STATIC STUDIO PREVIEW - NOT LIP SYNC"),anchor="mb",
               font=ImageFont.load_default(size=18),fill=(255,196,130))
     return canvas
 

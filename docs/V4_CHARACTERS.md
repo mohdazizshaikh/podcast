@@ -33,3 +33,5 @@ Hindi Kokoro presets now feed an explicit local TTS adapter for compatible Hindi
 Optional eSpeak profile engine and opt-in cast personality prompt snapshots are now available. See V4_MODEL_VOICES_PERSONA.md. Cross-episode memory and realistic portrait generation remain pending.
 
 Local profile-bound portrait brief generation is available (V4_STUDIO_ENGLISH.md). This prepares prompts only, not real AI image generation.
+
+Authorized portrait attachment can create a new character version directly from an existing profile ID; see V4_NEURAL_STUDIO.md. No image inference or cast reassignment.

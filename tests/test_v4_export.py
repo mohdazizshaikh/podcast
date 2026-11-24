@@ -51,6 +51,18 @@ def test_export_fixture_gate_and_audit(tmp_path,monkeypatch,fmt):
     assert export.inspect(root,pid,allow_fixture=True)==result
     assert export.compose(root,pid,allow_fixture=True)==result
     if fmt=="square":
+        from podcast_gpt import studio_preview,studio_neural
+        studio_preview.configure(root,pid,layout="grid")
+        with pytest.raises(ValueError,match="fixture"):studio_neural.compose(root,pid)
+        studio=studio_neural.compose(root,pid,allow_fixture=True)
+        assert studio["studio"]["streams"]["decoded_video_frames"]==56
+        assert studio["studio"]["inactive_presenters_static"]
+        assert studio_neural.inspect(root,pid,allow_fixture=True)==studio
+        assert export.inspect(root,pid,allow_fixture=True)==result
+        with pytest.raises(ValueError,match="fixture"):studio_neural.qa(root,pid,"template")
+        path=neural._context(root,pid)[1]/studio_neural.FOLDER/studio_neural.SRT
+        path.write_text("tampered",encoding="utf-8")
+        with pytest.raises(ValueError,match="subtitles"):studio_neural.inspect(root,pid,allow_fixture=True)
         from podcast_gpt import v4_post_audio as mix,v4_mixed_video as mixed
         from test_v4_master_tts import wav
         mix.compose(root,pid,intro=wav(tmp_path/"intro.wav",500),outro=wav(tmp_path/"outro.wav",700),acknowledgment=mix.ACK)
