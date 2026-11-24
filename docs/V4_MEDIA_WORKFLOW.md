@@ -21,3 +21,5 @@ Successful orchestrated media actions record wall-clock elapsed seconds, unit ID
 ```
 
 Open private HTML locally and listed files in a separate local media player. Complete observations and export JSON, then use actual downloaded path. No remote resources or default PASS, and existing source-bound review validators remain mandatory. Pilot and final production forms reject synthetic clips. Real browser interaction, integrated playback, genuine model inference and actual Windows acceptance remain pending.
+
+A read-only dashboard overview and historical neural-stage extrapolation are now available (V4_PRODUCTION_OVERVIEW.md). No live ETA or automatic approval.

@@ -26,3 +26,5 @@ No automatic PASS or publication. Failed review remains immutable. Incomplete st
 ```
 
 Creates a new immutable character version using the original profile and authorized new PNG, preserving old records and casts. Select the new ID when assigning a new project's cast. Does not generate images or automatically reassign existing projects. Actual local image inference, genuine model rendering and Windows acceptance remain pending. Tests exercise synthetic media, geometry, archive and review behavior.
+
+Verified neural studio candidate playback manifest is available through V4_PRODUCTION_OVERVIEW.md. Browser interaction and genuine model acceptance remain pending.

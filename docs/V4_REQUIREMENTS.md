@@ -79,3 +79,6 @@ Implemented US/UK Kokoro non-transformer English phonemization and optional depe
 
 ## Increment 21 — neural studio, fresh review and portrait attachment
 Implemented independent neural focus/grid candidate with active speaker motion and static listeners, exact frame plan/master/SRT, immutable full review, two new studio recovery types and authorized immutable portrait attachment. No genuine model acceptance, local portrait inference, mixed studio or continuous camera motion. See V4_NEURAL_STUDIO.md.
+
+## Increment 22 — production overview, local playback and historical estimate
+Implemented selected-project read-only dashboard overview, allowlisted structural media manifests, client-local hash-checked playback and same-scope neural stage timing extrapolation. No HTTP file serving, inference controls, live ETA or approval automation. See V4_PRODUCTION_OVERVIEW.md.

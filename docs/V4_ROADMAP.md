@@ -56,3 +56,5 @@ Corrective audio/mixed-video/recovery CI 45479131328 passed 6/6. Combined Kokoro
 Language/research CI 45481266847 had five core jobs passed, packaging pending at check. English/studio/portrait preparation implemented (new CI pending). Next actual Windows model tests, CJK frontend, neural studio composition, local portrait generation, integrated dashboard and ETA.
 
 Language/research CI 45481266847 passed 6/6. English/static studio CI 45482554584 had three jobs passed at check. Neural studio composition, separate QA, expanded recovery and portrait attachment implemented (new CI pending). Next actual model pilot, CJK, local portrait inference, integrated dashboard and mixed studio.
+
+English/static studio CI 45482554584 passed 6/6. Neural studio CI 45483234208 had four jobs passed at check. Combined dashboard overview, local playback and historical neural-stage estimate implemented (CI pending). Next real model acceptance, mixed studio, local portrait generation and CJK, full GUI and live progress.

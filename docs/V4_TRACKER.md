@@ -17,40 +17,42 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Version-bound human listening review | Done | 6/6 CI run 45457590951 (synthetic fixtures) |
 | Audio-only peak normalization, background bed, intro/outro mix | Done | Corrective CI 45479131328 6/6 passed; synthetic PCM |
 | Mixed audio listening review, intro/outro video, shifted SRT and fresh video QA | Done | 6/6 CI 45479131328; synthetic fixture |
-| Safe incomplete-output archive (nine types) | Implemented | Prior seven types CI 45479131328 6/6; two new studio types CI pending |
+| Safe incomplete-output archive (nine types) | Implemented | Prior seven types CI 45479131328 6/6; studio CI 45483234208 four jobs passed at check |
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
 | Explicit Wikipedia candidate discovery and source-bound optional human factual review | Implemented | 6/6 CI 45481266847 (offline fixtures) |
 | Broad web search, automated semantic claim verification and corroboration | Not implemented | Pending |
 | Reusable character profiles, authorized PNG library and cast binding | Done | 6/6 CI run 45453165135 (synthetic PNGs) |
 | Opt-in cast-bound personality-aware dialogue prompts | Done | 6/6 CI 45462475819 (mock provider) |
-| Local profile-based portrait preparation brief | Implemented | CI 45482554584: three jobs passed at check; no image synthesis |
-| Authorized portrait attachment as immutable profile revision | Implemented | New CI pending; no image inference |
+| Local profile-based portrait preparation brief | Implemented | 6/6 CI 45482554584; no image synthesis |
+| Authorized portrait attachment as immutable profile revision | Implemented | CI 45483234208 four jobs passed at check; no image inference |
 | AI portrait creation and longitudinal memory | Not implemented in V4 | Pending |
 | V4 local Hindi Kokoro adapter with preset/model provenance | Done | 6/6 CI run 45456602766 (fake model fixture) |
 | V4 local CPU SadTalker pilot, source-bound clips and reviewed batch | Done | 6/6 CI 45458379123 (synthetic model runner) |
 | Local eSpeak multilingual fallback and installed language inventory | Done | 6/6 CI 45462475819 (fake executable) |
 | Kokoro Spanish/French/Italian/Brazilian Portuguese expansion | Implemented | 6/6 CI 45481266847 (mock inference) |
-| English US/UK Kokoro frontend and dependency group | Implemented | CI 45482554584: three jobs passed at check; actual voices unverified |
+| English US/UK Kokoro frontend and dependency group | Implemented | 6/6 CI 45482554584; actual voices unverified |
 | Japanese/Mandarin neural frontends and Edge adapter | Not implemented in V4 | Pending |
 | Selected-format neural candidate composition, measured SRT and structural audit | Done | 6/6 CI 45458841874 (short synthetic fixture exports) |
 | Full candidate-specific human video QA | Done | 6/6 CI run 45461563645 |
 | Safe stopped neural scratch archive | Done | 6/6 CI run 45461563645; other failure modes manual |
 | Read-only staged V4 readiness and dashboard action | Done | 6/6 CI run 45461563645 |
 | Selected landscape/vertical/square static preview and measured SRT | Done | 6/6 CI run 45457590951 (short synthetic previews) |
-| Authorized studio background and static focus/grid preview | Implemented | CI 45482554584: three jobs passed at check |
-| Separate neural focus/grid studio, per-turn switching and fresh QA | Implemented | New CI pending; static listeners; synthetic media only |
+| Authorized studio background and static focus/grid preview | Implemented | 6/6 CI 45482554584 |
+| Separate neural focus/grid studio, per-turn switching and fresh QA | Implemented | CI 45483234208: four jobs passed at initial check; static listeners; synthetic only |
 | Full-length real neural video and dynamic camera layouts | Not implemented in V4 | Pending |
 | Offline visual script editing and review JSON import | Done | 6/6 CI 45463360856; actual browser interaction pending |
 | Bounded foreground orchestration and per-action elapsed timing | Done | 6/6 CI 45463360856 |
 | Configured TTS/neural foreground orchestration | Done | 6/6 CI 45464174884 (mock inference) |
 | Persistent media action timing history | Done | 6/6 CI 45464174884; historical only |
 | Offline audio/pilot/final visual QA and JSON import | Done | 6/6 CI 45464174884; browser interaction pending |
-| Full dashboard, automatic/manual orchestration, ETA | Partial | Offline script/media QA and configured CLI runner; no live ETA |
+| Selected-project dashboard overview and hash-checked local browser playback | Implemented | New CI pending; browser interaction pending |
+| Historical neural-stage ETA with matched completed timings | Implemented | New CI pending; no live subprocess progress |
+| Full dashboard, automatic/manual orchestration, ETA | Partial | Read-only overview/playback, offline forms and configured CLI runner; full GUI and live ETA pending |
 | Real Windows model run and acceptance | Not verified | Local user hardware required |
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify English/static studio and new neural studio CI. Next actual model setup/pilot, CJK model-specific frontends, local portrait inference, mixed neural studio and integrated dashboard. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify neural studio and new overview/playback/estimate CI. Next actual model setup/pilot, CJK frontends, local portrait inference, mixed neural studio and full dashboard authoring controls. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

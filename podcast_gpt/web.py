@@ -24,6 +24,7 @@ from .readiness import inspect as inspect_readiness
 from .setup_wizard import inspect as inspect_setup
 from .projects import list_projects,ID_RE
 from .v4_readiness import inspect as inspect_v4_readiness
+from . import production_overview
 
 STYLE="""body{font:16px system-ui;background:#121b2b;color:#f4f7ff;margin:auto;max-width:1100px;padding:28px}
 header{padding:18px;border-bottom:1px solid #53627c}.panel{padding:18px;margin:18px 0;border:1px solid #4c5a70;border-radius:12px}
@@ -36,7 +37,7 @@ def html_page(token:str)->str:
     # Static trusted markup, token is exclusively server-generated hex.
     return '''<!doctype html><html lang="hi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none';style-src 'unsafe-inline';script-src 'unsafe-inline';connect-src 'self';form-action 'none';base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none';style-src 'unsafe-inline';script-src 'unsafe-inline';connect-src 'self';media-src blob:;form-action 'none';base-uri 'none'">
 <title>Podcast GPT — Private Hindi Studio</title><style>'''+STYLE+'''</style></head><body>
 <header><h1>Podcast GPT — Private Hindi Studio</h1>
 <p>Three human-authorized presenters, original 45 Hindi turns, true WAV sample provenance and CPU-only rendering.</p>
@@ -48,6 +49,14 @@ def html_page(token:str)->str:
 <button data-action="project-list">List private V4 projects</button>
 <label>Project ID <input id="v4ProjectId" maxlength="32" autocomplete="off"></label>
 <button id="v4Readiness">Check selected V4 project readiness (read-only)</button>
+<button id="v4Overview">Production overview / historical estimate</button>
+<div id="v4Summary" aria-live="polite"></div>
+<h3>Verified local playback</h3>
+<label>Media type <select id="v4MediaKind"><option value="master">Master WAV</option><option value="preview">Static preview</option><option value="neural">Neural video</option><option value="mix">Audio mix</option><option value="mixed">Mixed video</option><option value="studio-preview">Static studio</option><option value="neural-studio">Neural studio</option></select></label>
+<button id="v4MediaCheck">Audit selected media</button>
+<p id="v4MediaInfo">Audit first, then select the matching local file (128 MiB maximum for browser hash check).</p>
+<input type="file" id="v4LocalMedia" accept=".wav,.mp4" disabled><video id="v4Player" controls preload="none" style="max-width:100%;display:none"></video>
+<p><small>File bytes stay in this browser tab; no upload or HTTP media endpoint. Large files: use the displayed local path in your own player.</small></p>
 <small>Use project-create and project-plan CLI for creating and planning. API keys are managed only in the local CLI, not the browser.</small></section>
 <section class="panel"><h2>1. Original 45-turn episode</h2>
 <button data-action="init">Create NEW original 45-turn project</button>
@@ -78,19 +87,51 @@ async function send(endpoint,data,portraitRights=false){let opt={method:'POST',h
 if(portraitRights)opt.headers['X-Portrait-Rights-Confirmed']='YES';
 if(data instanceof File){opt.body=data;opt.headers['Content-Type']='application/octet-stream'}
 let r=await fetch(endpoint,opt);let j=await r.json();if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
+let manifest=null,blobUrl=null;
+function clearMedia(){manifest=null;let p=document.getElementById('v4Player');p.pause();p.removeAttribute('src');p.load();p.style.display='none';if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}let i=document.getElementById('v4LocalMedia');i.value='';i.disabled=true}
+function showResult(status){
+ if(status.phase!=='complete'||!status.result)return;
+ let data=status.result;
+ if(status.command==='project-production-overview'){
+  if(data.project_id!==document.getElementById('v4ProjectId').value.trim())return;
+  let area=document.getElementById('v4Summary');area.replaceChildren();
+  for(let line of ['Stage: '+data.readiness.stage,'Next: '+data.readiness.next_action,...Object.entries(data.readiness.checks).map(([k,v])=>k+': '+JSON.stringify(v)), 'Historical timing observations: '+data.timing.completed_observations, data.neural_estimate.estimate_available?'Approximate remaining stage seconds: '+data.neural_estimate.estimated_seconds+' (historical range '+data.neural_estimate.observed_rate_range_seconds.join('–')+')':'Estimate unavailable: '+data.neural_estimate.reason]){let p=document.createElement('p');p.textContent=line;area.append(p)}
+ }
+ if(status.command==='project-media-check'&&data.project_id===document.getElementById('v4ProjectId').value.trim()&&data.kind===document.getElementById('v4MediaKind').value){
+  manifest=data;document.getElementById('v4MediaInfo').textContent='Verified local file: '+data.local_path+' | SHA-256: '+data.sha256+(data.browser_check_supported?' | Select this file locally.':' | Too large for browser hash check; use a local player.');
+  document.getElementById('v4LocalMedia').disabled=!data.browser_check_supported;
+ }
+}
 async function refresh(){
  let r=await fetch('/api/status',{cache:'no-store'});let status=await r.json();
- out.textContent=JSON.stringify(status,null,2);
+ out.textContent=JSON.stringify(status,null,2);showResult(status);
  if(status.phase==='running')setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
 }
-async function action(name,pid=null){try{
+async function action(name,pid=null,kind=null){try{
  out.textContent='Starting '+name+'...';
- let receipt=await send('/api/action?cmd='+encodeURIComponent(name)+(pid===null?'':'&project_id='+encodeURIComponent(pid)));
+ let receipt=await send('/api/action?cmd='+encodeURIComponent(name)+(pid===null?'':'&project_id='+encodeURIComponent(pid))+(kind===null?'':'&kind='+encodeURIComponent(kind)));
  out.textContent=JSON.stringify(receipt,null,2);
  await refresh();
 }catch(e){out.textContent='BLOCKED: '+e.message}}
 document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>action(b.dataset.action)));
 document.getElementById('v4Readiness').addEventListener('click',()=>{let pid=document.getElementById('v4ProjectId').value.trim();if(!/^[0-9a-f]{32}$/.test(pid)){out.textContent='Enter a valid project ID from the project list';return}action('project-readiness',pid)});
+function currentPid(){let pid=document.getElementById('v4ProjectId').value.trim();if(!/^[0-9a-f]{32}$/.test(pid))throw new Error('Enter a valid project ID');return pid}
+document.getElementById('v4Overview').addEventListener('click',()=>{try{action('project-production-overview',currentPid())}catch(e){out.textContent=e.message}});
+document.getElementById('v4MediaCheck').addEventListener('click',()=>{try{clearMedia();document.getElementById('v4MediaInfo').textContent='Auditing current candidate...';action('project-media-check',currentPid(),document.getElementById('v4MediaKind').value)}catch(e){out.textContent=e.message}});
+for(const id of ['v4ProjectId','v4MediaKind'])document.getElementById(id).addEventListener('input',()=>{clearMedia();document.getElementById('v4MediaInfo').textContent='Audit the current selection first.';document.getElementById('v4Summary').replaceChildren()});
+document.getElementById('v4LocalMedia').addEventListener('change',async()=>{
+ const selected=manifest,info=document.getElementById('v4MediaInfo'),player=document.getElementById('v4Player');
+ const file=document.getElementById('v4LocalMedia').files[0];
+ player.pause();player.removeAttribute('src');player.load();player.style.display='none';if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}
+ try{
+  if(!selected||!file||!selected.browser_check_supported||file.size!==selected.bytes||file.size>134217728)throw new Error('Select the matching verified file within the browser size limit');
+  if(!globalThis.crypto?.subtle)throw new Error('Browser SHA-256 unavailable; use a local player');
+  const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer())),b=>b.toString(16).padStart(2,'0')).join('');
+  if(manifest!==selected)return;
+  if(hash!==selected.sha256)throw new Error('Selected file differs from audited SHA-256');
+  blobUrl=URL.createObjectURL(file);player.src=blobUrl;player.style.display='block';info.textContent='Local file hash matches audited candidate. Use playback controls; no review saved.';
+ }catch(e){if(manifest===selected)info.textContent='BLOCKED: '+e.message}
+});
 async function upload(files,kind){
 if(kind==='portrait'&&!document.getElementById('portraitRights').checked)
   throw new Error('Explicit portrait ownership/written permission required');
@@ -151,10 +192,15 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
             if url.path=="/api/action":
                 if size!=0:return self._json(400,{"error":"Action body must be empty"})
                 command=query.get("cmd",[""])[0]
-                if command=="project-readiness":
+                if command in ("project-readiness","project-production-overview","project-media-check"):
                     pid=query.get("project_id",[""])[0]
                     if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})
-                    selected=lambda:inspect_v4_readiness(root,pid)
+                    if command=="project-readiness":selected=lambda:inspect_v4_readiness(root,pid)
+                    elif command=="project-production-overview":selected=lambda:production_overview.inspect(root,pid)
+                    else:
+                        kind=query.get("kind",[""])[0]
+                        if kind not in production_overview.MEDIA:return self._json(400,{"error":"Unknown media kind"})
+                        selected=lambda:production_overview.media_check(root,pid,kind)
                 elif command in actions:selected=actions[command]
                 else:return self._json(400,{"error":"Unrecognized local action"})
                 with state_lock:

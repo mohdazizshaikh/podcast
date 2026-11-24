@@ -79,6 +79,11 @@ def parse(argv=None):
     auto.add_argument("--kokoro-ack")
     auto.add_argument("--espeak-ack")
     auto.add_argument("--neural-ack")
+    overview=subs.add_parser("project-production-overview")
+    overview.add_argument("--project-id",required=True)
+    checkmedia=subs.add_parser("project-media-check")
+    checkmedia.add_argument("--project-id",required=True)
+    checkmedia.add_argument("--kind",choices=("master","preview","neural","mix","mixed","studio-preview","neural-studio"),required=True)
     prog=subs.add_parser("project-production-progress")
     prog.add_argument("--project-id",required=True)
     qa=subs.add_parser("project-media-review-visual")
@@ -490,6 +495,11 @@ def execute(a)->dict:
         return v4_orchestrator.run(a.workspace.expanduser().absolute(),a.project_id,execute=a.execute,
             acknowledgment=a.acknowledgment,max_steps=a.max_steps,allow_local_ai=a.allow_local_ai,
             kokoro_ack=a.kokoro_ack,espeak_ack=a.espeak_ack,neural_ack=a.neural_ack)
+    if action in ("project-production-overview","project-media-check"):
+        from . import production_overview
+        private=a.workspace.expanduser().absolute()
+        if action=="project-production-overview":return production_overview.inspect(private,a.project_id)
+        return production_overview.media_check(private,a.project_id,a.kind)
     if action=="project-production-progress":
         from . import v4_progress
         return v4_progress.inspect(a.workspace.expanduser().absolute(),a.project_id)

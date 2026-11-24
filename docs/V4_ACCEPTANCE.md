@@ -32,3 +32,5 @@ Offline graphical audio/pilot/final QA forms with explicit JSON file imports are
 Current incomplete output directories without completion receipts can now be explicitly archived under strict conditions; see V4_POST_AUDIO_RECOVERY.md. Existing reviewed or completed evidence is not automatically moved.
 
 Independent neural studio candidate review and two additional incomplete studio output archive types are documented in V4_NEURAL_STUDIO.md. Prior review receipts do not transfer.
+
+Dashboard can audit allowlisted current media and play a matching manually selected local file (V4_PRODUCTION_OVERVIEW.md). Playback does not record approval or serve files over HTTP.

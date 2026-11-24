@@ -28,7 +28,7 @@ def record(root,pid,*,scope,action,unit,seconds):
         source.atomic_json(dest/(uuid.uuid4().hex+".json"),{"observation":data,"sha256":source.json_digest(data)},new=True)
 
 
-def inspect(root,pid):
+def records(root,pid):
     folder=projects.project(root,pid);dest=folder/FOLDER;projects._plain(dest,missing=True)
     records=[]
     if dest.exists():
@@ -38,10 +38,15 @@ def inspect(root,pid):
             row=source.read_json(p,16000)
             if set(row)!={"observation","sha256"} or source.json_digest(row["observation"])!=row["sha256"]:raise ValueError("Timing hash differs")
             records.append(validate(row["observation"]))
+    return records
+
+
+def inspect(root,pid):
+    folder=projects.project(root,pid);observations=records(root,pid)
     groups={}
-    for row in records:groups.setdefault((row["scope"],row["action"]),[]).append(row["seconds"])
+    for row in observations:groups.setdefault((row["scope"],row["action"]),[]).append(row["seconds"])
     lock=folder/projects.LOCK
     return {"project_id":pid,"operation_lock_present":lock.exists() or lock.is_symlink(),
-            "completed_observations":len(records),"groups":[{"scope":k[0],"action":k[1],"count":len(v),
+            "completed_observations":len(observations),"groups":[{"scope":k[0],"action":k[1],"count":len(v),
             "mean_seconds":round(sum(v)/len(v),3),"min_seconds":min(v),"max_seconds":max(v)} for k,v in groups.items()],
-            "recent_observations":sorted(records,key=lambda d:d["utc"])[-20:],"live_eta_available":False,"historical_only":True}
+            "recent_observations":sorted(observations,key=lambda d:d["utc"])[-20:],"live_eta_available":False,"historical_only":True}

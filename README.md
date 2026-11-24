@@ -314,3 +314,5 @@ V4 expanded local Kokoro language presets, opt-in Wikipedia candidate discovery 
 V4 English voice frontend, portrait preparation briefs and static background/focus/grid studio preview: [studio and English guide](docs/V4_STUDIO_ENGLISH.md). Real image generation and animated neural studio remain pending.
 
 V4 separate neural studio composition, fresh full review, studio recovery and portrait attachment: [neural studio guide](docs/V4_NEURAL_STUDIO.md). Active speaker animated clip; other presenters static. Actual local model acceptance pending.
+
+V4 dashboard overview, historical neural-stage estimate and verified local playback: [production overview guide](docs/V4_PRODUCTION_OVERVIEW.md). No media HTTP endpoint, live ETA or automatic publication.

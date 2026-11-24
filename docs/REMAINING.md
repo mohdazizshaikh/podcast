@@ -93,3 +93,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Language/research CI 45481266847 6/6 passed.
 - [ ] Verify English/static studio CI and new neural studio CI. Real model acceptance, local portrait inference, animated listeners/camera transitions, mixed studio export, studio settings recovery, CJK and complete GUI remain pending.
+
+- [x] English/static studio CI 45482554584 6/6 passed.
+- [ ] Verify neural studio and production overview CI, actual browser playback/codec support, real timing observations, live process progress, full GUI authoring/inference, mixed neural studio, local portrait inference, CJK and actual Windows acceptance.
