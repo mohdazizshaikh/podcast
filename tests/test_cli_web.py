@@ -34,3 +34,50 @@ def test_portrait_ui_requires_explicit_local_owner_declaration():
     assert 'id="portraitRights"' in page
     assert "X-Portrait-Rights-Confirmed" in page
     assert "source authentic" not in page.lower()
+
+
+
+def test_web_browser_launch_requires_explicit_flag(tmp_path,monkeypatch):
+    calls=[]
+    monkeypatch.setattr(web,"serve",lambda root,port,*,open_browser: calls.append((port,open_browser)))
+    for flags in ([],["--open-browser"]):
+        args=cli.parse(["--workspace",str(tmp_path),"web","--port","7861"]+flags)
+        assert cli.execute(args)["dashboard_stopped"]
+    assert calls==[(7861,False),(7861,True)]
+
+
+def test_browser_only_opens_after_successful_local_bind(tmp_path,monkeypatch):
+    import webbrowser
+    events=[]
+    class FakeServer:
+        def __init__(self,address,handler):
+            assert address==("127.0.0.1",7861)
+            events.append("bind")
+        def serve_forever(self): events.append("serve")
+        def server_close(self): events.append("close")
+    monkeypatch.setattr(web,"ThreadingHTTPServer",FakeServer)
+    monkeypatch.setattr(webbrowser,"open",lambda url: events.append(url) or True)
+    web.serve(tmp_path/"private",7861,open_browser=True)
+    assert events==["bind","http://127.0.0.1:7861","serve","close"]
+    events.clear()
+    def occupied(*args):
+        raise OSError("Port occupied")
+    monkeypatch.setattr(web,"ThreadingHTTPServer",occupied)
+    with pytest.raises(OSError,match="occupied"):
+        web.serve(tmp_path/"private",7861,open_browser=True)
+    assert events==[]
+
+
+def test_browser_failure_keeps_manual_dashboard_available(tmp_path,monkeypatch):
+    import webbrowser
+    events=[]
+    class FakeServer:
+        def __init__(self,*args): pass
+        def serve_forever(self): events.append("serve")
+        def server_close(self): events.append("close")
+    def unavailable(url):
+        raise webbrowser.Error("No browser")
+    monkeypatch.setattr(web,"ThreadingHTTPServer",FakeServer)
+    monkeypatch.setattr(webbrowser,"open",unavailable)
+    web.serve(tmp_path/"private",7861,open_browser=True)
+    assert events==["serve","close"]

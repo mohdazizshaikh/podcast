@@ -93,7 +93,7 @@ if(!files.length)throw new Error('Select WAVs');await upload(files,'voice')}catc
 </script></body></html>'''
 
 
-def serve(root:Path,port:int=7860):
+def serve(root:Path,port:int=7860,*,open_browser:bool=False):
     if type(port)!=int or not 1024<=port<=65535:raise ValueError("Private loopback port 1024..65535")
     root=workspace_path(root);root.mkdir(parents=True,exist_ok=True)
     token=secrets.token_hex(32)
@@ -241,6 +241,17 @@ def serve(root:Path,port:int=7860):
         def log_message(self,format,*args):pass  # no local portrait or private URL traces
 
     http=ThreadingHTTPServer(("127.0.0.1",port),Handler)
-    print(f"Private local studio: http://127.0.0.1:{port} ; private workspace outside repo")
-    try:http.serve_forever()
+    url=f"http://127.0.0.1:{port}"
+    print(f"Private local studio: {url} ; private workspace outside repo",flush=True)
+    try:
+        if open_browser:
+            # The socket is already successfully bound/listening. Do not open
+            # a browser pointing at another process on an occupied port.
+            import webbrowser
+            try:
+                if not webbrowser.open(url):
+                    print("Open the private dashboard URL manually.",flush=True)
+            except (OSError, webbrowser.Error):
+                print("Browser unavailable; open the private dashboard URL manually.",flush=True)
+        http.serve_forever()
     finally:http.server_close()

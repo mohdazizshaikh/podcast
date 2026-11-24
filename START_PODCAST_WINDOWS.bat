@@ -2,32 +2,58 @@
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
 title Podcast GPT - ORIGINAL 3-PRESENTER HINDI STUDIO v3
-set "PYPATH=py -3.11"
-py -3.11 -c "import sys" >nul 2>nul
-if errorlevel 1 set "PYPATH=python"
-if not exist ".venv\Scripts\python.exe" (
-  echo [SETUP] Creating local Python app virtual environment...
-  %PYPATH% -m venv .venv
-  if errorlevel 1 goto :failed
-)
-echo [SETUP] Installing only Python application packages; no AI model weights downloaded.
-".venv\Scripts\python.exe" -m pip install -e .
-if errorlevel 1 goto :failed
-where ffmpeg.exe >nul 2>nul
-if errorlevel 1 (
- echo [BLOCKED] FFmpeg required. Install FFmpeg and put ffmpeg and ffprobe on PATH.
- echo Example: winget install Gyan.FFmpeg
- goto :failed
-)
-where ffprobe.exe >nul 2>nul
-if errorlevel 1 goto :failed
 set "BASE=%PODCAST_WORKSPACE%"
 if not defined BASE set "BASE=%USERPROFILE%\PodcastGPTStudio"
-echo [LOCAL ONLY] Opening browser at http://127.0.0.1:7860
-start "" "http://127.0.0.1:7860"
-".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" web --port 7860
+where ffmpeg.exe >nul 2>nul
+if errorlevel 1 goto :missingffmpeg
+where ffprobe.exe >nul 2>nul
+if errorlevel 1 goto :missingffmpeg
+if exist ".venv\Scripts\python.exe" goto :checkvenv
+set "PYPATH=py -3.11"
+%PYPATH% -c "import sys; assert sys.version_info >= (3,10)" >nul 2>nul
+if not errorlevel 1 goto :createvenv
+set "PYPATH=py -3.12"
+%PYPATH% -c "import sys; assert sys.version_info >= (3,10)" >nul 2>nul
+if not errorlevel 1 goto :createvenv
+set "PYPATH=py -3"
+%PYPATH% -c "import sys; assert sys.version_info >= (3,10)" >nul 2>nul
+if not errorlevel 1 goto :createvenv
+set "PYPATH=python"
+%PYPATH% -c "import sys; assert sys.version_info >= (3,10)" >nul 2>nul
+if errorlevel 1 goto :missingpython
+:createvenv
+echo [SETUP] Creating local Python app virtual environment...
+%PYPATH% -m venv .venv
+if errorlevel 1 goto :failed
+:checkvenv
+".venv\Scripts\python.exe" -c "import sys; assert sys.version_info >= (3,10)" >nul 2>nul
+if errorlevel 1 goto :brokenvenv
+rem Avoid network/package changes on normal starts. The helper checks the
+rem installed editable package and records the exact pyproject.toml digest.
+".venv\Scripts\python.exe" -m podcast_gpt.bootstrap check >nul 2>nul
+if not errorlevel 1 goto :launch
+echo [SETUP] Installing or refreshing application dependencies only (internet may be needed).
+".venv\Scripts\python.exe" -m pip install -e .
+if errorlevel 1 goto :failed
+".venv\Scripts\python.exe" -m podcast_gpt.bootstrap record
+if errorlevel 1 goto :failed
+:launch
+echo [LOCAL ONLY] Starting private dashboard; browser opens after successful local bind.
+".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" web --port 7860 --open-browser
 if errorlevel 1 goto :failed
 exit /b 0
+:missingffmpeg
+echo [BLOCKED] FFmpeg and FFprobe required on PATH.
+echo Example: winget install Gyan.FFmpeg
+echo Open a new CMD window after installation.
+goto :failed
+:missingpython
+echo [BLOCKED] Python 3.10 or newer required. Python 3.11 recommended.
+goto :failed
+:brokenvenv
+echo [BLOCKED] Existing .venv Python is missing dependencies or incompatible.
+echo Rename only the application .venv folder and retry; do NOT rename or delete your private workspace.
+goto :failed
 :failed
 echo [BLOCKED] Setup or local server failed. Originals were not intentionally modified.
 pause

@@ -19,7 +19,10 @@ def parse(argv=None):
                  "render-static","audit-static","progress","budget","readiness","review-pilot","inspect-pilot",
                  "compose-neural","audit-neural","review-full","web"):
         cmd=subs.add_parser(name)
-        if name=="web":cmd.add_argument("--port",type=int,default=7860)
+        if name=="web":
+            cmd.add_argument("--port",type=int,default=7860)
+            cmd.add_argument("--open-browser",action="store_true",
+                             help="Open default browser only after successful local server bind")
     preflight=subs.add_parser("check-sadtalker",help="READ ONLY local SadTalker CPU installation check; NO inference")
     preflight.add_argument("--sadtalker-root",type=Path,required=True)
     preflight.add_argument("--sadtalker-python",type=Path,required=True)
@@ -182,7 +185,7 @@ def execute(a)->dict:
         return asyncio.run(_tts_one(root,a.turn,a.allow_network_tts,a.voice))
     if action=="web":
         from .web import serve
-        serve(root,a.port)
+        serve(root,a.port,open_browser=a.open_browser)
         return {"dashboard_stopped":True}
     raise ValueError("Unknown action")
 
