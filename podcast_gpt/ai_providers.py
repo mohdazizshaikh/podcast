@@ -113,7 +113,7 @@ def _local_model(request,preferred):
 
 
 def inventory(credentials=None):
-    c=credentials or Credentials.environment()
+    c=Credentials() if offline_only else (credentials or Credentials.environment())
     return {"provider_order":["openrouter","gemini","ollama"],
             "openrouter_key_present":bool(_key(c.openrouter)),
             "gemini_key_present":bool(_key(c.gemini)),

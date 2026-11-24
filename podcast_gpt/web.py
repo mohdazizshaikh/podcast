@@ -1,8 +1,7 @@
 """Local-only dashboard: explicit one-click source actions + private file imports.
 
-No media/portrait HTTP GET endpoints, network uploads, AI model inference,
-automatic publishing, or model downloads. Real CPU model from separate
-consent-screen BAT/CLI only. Stateful CSRF token per local server instance.
+No media/portrait HTTP GET endpoints, automatic publishing, or model downloads.
+V4 local inference requires explicit selected-engine consent; cloud AI remains CLI-only. Stateful CSRF token per local server instance.
 """
 from __future__ import annotations
 
@@ -11,6 +10,7 @@ import os
 import re
 import secrets
 import threading
+import time
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs,urlsplit
@@ -41,7 +41,7 @@ def html_page(token:str)->str:
 <title>Podcast GPT — Private Hindi Studio</title><style>'''+STYLE+'''</style></head><body>
 <header><h1>Podcast GPT — Private Hindi Studio</h1>
 <p>Three human-authorized presenters, original 45 Hindi turns, true WAV sample provenance and CPU-only rendering.</p>
-<small>Localhost-only. Your portraits, voices and rendered media stay on your computer and are never served over HTTP. Online TTS and real SadTalker require separate explicit CLI consent.</small></header>
+<small>Localhost-only. Your portraits, voices and rendered media stay on your computer and are never served over HTTP. V4 local inference requires separate explicit model consent; original V3 neural inference and cloud AI remain CLI-only.</small></header>
 <section class="panel"><h2>0. V4 Smart setup — hardware and model readiness</h2>
 <button data-action="setup-wizard">Inspect hardware, storage and installed app packages</button>
 <p><small>For selecting existing local AI model files and explicitly probing a trusted model interpreter, run SMART_SETUP_WINDOWS.bat. No model downloads or external executable paths are accepted over HTTP.</small></p></section>
@@ -94,7 +94,18 @@ def html_page(token:str)->str:
 <label><input id="v4ModelReplace" type="checkbox"> Explicitly replace previous configuration</label>
 <button id="v4ModelSave">Save selected paths (no execution)</button>
 <p><label><input id="v4AuthorConsent" type="checkbox"> I authorize the selected local authoring or import action</label></p>
-<small>Selected files go only to this localhost application. Use trusted sources and model paths. No AI inference or dependency install here.</small>
+<small>Selected files go only to this localhost application. Use trusted sources and model paths. No AI inference or dependency install in these authoring controls.</small>
+<h3>Research pack</h3>
+<label>Optional public search query <input id="v4ResearchQuery" maxlength="200"></label>
+<label>2–4 distinct public HTTPS source URLs (one per line) <textarea id="v4ResearchUrls" rows="4" maxlength="8200"></textarea></label>
+<label><input id="v4ResearchConsent" type="checkbox"> I authorize the selected public internet search or source retrieval</label>
+<button id="v4ResearchDiscover">Discover Wikipedia candidates</button><button id="v4ResearchCapture">Capture selected research sources</button><button id="v4ResearchStatus">Inspect saved research pack</button>
+<h3>Explicit local AI production</h3>
+<label>Engine <select id="v4InferenceEngine"><option value="ollama">Ollama — local script</option><option value="kokoro">Kokoro — voice</option><option value="espeak">eSpeak — voice</option><option value="sadtalker">SadTalker — neural clips</option></select></label>
+<label>Maximum actions <input id="v4InferenceSteps" type="number" min="1" max="5" value="1"></label>
+<label><input id="v4InferenceConsent" type="checkbox"> I trust the selected local installation, have usage rights and authorize execution now</label>
+<button id="v4InferenceRun">Run bounded local inference</button>
+<p><small>No cloud AI or automatic model downloads authorized. Local third-party programs are not sandboxed. Human review and missing-input gates stop processing. Do not close the app while a task is running.</small></p>
 <h3>Explicit local production actions</h3>
 <label><input type="checkbox" id="v4ProcessConsent"> I authorize the selected local processing action. No AI inference or approval is authorized here.</label>
 <select id="v4Process"><option value="project-safe-step">One eligible non-inference production step</option><option value="project-script-visual-edit">Create offline script editor</option><option value="project-script-visual-review">Create script review page</option><option value="project-audio-visual-review">Create audio review page</option><option value="project-pilot-visual-review">Create pilot review page</option><option value="project-final-visual-review">Create final review page</option><option value="project-static-render">Render static preview</option><option value="project-studio-render">Render static studio</option><option value="project-neural-studio-compose">Compose neural studio from saved clips</option><option value="project-mixed-studio-compose">Compose mixed neural studio</option></select>
@@ -105,7 +116,7 @@ def html_page(token:str)->str:
 <p id="v4MediaInfo">Audit first, then select the matching local file (128 MiB maximum for browser hash check).</p>
 <input type="file" id="v4LocalMedia" accept=".wav,.mp4" disabled><video id="v4Player" controls preload="none" style="max-width:100%;display:none"></video>
 <p><small>File bytes stay in this browser tab; no upload or HTTP media endpoint. Large files: use the displayed local path in your own player.</small></p>
-<small>Research pack capture, model inference, cloud AI consent, API keys and recorded human approvals remain CLI-only.</small></section>
+<small>Cloud AI consent, API keys and recorded human approvals remain CLI-only.</small></section>
 <section class="panel"><h2>1. Original 45-turn episode</h2>
 <button data-action="init">Create NEW original 45-turn project</button>
 <button data-action="doctor">Check tools</button>
@@ -128,7 +139,7 @@ def html_page(token:str)->str:
 <button data-action="progress">Check genuine saved neural previews</button>
 <button data-action="readiness">READINESS — read-only all-stage SHA/video audit and next safe step</button>
 <p><small>Static is NOT lip-sync. Real SadTalker CPU models and one-per-presenter PILOT use the separate explicit-consent Windows launcher.</small></p></section>
-<section class="panel"><h2>Local task log</h2><pre id="status" aria-live="polite">Ready. Nothing running.</pre></section>
+<section class="panel"><h2>Local task log</h2><p id="v4TaskProgress" aria-live="polite">Idle</p><button id="v4RefreshTask">Refresh task status</button><pre id="status" aria-live="polite">Ready. Nothing running.</pre></section>
 <script>
 'use strict';const token='''+json.dumps(token)+''';const out=document.getElementById('status');
 async function send(endpoint,data,portraitRights=false){let opt={method:'POST',headers:{'X-CSRF-Token':token}};
@@ -158,10 +169,13 @@ function showResult(status){
   document.getElementById('v4LocalMedia').disabled=!data.browser_check_supported;
  }
 }
+let pollTimer=null;
 async function refresh(){
+ if(pollTimer!==null){clearTimeout(pollTimer);pollTimer=null}
  let r=await fetch('/api/status',{cache:'no-store'});let status=await r.json();
  out.textContent=JSON.stringify(status,null,2);showResult(status);
- if(status.phase==='running')setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
+ const progress=status.progress;document.getElementById('v4TaskProgress').textContent=status.phase+' | '+(status.command||'No task')+' | elapsed '+(status.elapsed_seconds??0)+' s'+(progress?' | '+progress.action+' | verified actions '+progress.completed_actions+'/'+progress.action_limit:'');
+ if(status.phase==='running')pollTimer=setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
 }
 async function action(name,pid=null,kind=null,consent=false){try{
  out.textContent='Starting '+name+'...';
@@ -203,6 +217,12 @@ async function authorFile(kind,id,file,rights=false){if(!file)throw new Error('S
 onAuthor('v4PortraitAttach',()=>{if(!field('v4PortraitRights').checked)throw new Error('Confirm portrait rights');field('v4PortraitRights').checked=false;return authorFile('portrait',val('v4CharId').trim(),field('v4Portrait').files[0],true)});
 onAuthor('v4SourceImport',()=>authorFile('source',currentPid(),field('v4SourceFile').files[0]));
 onAuthor('v4SourceWeb',()=>{if(!field('v4WebConsent').checked)throw new Error('Explicit internet retrieval consent required');field('v4WebConsent').checked=false;return author('source-url',{project_id:currentPid(),url:val('v4SourceUrl').trim(),allow_web_fetch:true},true)});
+function researchConsent(){if(!field('v4ResearchConsent').checked)throw new Error('Explicit public internet consent required');field('v4ResearchConsent').checked=false}
+onAuthor('v4ResearchDiscover',()=>{researchConsent();return author('research-discover',{project_id:currentPid(),query:val('v4ResearchQuery').trim()||null,allow_web_search:true},true)});
+onAuthor('v4ResearchCapture',()=>{researchConsent();return author('research-capture',{project_id:currentPid(),urls:val('v4ResearchUrls').split(/\\r?\\n/).map(s=>s.trim()).filter(Boolean),allow_web_fetch:true},true)});
+onAuthor('v4ResearchStatus',()=>author('research-status',{project_id:currentPid()}));
+onAuthor('v4InferenceRun',()=>{if(!field('v4InferenceConsent').checked)throw new Error('Explicit local model trust and usage rights required');field('v4InferenceConsent').checked=false;return author('local-inference',{project_id:currentPid(),engine:val('v4InferenceEngine'),max_steps:Number(val('v4InferenceSteps')),model_consent:true},true)});
+onAuthor('v4RefreshTask',()=>refresh());
 onAuthor('v4ModelStatus',()=>author('model-status',{}));
 onAuthor('v4ModelSave',()=>{const engine=val('v4ModelEngine'),paths=engine==='kokoro'?{model:val('v4ModelPath'),voices:val('v4VoicesPath')}:engine==='sadtalker'?{model:val('v4ModelPath'),python:val('v4PythonPath')}:{executable:val('v4ExePath')};const replace=field('v4ModelReplace').checked;field('v4ModelReplace').checked=false;return author('model-configure',{engine,paths,replace},true)});
 field('v4ProjectId').addEventListener('input',()=>{castPid=null;field('v4CastRows').replaceChildren()});
@@ -240,7 +260,8 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
     if type(port)!=int or not 1024<=port<=65535:raise ValueError("Private loopback port 1024..65535")
     root=workspace_path(root);root.mkdir(parents=True,exist_ok=True)
     token=secrets.token_hex(32)
-    status={"phase":"idle","command":None,"result":None}
+    status={"phase":"idle","command":None,"result":None,"progress":None,"elapsed_seconds":0}
+    started=None
     lock=threading.Lock()
     state_lock=threading.Lock()
     actions={"init":lambda:init(root),"doctor":lambda:doctor(root),
@@ -272,9 +293,11 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
             if self.path=="/api/status":
                 with state_lock:
                     snapshot=dict(status)
+                    if status["phase"]=="running" and started is not None:snapshot["elapsed_seconds"]=round(time.monotonic()-started,1)
                 return self._json(200,snapshot)
             return self._json(404,{"error":"No HTTP media or private filesystem routes"})
         def do_POST(self):
+            nonlocal started
             if not self._allowed() or not secrets.compare_digest(self.headers.get("X-CSRF-Token",""),token):
                 return self._json(403,{"error":"Blocked external/cross-origin/CSRF request"})
             size_str=self.headers.get("Content-Length","")
@@ -307,7 +330,9 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                         else:
                             data=dashboard_authoring.parse(raw)
                             command="author-"+action
-                            selected=lambda:dashboard_authoring.run(root,action,data,acknowledgment=consent)
+                            def report(value):
+                                with state_lock:status["progress"]=dict(value)
+                            selected=lambda:dashboard_authoring.run(root,action,data,acknowledgment=consent,progress=report)
                     except (ValueError,OSError) as err:return self._json(400,{"error":str(err)})
                 elif url.path=="/api/project-create":
                     if not 1<=size<=dashboard_actions.CREATE_LIMIT or self.headers.get("Content-Type")!="application/json":return self._json(400,{"error":"Bounded JSON project request required"})
@@ -340,7 +365,8 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                 with state_lock:
                     accepted=lock.acquire(blocking=False)
                     if accepted:
-                        status.update(phase="running",command=command,result=None)
+                        started=time.monotonic()
+                        status.update(phase="running",command=command,result=None,progress=None,elapsed_seconds=0)
                 if not accepted:
                     return self._json(409,{"error":"Another explicit local task is running"})
                 def run():
@@ -356,7 +382,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                         # is already released, without clobbering a new task.
                         with state_lock:
                             lock.release()
-                            status.update(phase=phase,result=result)
+                            status.update(phase=phase,result=result,elapsed_seconds=round(time.monotonic()-started,1))
                 try:
                     threading.Thread(target=run,daemon=True).start()
                 except RuntimeError as err:
@@ -364,7 +390,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                         lock.release()
                         status.update(phase="blocked",result={"error":str(err)})
                     return self._json(503,{"error":"Unable to start local task"})
-                return self._json(202,{"task_started":command,"next":"Refresh /api/status for result; no AI inference"})
+                return self._json(202,{"task_started":command,"next":"Refresh /api/status for actual task status; only explicitly selected action authorized"})
             if url.path=="/api/upload":
                 kind=query.get("kind",[""])[0];name=query.get("name",[""])[0]
                 valid=(name in [s+".png" for s in SPEAKERS]) if kind=="portrait" else bool(re.fullmatch(r"0(?:0[1-9]|[1-3]\d|4[0-5])\.wav",name)) if kind=="voice" else False

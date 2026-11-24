@@ -62,3 +62,5 @@ English/static studio CI 45482554584 passed 6/6. Neural studio CI 45483234208 ha
 Neural studio CI 45483234208 passed 6/6; dashboard overview CI 45484187245 had three jobs passed at check. Dashboard creation/processing controls and mixed neural studio implemented (new CI pending). Next real model setup/acceptance, CJK and portrait inference, full GUI and live progress.
 
 Dashboard overview CI 45484187245 and mixed studio CI 45484813520 each passed 6/6. Graphical authoring implemented (new CI pending). Next actual model acceptance, CJK and portrait inference, browser production controls and live progress.
+
+Authoring CI 45487275746 running at check. Browser local inference, research pack controls and live elapsed/checkpoint status implemented (new CI pending). Next real model acceptance, CJK, image inference and graphical approval recording.

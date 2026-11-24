@@ -88,3 +88,6 @@ Implemented bounded JSON project creation, explicit non-inference dashboard acti
 
 ## Increment 24 — graphical local authoring
 Implemented browser character profile/revision creation, authorized portrait attachment, immutable cast selection, bounded local source upload and explicit public URL capture, and local model path configuration. DOCX XML restricted to UTF-8. Browser inference, research pack capture and approval recording remain CLI-only. CI pending; see V4_DASHBOARD_AUTHORING.md.
+
+## Increment 25 — graphical local inference, research and task status
+Implemented explicitly consented selected-engine bounded local inference, research discovery/capture/status, offline cloud-key isolation and measured elapsed/checkpoint task reporting. No live internal model percentage, cloud AI, automatic downloads or approval recording. CI pending; see V4_DASHBOARD_INFERENCE.md.

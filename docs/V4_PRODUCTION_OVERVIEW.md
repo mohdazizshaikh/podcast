@@ -16,3 +16,5 @@ Choose master, preview, neural, mix, mixed, studio-preview or neural-studio. Aud
 Full dashboard authoring/inference controls, live subprocess percentage, embedded subtitles, mixed neural studio and physical Windows model acceptance remain pending. Tests exercise local manifest validation, lock protection, estimate scope and dashboard markup, not actual browser playback.
 
 Dashboard now also permits validated private project creation and explicit local non-inference production actions. Mixed neural studio playback is available. See V4_DASHBOARD_MIXED_STUDIO.md; actual browser verification pending.
+
+Live task elapsed time and verified action count are now displayed for dashboard local inference (V4_DASHBOARD_INFERENCE.md). This is distinct from historical ETA and not a model percentage.

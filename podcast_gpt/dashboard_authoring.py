@@ -3,12 +3,12 @@ import json
 import re
 import tempfile
 from pathlib import Path
-from . import projects, characters, portrait_brief, ingestion, model_config
+from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference
 
 JSON_LIMIT=32768
-READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status")
+READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status")
 ACTIONS=("character-list","character-show","character-create","cast-assign","cast-status","cast-choices",
-         "source-url","model-configure","model-status")
+         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference")
 UPLOADS={"portrait":characters.MAX_PORTRAIT,"source":ingestion.MAX_FILE}
 ACK="I_AUTHORIZE_THIS_LOCAL_AUTHORING_ACTION"
 
@@ -35,7 +35,7 @@ def _local_path(value):
     return Path(value)
 
 
-def run(root,action,data,*,acknowledgment=None):
+def run(root,action,data,*,acknowledgment=None,progress=None):
     if action not in ACTIONS:raise ValueError("Unknown authoring action")
     if action in ("character-list","model-status"):
         _keys(data,())
@@ -49,7 +49,23 @@ def run(root,action,data,*,acknowledgment=None):
         result={"project_id":pid,"presenters":projects.load(root,pid)["presenters"],"cast":characters.status(root,pid)}
         if action=="cast-choices":result.update(characters.list_characters(root))
         return result
+    if action=="research-status":
+        _keys(data,("project_id",))
+        return research.inspect(root,data["project_id"])
     if acknowledgment!=ACK:raise ValueError("Explicit local authoring consent required")
+    if action=="local-inference":
+        _keys(data,("project_id","engine","max_steps","model_consent"))
+        if data["model_consent"] is not True:raise ValueError("Explicit model execution consent required")
+        return dashboard_inference.run(root,data["project_id"],engine=data["engine"],max_steps=data["max_steps"],
+            acknowledgment=dashboard_inference.ACK,progress=progress)
+    if action=="research-discover":
+        _keys(data,("project_id","query","allow_web_search"))
+        return research_discovery.discover(root,data["project_id"],query=data["query"],allow_web_search=data["allow_web_search"])
+    if action=="research-capture":
+        _keys(data,("project_id","urls","allow_web_fetch"))
+        urls=data["urls"]
+        if not isinstance(urls,list) or any(not isinstance(u,str) or not 1<=len(u)<=2048 for u in urls):raise ValueError("Invalid research URLs")
+        return research.capture(root,data["project_id"],urls,allow_web_fetch=data["allow_web_fetch"])
     if action=="character-create":
         _keys(data,("profile","parent_id"))
         return characters.create(root,data["profile"],parent_id=data["parent_id"])

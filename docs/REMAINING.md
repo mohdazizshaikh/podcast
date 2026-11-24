@@ -102,3 +102,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Dashboard overview and mixed studio CI 6/6 each (45484187245, 45484813520).
 - [ ] Verify graphical authoring CI and browser/device operation. Real inference, full acceptance, research pack UI, browser inference and approval recording, CJK and image synthesis remain open.
+
+- [ ] Verify authoring CI 45487275746 and new local inference/research/status CI. Actual browser interaction, local model inference, cloud consent UI, approval recording, cancellation, CJK, portrait inference and full Windows acceptance remain open.
