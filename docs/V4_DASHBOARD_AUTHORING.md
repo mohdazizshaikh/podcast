@@ -9,3 +9,5 @@ Model controls save existing Kokoro, SadTalker or eSpeak paths; specify absolute
 Every write requires a fresh authoring checkbox; portrait and URL actions additionally require specific rights/network consent. Existing localhost host/origin, CSRF and action mutex protections apply. No arbitrary commands, paths for source upload, or HTTP media-serving routes. File bytes go to the local app only, not an external service. API keys, research pack capture, model inference and recorded human approvals remain CLI-only. Tests exercise authoring adapters, validation, and markup; actual browser/device acceptance remains pending.
 
 Browser now supports separately authorized local inference and research packs; see V4_DASHBOARD_INFERENCE.md. Earlier CLI-only restriction applies to previous increment. Cloud AI and recorded approvals remain CLI-only.
+
+Browser WAV turn import, studio configuration and selected continuity controls added (V4_BATCH29.md). Actual browser tests pending.

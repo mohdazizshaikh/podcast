@@ -94,12 +94,13 @@ def status(root,*,pid=None):
             "cloud_consent_persisted":False}
 
 
-def resolve(root,*,pid=None):
+def resolve(root,*,pid=None,providers=PROVIDERS):
+    if not isinstance(providers,(tuple,list)) or not set(providers)<=set(PROVIDERS):raise ValueError("Invalid credential provider selection")
     env=ai_providers.Credentials.environment()
     data=_read(_folder(root,None))
     if pid:data.update(_read(_folder(root,pid)))
     result={}
-    for provider in PROVIDERS:
+    for provider in providers:
         if provider not in data:result[provider]=getattr(env,provider);continue
         try:key=_dpapi(base64.b64decode(data[provider],validate=True),decrypt=True).decode("ascii")
         except (ValueError,UnicodeError):raise ValueError("Unable to decrypt saved provider key; remove or replace it") from None
@@ -110,7 +111,7 @@ def resolve(root,*,pid=None):
 
 def prompt_key(provider):
     import getpass
-    if sys.platform!="win32":raise ValueError("Windows DPAPI required; use environment keys on this OS")
+    if provider not in PROVIDERS:raise ValueError("Unknown provider")
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error",getpass.GetPassWarning)

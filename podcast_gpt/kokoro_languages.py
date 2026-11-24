@@ -1,7 +1,7 @@
 """Explicit Kokoro v1.0 candidate presets using Misaki EspeakG2P.
 
 Not an installed voice inventory or proof of natural pronunciation.
-English uses non-transformer Misaki G2P; CJK is not enabled.
+English uses non-transformer Misaki G2P; Mandarin uses the v1.0 frontend. Japanese remains disabled.
 """
 from . import kokoro
 
@@ -9,14 +9,16 @@ PRESETS={"hi":kokoro.VOICE_CHOICES,"es":frozenset(("ef_dora","em_alex","em_santa
          "fr-fr":frozenset(("ff_siwis",)),"it":frozenset(("if_sara","im_nicola")),
          "pt-br":frozenset(("pf_dora","pm_alex","pm_santa")),
          "en-us":frozenset(("af_heart","af_bella","af_sarah","af_nicole","af_sky","am_adam","am_michael","am_fenrir","am_onyx","am_puck")),
-         "en-gb":frozenset(("bf_alice","bf_emma","bf_isabella","bf_lily","bm_daniel","bm_fable","bm_george","bm_lewis"))}
+         "en-gb":frozenset(("bf_alice","bf_emma","bf_isabella","bf_lily","bm_daniel","bm_fable","bm_george","bm_lewis")),
+         "zh":frozenset(("zf_xiaobei","zf_xiaoni","zf_xiaoxiao","zf_xiaoyi","zm_yunjian","zm_yunxi","zm_yunxia","zm_yunyang"))}
 ALIASES={"hi":"hi","hindi":"hi","hi-in":"hi","हिन्दी":"hi","हिंदी":"hi",
          "spanish":"es","es":"es","es-es":"es",
          "french":"fr-fr","fr":"fr-fr","fr-fr":"fr-fr",
          "italian":"it","it":"it","it-it":"it",
          "brazilian portuguese":"pt-br","portuguese (brazil)":"pt-br","pt-br":"pt-br",
          "english":"en-us","en":"en-us","en-us":"en-us","american english":"en-us",
-         "british english":"en-gb","en-gb":"en-gb"}
+         "british english":"en-gb","en-gb":"en-gb",
+         "mandarin":"zh","mandarin chinese":"zh","zh":"zh","zh-cn":"zh","普通话":"zh","简体中文":"zh"}
 
 
 def language(value):
@@ -44,6 +46,9 @@ def engine(model,voices,code):
             from misaki import en,espeak
             british=code=="en-gb"
             g2p=en.G2P(trf=False,british=british,fallback=espeak.EspeakFallback(british=british))
+        elif code=="zh":
+            from misaki import zh
+            g2p=zh.ZHG2P(version=None)
         else:
             from misaki.espeak import EspeakG2P
             g2p=EspeakG2P(language=code)

@@ -26,3 +26,5 @@ For a current web-research script, generate the private review template. Each tu
 This is optional human self-attestation, not independent claim verification or a mandatory media gate. Correct flagged claims using existing script revisions. Neither exact quotation nor a PASS proves truth, source independence or publication rights. Actual Wikipedia calls, natural model inference and real Windows acceptance remain untested; tests are offline fixtures.
 
 English US/UK frontend and optional dependency group are now implemented; see V4_STUDIO_ENGLISH.md. CJK remains pending.
+
+Mandarin v1.0 frontend and eight candidate presets now implemented with optional dependency group; Japanese still pending. See V4_BATCH29.md.

@@ -71,7 +71,7 @@ def parse(argv=None):
     visual.add_argument("--mode",choices=("edit","review"),required=True)
     for name in ("dependency-plan","dependency-install"):
         dep=subs.add_parser(name)
-        dep.add_argument("--group",choices=("documents","kokoro","kokoro-english"),required=True)
+        dep.add_argument("--group",choices=("documents","kokoro","kokoro-english","kokoro-mandarin"),required=True)
         if name=="dependency-install":dep.add_argument("--acknowledgment",required=True)
     auto=subs.add_parser("project-auto-step")
     auto.add_argument("--project-id",required=True)
@@ -404,7 +404,7 @@ def execute(a)->dict:
         if action=="key-status":return credentials.status(private,pid=a.project_id)
         if action=="key-store":return credentials.store(private,a.provider,credentials.prompt_key(a.provider),pid=a.project_id)
         if action=="key-remove":return credentials.remove(private,a.provider,pid=a.project_id)
-        keys=credentials.resolve(private,pid=a.project_id) if a.allow_cloud_text and not a.offline_only else None
+        keys=credentials.resolve(private,pid=a.project_id,providers=("openrouter","gemini") if a.confirm_gemini_free_project else ("openrouter",)) if a.allow_cloud_text and not a.offline_only else None
         return projects.generate_outline(private,a.project_id,credentials=keys,
             allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
             offline_only=a.offline_only,local_model=a.ollama_model)
@@ -422,7 +422,7 @@ def execute(a)->dict:
         if action=="project-script-status":return script_generation.inspect(private,a.project_id)
         if action=="project-script-finalize":return script_generation.finalize(private,a.project_id)
         if action=="project-script-show":return script_generation.show(private,a.project_id)
-        keys=credentials.resolve(private,pid=a.project_id) if a.allow_cloud_text and not a.offline_only else None
+        keys=credentials.resolve(private,pid=a.project_id,providers=("openrouter","gemini") if a.confirm_gemini_free_project else ("openrouter",)) if a.allow_cloud_text and not a.offline_only else None
         return script_generation.generate(private,a.project_id,max_new=a.max_new,credentials=keys,
             allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
             offline_only=a.offline_only,local_model=a.ollama_model)
@@ -597,12 +597,9 @@ def execute(a)->dict:
         if a.prompt_keys:
             if not a.allow_cloud_text or a.offline_only:
                 raise ValueError("Session cloud keys require explicit cloud text consent")
-            import getpass
-            try:
-                router=getpass.getpass("OpenRouter free API key (Enter to retain environment default): ")
-                gemini=getpass.getpass("Gemini free API key (Enter to retain environment default): ") if a.confirm_gemini_free_project else ""
-            except (EOFError,KeyboardInterrupt):
-                raise ValueError("AI key input cancelled")
+            from .credentials import prompt_key
+            router=prompt_key("openrouter")
+            gemini=prompt_key("gemini") if a.confirm_gemini_free_project else ""
             credentials=ai_providers.Credentials(router or credentials.openrouter,gemini or credentials.gemini)
         return episode_plan.plan(episode_plan.load_request(a.request),credentials=credentials,
             allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,

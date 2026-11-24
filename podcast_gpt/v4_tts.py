@@ -63,6 +63,7 @@ def generate(root,pid,*,model,voices,run_local=False,acknowledgment=None,max_new
             preset=presets[turn["speaker"]]
             phonemes=g2p(turn["text"])[0]
             if not isinstance(phonemes,str) or not phonemes.strip():raise ValueError("Local phonemizer returned no phonemes")
+            if len(phonemes)>510:raise ValueError("Phoneme sequence exceeds 510 characters; revise or split the dialogue before rendering")
             samples,rate=engine.create(phonemes,voice=preset,speed=1.0,is_phonemes=True)
             with tempfile.TemporaryDirectory(prefix="v4-kokoro-",dir=folder) as temp:
                 raw=Path(temp)/"raw.wav";fixed=Path(temp)/"speech.wav"

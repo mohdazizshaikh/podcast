@@ -3,13 +3,13 @@ import json
 import re
 import tempfile
 from pathlib import Path
-from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script
+from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script, continuity, studio_preview, v4_audio, dashboard_cloud
 
 JSON_LIMIT=32768
-READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status")
+READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status")
 ACTIONS=("character-list","character-show","character-create","cast-assign","cast-status","cast-choices",
-         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script")
-UPLOADS={"portrait":characters.MAX_PORTRAIT,"source":ingestion.MAX_FILE}
+         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft")
+UPLOADS={"portrait":characters.MAX_PORTRAIT,"source":ingestion.MAX_FILE,"audio-turn":v4_audio.MAX_WAV,"studio-background":characters.MAX_PORTRAIT}
 ACK="I_AUTHORIZE_THIS_LOCAL_AUTHORING_ACTION"
 
 
@@ -52,7 +52,21 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
     if action=="research-status":
         _keys(data,("project_id",))
         return research.inspect(root,data["project_id"])
+    if action in ("continuity-status","studio-status"):
+        _keys(data,("project_id",))
+        return continuity.inspect(root,data["project_id"]) if action=="continuity-status" else studio_preview.inspect_settings(root,data["project_id"])
     if acknowledgment!=ACK:raise ValueError("Explicit local authoring consent required")
+    if action=="continuity-enable":
+        _keys(data,("project_id","prior_project_id","turn_ids","local_only_consent"))
+        if data["local_only_consent"] is not True:raise ValueError("Explicit local-only continuity consent required")
+        return continuity.enable(root,data["project_id"],data["prior_project_id"],data["turn_ids"],acknowledgment=continuity.ACK)
+    if action=="studio-configure":
+        _keys(data,("project_id","layout"))
+        return studio_preview.configure(root,data["project_id"],layout=data["layout"])
+    if action=="cloud-draft":
+        _keys(data,("project_id","cloud_consent","confirm_gemini_free_project"))
+        if data["cloud_consent"] is not True:raise ValueError("Explicit cloud text consent required")
+        return dashboard_cloud.run(root,data["project_id"],acknowledgment=dashboard_cloud.ACK,confirm_gemini_free_project=data["confirm_gemini_free_project"])
     if action=="local-inference":
         _keys(data,("project_id","engine","max_steps","model_consent"))
         if data["model_consent"] is not True:raise ValueError("Explicit model execution consent required")
@@ -91,13 +105,19 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
     return model_config.save(root,engine,{k:_local_path(v) for k,v in data["paths"].items()},replace=data["replace"])
 
 
-def upload(root,kind,identifier,name,raw,*,acknowledgment=None,rights=False):
+def upload(root,kind,identifier,name,raw,*,acknowledgment=None,rights=False,unit=None,layout=None):
     if kind not in UPLOADS or not 1<=len(raw)<=UPLOADS[kind]:raise ValueError("Invalid local upload kind or size")
     if acknowledgment!=ACK:raise ValueError("Explicit local authoring consent required")
     if not isinstance(name,str) or not 1<=len(name)<=160 or not re.fullmatch(r"[\w .()-]+",name) or name in (".",".."):
         raise ValueError("Use a simple source filename")
     suffix=Path(name).suffix.lower()
-    if kind=="portrait":
+    if kind=="audio-turn":
+        if rights is not True or suffix!=".wav" or not isinstance(unit,str) or not re.fullmatch(r"\d{4}",unit):raise ValueError("Authorized matching WAV and valid turn ID required")
+        projects.project(root,identifier);v4_audio._pcm(raw)
+    elif kind=="studio-background":
+        if rights is not True or suffix!=".png" or layout not in studio_preview.LAYOUTS:raise ValueError("Authorized PNG and studio layout required")
+        projects.project(root,identifier);characters._portrait_info(raw)
+    elif kind=="portrait":
         if rights is not True or suffix!=".png":raise ValueError("Authorized PNG and portrait rights required")
         characters.read(root,identifier)
         characters._portrait_info(raw)
@@ -108,7 +128,11 @@ def upload(root,kind,identifier,name,raw,*,acknowledgment=None,rights=False):
     # Never use a client-provided path or filename for disk writes.
     base=projects.base(root,create=True)
     with tempfile.TemporaryDirectory(prefix="dashboard-input-",dir=base) as tmp:
-        path=Path(tmp)/("portrait.png" if kind=="portrait" else "source"+suffix)
+        path=Path(tmp)/("input"+suffix)
         with path.open("xb") as handle:handle.write(raw)
         if kind=="portrait":return portrait_brief.attach(root,identifier,portrait=path,acknowledgment=characters.ACK)
-        return projects.import_source(root,identifier,path=path)
+        if kind=="audio-turn":return v4_audio.import_turn(root,identifier,unit,path,acknowledgment=v4_audio.ACK)
+        if kind=="studio-background":return studio_preview.configure(root,identifier,layout=layout,background=path,acknowledgment=studio_preview.ACK)
+        # Preserve the existing evidence locator naming convention.
+        source_path=Path(tmp)/("source"+suffix);path.rename(source_path)
+        return projects.import_source(root,identifier,path=source_path)

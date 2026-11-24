@@ -113,3 +113,6 @@ Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 
 - [ ] Verify audio quality/provider/setup CI; actual listening, target LUFS normalization, noise reduction, real model setup, CJK, local portrait inference, cloud consent UI and actual Windows/browser acceptance remain pending.
 
 - [ ] Verify audio quality CI 45491404566 and new normalization/continuity CI. Dynamic limiter/compression, noise reduction, automatic continuity memory, graphical continuity selection, actual model setup, CJK, local portrait synthesis, free cloud consent UI and real Windows/browser acceptance remain pending.
+
+- [x] Batch 27/28 CI 12/12 passed (45491404566, 45492395979).
+- [ ] Verify batch 29 tests, real browser and Mandarin model setup, free account eligibility, Japanese dictionary setup, local portrait inference, dynamic audio processing and full Windows acceptance. No 100–200 feature completion claim.

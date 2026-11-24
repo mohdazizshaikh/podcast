@@ -14,3 +14,5 @@ Local inference now supports cooperative stop at the next action boundary, with 
 Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 45487824070 reported three failing tests in Ubuntu matrix: script progress variable shadowed callback, and offline credential isolation was applied to inventory rather than generate_json. Both code regressions corrected in subsequent commit; existing regression tests retained. Corrective CI pending. Actual model/browser acceptance remains unverified.
 
 Corrective CI 45488657835 passed all six jobs, including inference regressions and review/stop/manual tests. Actual browser/model acceptance remains pending. Explicit provider refusals now stop fallback (V4_AUDIO_QUALITY_SETUP.md).
+
+Explicit single-action browser cloud drafting now available with separate free-project consent; keys remain CLI-only. See V4_BATCH29.md. Continuity-enabled projects remain local-only.

@@ -328,3 +328,5 @@ V4 browser review/revision imports, cooperative checkpoint stop and structured v
 V4 optional speech-driven music ducking, read-only LUFS/true-peak diagnostics, guided local model setup and provider refusal hardening: [audio quality and setup guide](docs/V4_AUDIO_QUALITY_SETUP.md). Actual model acceptance and target normalization pending.
 
 V4 measured loudness-target static gain, per-turn audio diagnostics and explicit local cross-episode continuity: [normalization and continuity guide](docs/V4_NORMALIZATION_CONTINUITY.md). Real model/device acceptance and dynamic limiting remain pending.
+
+V4 expanded dashboard WAV/studio/continuity authoring, explicitly consented free-policy cloud drafting, Mandarin frontend and broad test matrix: [batch 29 guide](docs/V4_BATCH29.md). Real browser/model acceptance pending.

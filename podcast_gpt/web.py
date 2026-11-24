@@ -110,6 +110,25 @@ def html_page(token:str)->str:
 <p id="v4ReviewDeclaration"></p>
 <button id="v4ReviewImport">Import selected completed JSON</button>
 <small>Review all current media and criteria yourself before recording. No automatic PASS; existing review receipts cannot be overwritten.</small>
+<h3>Voice import and studio settings</h3>
+<label>Approved script turn ID <input id="v4TurnId" maxlength="4"></label>
+<label>Matching local mono PCM16 16 kHz WAV <input id="v4TurnWav" type="file" accept=".wav"></label>
+<label><input id="v4TurnRights" type="checkbox"> I have rights and this recording matches the exact approved dialogue</label>
+<button id="v4TurnImport">Import one dialogue recording</button>
+<label>Studio layout <select id="v4StudioLayout"><option>focus</option><option>grid</option></select></label>
+<label>Optional local studio background PNG <input id="v4StudioBg" type="file" accept=".png"></label>
+<label><input id="v4StudioRights" type="checkbox"> I have rights to use the selected background</label>
+<button id="v4StudioSave">Save immutable studio settings</button><button id="v4StudioStatus">Inspect studio settings</button>
+<h3>Selected prior-episode continuity</h3>
+<label>Prior reviewed project ID <input id="v4PriorId" maxlength="32"></label>
+<label>Prior turn IDs (1–8, comma separated) <input id="v4PriorTurns" maxlength="48"></label>
+<label><input id="v4ContinuityConsent" type="checkbox"> I authorize selected reviewed excerpts for local-only drafting</label>
+<button id="v4ContinuitySave">Freeze continuity snapshot</button><button id="v4ContinuityStatus">Inspect continuity</button>
+<h3>Explicit free-policy cloud text drafting</h3>
+<p>One outline or one script unit. Current topic, source evidence, research and relevant persona context may be sent to OpenRouter and, only with separate confirmation, Gemini. Local Ollama fallback may execute. No paid fallback; provider billing status cannot be independently verified. Set keys through the CLI.</p>
+<label><input id="v4CloudConsent" type="checkbox"> I authorize this text transfer and eligible local fallback now</label>
+<label><input id="v4GeminiConsent" type="checkbox"> I confirm my Gemini project is unbilled Free Tier and authorize Gemini fallback</label>
+<button id="v4CloudDraft">Run one consented drafting action</button>
 <h3>Explicit local AI production</h3>
 <label>Engine <select id="v4InferenceEngine"><option value="ollama">Ollama — local script</option><option value="kokoro">Kokoro — voice</option><option value="espeak">eSpeak — voice</option><option value="sadtalker">SadTalker — neural clips</option></select></label>
 <label>Maximum actions <input id="v4InferenceSteps" type="number" min="1" max="5" value="1"></label>
@@ -127,7 +146,7 @@ def html_page(token:str)->str:
 <p id="v4MediaInfo">Audit first, then select the matching local file (128 MiB maximum for browser hash check).</p>
 <input type="file" id="v4LocalMedia" accept=".wav,.mp4" disabled><video id="v4Player" controls preload="none" style="max-width:100%;display:none"></video>
 <p><small>File bytes stay in this browser tab; no upload or HTTP media endpoint. Large files: use the displayed local path in your own player.</small></p>
-<small>Cloud AI consent and API keys remain CLI-only. Review imports require explicit full-review declarations.</small></section>
+<small>Cloud drafting requires separate per-action consent; API keys remain CLI-only. Review imports require explicit full-review declarations.</small></section>
 <section class="panel"><h2>1. Original 45-turn episode</h2>
 <button data-action="init">Create NEW original 45-turn project</button>
 <button data-action="doctor">Check tools</button>
@@ -225,9 +244,15 @@ onAuthor('v4CharShow',()=>author('character-show',{character_id:val('v4CharId').
 onAuthor('v4CharCreate',()=>author('character-create',{parent_id:val('v4CharId').trim()||null,profile:{name:val('v4CharName'),personality:val('v4CharPersonality'),speaking_style:val('v4CharStyle'),appearance:val('v4CharAppearance'),voice_preferences:{engine:val('v4CharEngine'),language:val('v4CharLanguage'),preset:val('v4CharPreset'),style_notes:val('v4CharNotes')}}},true));
 onAuthor('v4CastLoad',()=>author('cast-choices',{project_id:currentPid()}));
 onAuthor('v4CastAssign',()=>{if(castPid!==currentPid())throw new Error('Load cast choices for selected project');const mapping=Object.fromEntries(Array.from(field('v4CastRows').querySelectorAll('select'),s=>[s.dataset.speaker,s.value]));return author('cast-assign',{project_id:currentPid(),mapping},true)});
-async function authorFile(kind,id,file,rights=false){if(!file)throw new Error('Select a local file first');authorConsent();out.textContent=JSON.stringify(await send('/api/author-file?kind='+encodeURIComponent(kind)+'&id='+encodeURIComponent(id)+'&name='+encodeURIComponent(file.name)+'&consent=YES',file,rights),null,2);await refresh()}
+async function authorFile(kind,id,file,rights=false,extra=''){if(!file)throw new Error('Select a local file first');authorConsent();out.textContent=JSON.stringify(await send('/api/author-file?kind='+encodeURIComponent(kind)+'&id='+encodeURIComponent(id)+'&name='+encodeURIComponent(file.name)+'&consent=YES'+extra,file,rights),null,2);await refresh()}
 onAuthor('v4PortraitAttach',()=>{if(!field('v4PortraitRights').checked)throw new Error('Confirm portrait rights');field('v4PortraitRights').checked=false;return authorFile('portrait',val('v4CharId').trim(),field('v4Portrait').files[0],true)});
 onAuthor('v4SourceImport',()=>authorFile('source',currentPid(),field('v4SourceFile').files[0]));
+onAuthor('v4TurnImport',()=>{if(!field('v4TurnRights').checked)throw new Error('Confirm matching dialogue and rights');field('v4TurnRights').checked=false;return authorFile('audio-turn',currentPid(),field('v4TurnWav').files[0],true,'&unit='+encodeURIComponent(val('v4TurnId').trim()))});
+onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout');if(!file)return author('studio-configure',{project_id:currentPid(),layout},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout))});
+onAuthor('v4StudioStatus',()=>author('studio-status',{project_id:currentPid()}));
+onAuthor('v4ContinuitySave',()=>{if(!field('v4ContinuityConsent').checked)throw new Error('Explicit local continuity consent required');field('v4ContinuityConsent').checked=false;return author('continuity-enable',{project_id:currentPid(),prior_project_id:val('v4PriorId').trim(),turn_ids:val('v4PriorTurns').split(',').map(s=>s.trim()),local_only_consent:true},true)});
+onAuthor('v4ContinuityStatus',()=>author('continuity-status',{project_id:currentPid()}));
+onAuthor('v4CloudDraft',()=>{if(!field('v4CloudConsent').checked)throw new Error('Explicit cloud text consent required');const gemini=field('v4GeminiConsent').checked;field('v4CloudConsent').checked=false;field('v4GeminiConsent').checked=false;return author('cloud-draft',{project_id:currentPid(),cloud_consent:true,confirm_gemini_free_project:gemini},true)});
 onAuthor('v4SourceWeb',()=>{if(!field('v4WebConsent').checked)throw new Error('Explicit internet retrieval consent required');field('v4WebConsent').checked=false;return author('source-url',{project_id:currentPid(),url:val('v4SourceUrl').trim(),allow_web_fetch:true},true)});
 function researchConsent(){if(!field('v4ResearchConsent').checked)throw new Error('Explicit public internet consent required');field('v4ResearchConsent').checked=false}
 onAuthor('v4ResearchDiscover',()=>{researchConsent();return author('research-discover',{project_id:currentPid(),query:val('v4ResearchQuery').trim()||null,allow_web_search:true},true)});
@@ -375,7 +400,8 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                             if not ID_RE.fullmatch(identifier):raise ValueError("Invalid target ID")
                             rights=self.headers.get("X-Portrait-Rights-Confirmed")=="YES"
                             command="author-"+kind
-                            selected=lambda:dashboard_authoring.upload(root,kind,identifier,name,raw,acknowledgment=consent,rights=rights)
+                            unit=query.get("unit",[None])[0];layout=query.get("layout",[None])[0]
+                            selected=lambda:dashboard_authoring.upload(root,kind,identifier,name,raw,acknowledgment=consent,rights=rights,unit=unit,layout=layout)
                         else:
                             data=dashboard_authoring.parse(raw)
                             command="author-"+action

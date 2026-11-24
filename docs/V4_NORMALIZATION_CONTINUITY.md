@@ -20,3 +20,5 @@ Assign current and prior project casts. Before generating any script units, sele
 .venv\Scripts\python.exe -m podcast_gpt project-continuity-status --project-id NEW_ID
 ```
 Selected excerpts are private, immutable, bound to both reviewed version and current request/cast. The snapshot does not follow later prior-script revisions. Only matching speaker text is sent to local Ollama during AI script generation; continuity-enabled drafts require explicit offline-only mode (dashboard local Ollama also works). No provider cloud sharing, automatic memory mining, automatic episode summary, personal facts, or fact verification. Prior dialogue is untrusted style/continuity context, not evidence. Existing script review and media approval gates remain mandatory. Verbatim custom-script projects are excluded. CLI selection only; no browser continuity authoring yet. Real model continuity quality and Windows/device acceptance pending.
+
+CI 45492395979 passed 6/6. Browser continuity selection now available (V4_BATCH29.md).

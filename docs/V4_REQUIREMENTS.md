@@ -102,3 +102,6 @@ Corrective CI 45488657835 passed 6/6, superseding failed inference and initial r
 
 ## Increment 28 — measured static gain and episode continuity
 Implemented optional bounded loudness-target static gain with baseline and output measurement, exact sample audit and true-peak ceiling gate; per-turn PCM/DC diagnostics; explicit frozen reviewed prior dialogue with matching character versions for local-only drafting. CI pending; no dynamic limiter, automatic memory capture, actual model/device acceptance. See V4_NORMALIZATION_CONTINUITY.md.
+
+## Increment 29 — expanded dashboard, Mandarin and validation matrix
+Batch 27 and 28 CI each 6/6. Implemented Mandarin candidate presets and frontend, phoneme length rejection, secure session key input and optional Gemini credential isolation, explicit single-action cloud drafting, graphical authorized WAV/studio/continuity controls. 159 test cases authored, CI pending. See V4_BATCH29.md. No actual inference, billing or browser acceptance claim.
