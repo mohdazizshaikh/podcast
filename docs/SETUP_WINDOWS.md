@@ -58,3 +58,7 @@ Use --workspace before the command for a non-default studio. INSPECTFULL and REA
 ### Install from a verified source-only ZIP
 
 See [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) for the CI-produced candidate, SHA256 check and installation workflow. Git clone remains the complete developer installation method.
+
+### Setup without opening the dashboard
+
+For installation diagnostics, run START_PODCAST_WINDOWS.bat --setup-only from CMD. This performs the same prerequisite and dependency checks and exits without launching a browser or server; it does not pause on errors. Normal double-click behavior is unchanged. Hindi JSON remains valid under legacy Windows redirected encodings, using Unicode escapes when necessary.

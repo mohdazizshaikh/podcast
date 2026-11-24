@@ -119,6 +119,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python scripts/build_release.py --verify dist/podcast-windows-source.zip
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Ensure real Windows FFmpeg prerequisites for native launcher
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            if ((Get-Command ffmpeg -ErrorAction SilentlyContinue) -and (Get-Command ffprobe -ErrorAction SilentlyContinue)) { break }
+            choco install ffmpeg --yes --no-progress --execution-timeout=240
+            if ($attempt -lt 3) { Start-Sleep -Seconds (5 * $attempt) }
+          }
+          if (-not ((Get-Command ffmpeg -ErrorAction SilentlyContinue) -and (Get-Command ffprobe -ErrorAction SilentlyContinue))) {
+            throw "Missing real FFmpeg prerequisites"
+          }
       - name: Extract outside repo and smoke test clean app setup
         shell: pwsh
         run: |
@@ -126,21 +138,32 @@ jobs:
           $app = Join-Path $base "app"
           $studio = Join-Path $base "private synthetic studio"
           Expand-Archive -LiteralPath dist/podcast-windows-source.zip -DestinationPath $app
+          $manifest = Get-Content -Raw (Join-Path $app "RELEASE_MANIFEST.json") | ConvertFrom-Json -AsHashtable
+          foreach ($name in $manifest.files.Keys) {
+            $actual = (Get-FileHash -Algorithm SHA256 (Join-Path $app $name)).Hash.ToLowerInvariant()
+            if ($actual -ne $manifest.files[$name]) { throw "Extracted member checksum differs: $name" }
+          }
           Push-Location $app
           try {
-            python -m venv .venv
+            cmd.exe /d /c START_PODCAST_WINDOWS.bat --setup-only
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            & ".venv/Scripts/python.exe" -m pip install -e .
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            & ".venv/Scripts/python.exe" -m podcast_gpt.bootstrap record
+            cmd.exe /d /c START_PODCAST_WINDOWS.bat --setup-only
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             & ".venv/Scripts/python.exe" -m podcast_gpt.bootstrap check
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            & ".venv/Scripts/python.exe" -m podcast_gpt --workspace "$studio" init
+            # Explicitly exercise legacy redirected Windows encoding, not only UTF-8.
+            $env:PYTHONIOENCODING = "cp1252:strict"
+            $initJson = & ".venv/Scripts/python.exe" -m podcast_gpt --workspace "$studio" init
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            & ".venv/Scripts/python.exe" -m podcast_gpt --workspace "$studio" readiness
+            $initJson | Out-String | ConvertFrom-Json | Out-Null
+            $stateJson = & ".venv/Scripts/python.exe" -m podcast_gpt --workspace "$studio" readiness
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $state = $stateJson | Out-String | ConvertFrom-Json
+            if ($state.publication_approved -ne $false -or $state.new_model_inference_calls -ne 0) {
+              throw "Unexpected model execution or approval claim"
+            }
             if (-not (Test-Path (Join-Path $studio "project.json"))) { throw "Missing synthetic project" }
+            Remove-Item Env:PYTHONIOENCODING
           } finally {
             Pop-Location
           }

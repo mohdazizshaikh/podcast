@@ -2,6 +2,9 @@
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
 title Podcast GPT - ORIGINAL 3-PRESENTER HINDI STUDIO v3
+rem Optional setup-only mode for clean deployment checks; no server/browser.
+set "SETUP_ONLY=0"
+if /I "%~1"=="--setup-only" set "SETUP_ONLY=1"
 set "BASE=%PODCAST_WORKSPACE%"
 if not defined BASE set "BASE=%USERPROFILE%\PodcastGPTStudio"
 where ffmpeg.exe >nul 2>nul
@@ -38,6 +41,10 @@ if errorlevel 1 goto :failed
 ".venv\Scripts\python.exe" -m podcast_gpt.bootstrap record
 if errorlevel 1 goto :failed
 :launch
+if "%SETUP_ONLY%"=="1" (
+ echo [PASS] Application setup ready. No server or model started.
+ exit /b 0
+)
 echo [LOCAL ONLY] Starting private dashboard; browser opens after successful local bind.
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" web --port 7860 --open-browser
 if errorlevel 1 goto :failed
@@ -56,5 +63,5 @@ echo Rename only the application .venv folder and retry; do NOT rename or delete
 goto :failed
 :failed
 echo [BLOCKED] Setup or local server failed. Originals were not intentionally modified.
-pause
+if "%SETUP_ONLY%"=="0" pause
 exit /b 1

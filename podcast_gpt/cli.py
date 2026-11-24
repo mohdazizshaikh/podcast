@@ -216,16 +216,40 @@ def execute(a)->dict:
     raise ValueError("Unknown action")
 
 
+def _print_json(result,stream=None)->None:
+    """Preserve Unicode JSON on UTF-8 terminals and legacy redirected CMD.
+
+    Fall back to JSON Unicode escapes before writing any bytes if the selected
+    stream cannot encode the original Hindi. The decoded JSON is identical.
+    """
+    stream=sys.stdout if stream is None else stream
+    payload=json.dumps(result,ensure_ascii=False,indent=2,default=str)
+    encoding=getattr(stream,"encoding",None)
+    if encoding:
+        try:payload.encode(encoding,errors="strict")
+        except UnicodeEncodeError:
+            payload=json.dumps(result,ensure_ascii=True,indent=2,default=str)
+    print(payload,file=stream)
+
+
+def _print_error(err)->None:
+    message="BLOCKED: "+str(err)
+    encoding=getattr(sys.stderr,"encoding",None)
+    if encoding:
+        message=message.encode(encoding,errors="backslashreplace").decode(encoding)
+    print(message,file=sys.stderr)
+
+
 def main(argv=None)->int:
     try:
         args=parse(argv)
         result=execute(args)
-        print(json.dumps(result,ensure_ascii=False,indent=2,default=str))
+        _print_json(result)
         return 0
     except (ValueError,RuntimeError,OSError,TimeoutError,KeyError,TypeError,ImportError,
             json.JSONDecodeError) as err:
         # Avoid leaking user-supplied Hindi dialogue, portraits or private secrets.
-        print("BLOCKED: " + str(err),file=sys.stderr)
+        _print_error(err)
         return 1
 
 if __name__=="__main__":
