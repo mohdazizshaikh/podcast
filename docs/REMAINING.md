@@ -52,3 +52,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Verify research snapshot/citation CI and real websites; implement automatic source discovery, semantic claim verification, human review and revisions. Exact excerpt match does not certify truth.
 
 - [ ] Verify research CI 45451883118 final result and new versioned script review CI. Implement browser editor, structural revisions, character profile management, generalized audio/media pipeline and real human acceptance. Manual approval is self-attested text only, never a measured audio or publication receipt.
+
+- [x] Research/citation CI completed 6/6 (45451883118); real source and claim review remain pending.
+- [ ] Verify latest script review and character-library CI; test actual authorized portrait assets, voice compatibility, generalized audio timeline, image generation and character-aware prompts. The current media preflight does not invoke any model.

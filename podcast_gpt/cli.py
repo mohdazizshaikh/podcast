@@ -62,6 +62,20 @@ def parse(argv=None):
         r=subs.add_parser(name)
         r.add_argument("--project-id",required=True)
         if name=="project-script-review-record":r.add_argument("--acknowledgment",required=True)
+    char=subs.add_parser("character-create",help="Save a reusable local character profile and optional authorized PNG")
+    char.add_argument("--profile",type=Path,required=True)
+    char.add_argument("--portrait",type=Path)
+    char.add_argument("--acknowledgment")
+    char.add_argument("--parent-id")
+    subs.add_parser("character-list")
+    char_show=subs.add_parser("character-show")
+    char_show.add_argument("--character-id",required=True)
+    cast=subs.add_parser("project-cast-assign")
+    cast.add_argument("--project-id",required=True)
+    cast.add_argument("--mapping",type=Path,required=True)
+    for name in ("project-cast-status","project-media-preflight"):
+        c=subs.add_parser(name)
+        c.add_argument("--project-id",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -252,6 +266,15 @@ def execute(a)->dict:
         if action=="project-script-review-record":return script_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
         if action=="project-script-review-status":return script_review.inspect(private,a.project_id)
         return script_review.current_script(private,a.project_id)
+    if action in ("character-create","character-list","character-show","project-cast-assign","project-cast-status","project-media-preflight"):
+        from . import characters
+        private=a.workspace.expanduser().absolute()
+        if action=="character-create":return characters.create_from_file(private,a.profile,portrait=a.portrait,acknowledgment=a.acknowledgment,parent_id=a.parent_id)
+        if action=="character-list":return characters.list_characters(private)
+        if action=="character-show":return characters.read(private,a.character_id)
+        if action=="project-cast-assign":return characters.assign_from_file(private,a.project_id,a.mapping)
+        if action=="project-cast-status":return characters.status(private,a.project_id)
+        return characters.prepare_media_binding(private,a.project_id)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

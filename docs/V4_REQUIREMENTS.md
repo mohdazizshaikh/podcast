@@ -34,3 +34,6 @@ Implemented explicit 2–4 public HTTPS source snapshots, immutable research pac
 
 ## Increment 6 — versioned manual script editing and human approval
 Implemented editable JSON templates, immutable revision chain, current-version inspection, per-turn PASS/FAIL and global script review criteria, self-attestation receipt, stale approval invalidation and reusable PASS gate. Browser editing, arbitrary restructuring, actual duration and media integration remain pending. See V4_SCRIPT_REVIEW.md.
+
+## Increment 7 — reusable character library and voice identity preferences
+Implemented immutable reusable profile versions, explicit authorized PNG import, hash verification, 1–10 presenter cast binding, private profile inspection, and read-only current-approved-script/portrait handoff. Actual image generation, persistent conversational memory, personality-aware script prompting and real multilingual voice compatibility remain pending. See V4_CHARACTERS.md.

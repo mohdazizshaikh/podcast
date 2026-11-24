@@ -284,3 +284,5 @@ V4 full dialogue drafting (1–60 planned minutes, 1–10 speakers), resumable c
 V4 source-grounded research: explicit 2–4 public HTTPS pages and source-bound exact excerpt citations. [Research guide](docs/V4_RESEARCH.md); no automatic discovery or independent fact-checking yet.
 
 V4 manual script editing, immutable revisions and per-version human approval: [review guide](docs/V4_SCRIPT_REVIEW.md). No generalized media production until subsequent implementation and acceptance.
+
+V4 reusable local characters, authorized PNG portraits, voice identity preferences and cast assignment: [character guide](docs/V4_CHARACTERS.md). The media preflight binds current reviewed text and portrait hashes; actual image/voice generation and generalized rendering remain pending.

@@ -166,6 +166,9 @@ def inspect(root:Path,pid:str):
             result["script_review"]=script_review.inspect(root,pid)
     elif any((folder/name).exists() or (folder/name).is_symlink() for name in (script_generation.PARTS,script_generation.FINAL)):
         raise ValueError("Script artifacts require a verified outline")
+    from . import characters
+    if (folder/characters.CAST).exists() or (folder/characters.CAST).is_symlink():
+        result["cast"]=characters.status(root,pid)
     return result
 
 

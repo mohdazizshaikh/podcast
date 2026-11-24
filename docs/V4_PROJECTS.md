@@ -30,3 +30,5 @@ Non-topic projects now support a bounded source attachment before outline genera
 After saving an outline, project-script-generate/status/finalize/show provide resumable dialogue drafts; project-list and project-show now reflect script progress. See [V4_SCRIPT_GENERATION.md](V4_SCRIPT_GENERATION.md).
 
 Finalized scripts now support immutable manual revisions and current-version human review. Project inspection reports script_review independently of the original script stage. See V4_SCRIPT_REVIEW.md.
+
+Reusable character profiles and project-specific cast assignment are now available. Existing scripts/reviews are preserved; media preflight checks current review and authorized portrait hashes. See V4_CHARACTERS.md.
