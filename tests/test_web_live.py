@@ -194,11 +194,65 @@ def test_signed_source_manifest_refuses_any_late_dashboard_original_upload(signe
     assert code==409
     assert "SHA already bound" in body.decode("utf-8")
     assert (root/"voices"/"001.wav").read_bytes()==before
-    # The HTTP response can reach the client just before the handler's
-    # contextmanager __exit__ releases its lock. Check bounded eventual
-    # cleanup, not an impossible same-microsecond scheduling guarantee.
+    # Response is now sent only after the handler releases both locks.
     private_lock=root/"source"/"originals-voice-and-binding-exclusive.lock"
-    for _ in range(100):
-        if not private_lock.exists():break
-        time.sleep(.01)
     assert not private_lock.exists()
+
+
+
+def test_http_upload_response_waits_for_cross_process_lock_release(tmp_path, monkeypatch):
+    from contextlib import contextmanager
+    from podcast_gpt import source
+
+    port=_port()
+    root=tmp_path/"Private response barrier studio"
+    exiting=threading.Event()
+    resume=threading.Event()
+    @contextmanager
+    def delayed_release(path):
+        with source.original_voice_lock(path):
+            try:
+                yield
+            finally:
+                exiting.set()
+                if not resume.wait(10):
+                    raise RuntimeError("test release timeout")
+    monkeypatch.setattr(web,"original_voice_lock",delayed_release)
+    threading.Thread(target=web.serve,args=(root,port),daemon=True).start()
+    for _ in range(70):
+        try:
+            code,page=_request(port,"/")
+            if code==200:break
+        except (OSError,ConnectionError):
+            time.sleep(.08)
+    token=re.search(r'const token="([0-9a-f]{64})"',page.decode("utf-8")).group(1)
+    blob=io.BytesIO()
+    with wave.open(blob,"wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(16000)
+        w.writeframes(b"\0\0"*16000)
+    result=[]
+    finished=threading.Event()
+    def upload():
+        try:
+            result.append(_request(port,"/api/upload?kind=voice&name=005.wav",
+                                  body=blob.getvalue(),token=token))
+        finally:
+            finished.set()
+    worker=threading.Thread(target=upload,daemon=True)
+    worker.start()
+    try:
+        assert exiting.wait(10)
+        assert not finished.wait(.2), "HTTP must not acknowledge while lock remains held"
+        assert (root/"source"/source.ORIGINALS_LOCK).exists()
+        code,_=_request(port,"/api/action?cmd=doctor",body=b"",token=token)
+        assert code==409
+    finally:
+        resume.set()
+        worker.join(10)
+    assert not worker.is_alive()
+    assert [x[0] for x in result]==[201]
+    assert not (root/"source"/source.ORIGINALS_LOCK).exists()
+    code,_=_request(port,"/api/action?cmd=doctor",body=b"",token=token)
+    assert code==202

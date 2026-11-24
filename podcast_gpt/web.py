@@ -99,6 +99,7 @@ def serve(root:Path,port:int=7860):
     token=secrets.token_hex(32)
     status={"phase":"idle","command":None,"result":None}
     lock=threading.Lock()
+    state_lock=threading.Lock()
     actions={"init":lambda:init(root),"doctor":lambda:doctor(root),
              "build-source":lambda:build_source(root),
              "prepare-chunks":lambda:prepare_chunks(root),
@@ -122,7 +123,10 @@ def serve(root:Path,port:int=7860):
         def do_GET(self):
             if not self._allowed():return self._json(403,{"error":"Private loopback host only"})
             if self.path=="/":return self._send(200,html_page(token).encode("utf-8"),"text/html")
-            if self.path=="/api/status":return self._json(200,dict(status))
+            if self.path=="/api/status":
+                with state_lock:
+                    snapshot=dict(status)
+                return self._json(200,snapshot)
             return self._json(404,{"error":"No HTTP media or private filesystem routes"})
         def do_POST(self):
             if not self._allowed() or not secrets.compare_digest(self.headers.get("X-CSRF-Token",""),token):
@@ -134,16 +138,33 @@ def serve(root:Path,port:int=7860):
                 if size!=0:return self._json(400,{"error":"Action body must be empty"})
                 command=query.get("cmd",[""])[0]
                 if command not in actions:return self._json(400,{"error":"Unrecognized local action"})
-                if not lock.acquire(blocking=False):return self._json(409,{"error":"Another explicit local task is running"})
-                status.update(phase="running",command=command,result=None)
+                with state_lock:
+                    accepted=lock.acquire(blocking=False)
+                    if accepted:
+                        status.update(phase="running",command=command,result=None)
+                if not accepted:
+                    return self._json(409,{"error":"Another explicit local task is running"})
                 def run():
+                    phase="blocked"
+                    result={"error":"Local task interrupted"}
                     try:
                         result=actions[command]()
-                        status.update(phase="complete",result=result)
+                        phase="complete"
                     except Exception as e:
-                        status.update(phase="blocked",result={"error":str(e)})
-                    finally:lock.release()
-                threading.Thread(target=run,daemon=True).start()
+                        result={"error":str(e)}
+                    finally:
+                        # A visible terminal state must mean the action mutex
+                        # is already released, without clobbering a new task.
+                        with state_lock:
+                            lock.release()
+                            status.update(phase=phase,result=result)
+                try:
+                    threading.Thread(target=run,daemon=True).start()
+                except RuntimeError as err:
+                    with state_lock:
+                        lock.release()
+                        status.update(phase="blocked",result={"error":str(err)})
+                    return self._json(503,{"error":"Unable to start local task"})
                 return self._json(202,{"task_started":command,"next":"Refresh /api/status for result; no AI inference"})
             if url.path=="/api/upload":
                 kind=query.get("kind",[""])[0];name=query.get("name",[""])[0]
@@ -158,57 +179,65 @@ def serve(root:Path,port:int=7860):
                 if not lock.acquire(blocking=False):
                     return self._json(409,{"error":"Active private task/media import; retry later"})
                 try:
-                    # Media may be imported before INIT (historical dashboard
-                    # workflow). Lazily create only the *private lock folder*;
-                    # do not create a project or bind originals automatically.
-                    source_lock_dir=root/"source"
-                    if source_lock_dir.is_symlink():
-                        return self._json(400,{"error":"Unsafe private source-lock directory"})
-                    source_lock_dir.mkdir(parents=True,exist_ok=True)
-                    if source_lock_dir.is_symlink():
-                        return self._json(400,{"error":"Unsafe private source-lock directory"})
-                    # Unlike the per-server threading.Lock, this EXCLUSIVE
-                    # filesystem lock also serializes separate Windows/Python
-                    # TTS and BIND processes running against the same studio.
-                    with original_voice_lock(root):
-                        bound=root/"source"/SOURCE_FILE
-                        if bound.exists() or bound.is_symlink():
-                            return self._json(409,{"error":"Original source SHA already bound; all media imports closed"})
-                        folder=root/("portraits" if kind=="portrait" else "voices")
-                        if folder.is_symlink():
-                            return self._json(400,{"error":"Unsafe private media directory symlink"})
-                        folder.mkdir(parents=True,exist_ok=True)
-                        if folder.is_symlink():
-                            return self._json(400,{"error":"Unsafe private media directory symlink"})
-                        target=folder/name
-                        created=False
-                        try:
-                            with target.open("xb") as file:
-                                created=True
-                                pending=size
-                                while pending:
-                                    piece=self.rfile.read(min(pending,1024*1024))
-                                    if not piece:raise ValueError("Upload interrupted")
-                                    file.write(piece);pending-=len(piece)
-                            if kind=="voice":wav_info(target)
-                            else:
-                                from PIL import Image
-                                with Image.open(target) as im: im.verify()
-                                with Image.open(target) as im:
-                                    if im.format!="PNG" or min(im.size)<200:
-                                        raise ValueError("Portrait must be PNG >=200px")
-                            return self._json(201,{"original_local_file_imported":name,
-                                                   "portrait_rights_independently_verified":False})
-                        except FileExistsError:
-                            return self._json(409,{"error":"Original exists; refused overwrite"})
-                        except Exception:
-                            if created:target.unlink(missing_ok=True)
-                            return self._json(400,{"error":"Invalid, incomplete or unsupported private media"})
-                except ValueError as err:
-                    return self._json(409,{"error":"Cross-process original source lock/blocker: "+str(err)})
+                    code,payload=self._import_original(kind,name,size)
                 finally:
                     lock.release()
+                # Reply only after BOTH cross-process and server locks have
+                # been released. A disconnected client cannot roll back an
+                # already validated file merely because the socket write fails.
+                return self._json(code,payload)
             return self._json(404,{"error":"Unknown private API"})
+        def _import_original(self,kind,name,size):
+            try:
+                # Media may be imported before INIT (historical dashboard
+                # workflow). Lazily create only the *private lock folder*;
+                # do not create a project or bind originals automatically.
+                source_lock_dir=root/"source"
+                if source_lock_dir.is_symlink():
+                    return (400,{"error":"Unsafe private source-lock directory"})
+                source_lock_dir.mkdir(parents=True,exist_ok=True)
+                if source_lock_dir.is_symlink():
+                    return (400,{"error":"Unsafe private source-lock directory"})
+                # Unlike the per-server threading.Lock, this EXCLUSIVE
+                # filesystem lock also serializes separate Windows/Python
+                # TTS and BIND processes running against the same studio.
+                with original_voice_lock(root):
+                    bound=root/"source"/SOURCE_FILE
+                    if bound.exists() or bound.is_symlink():
+                        return (409,{"error":"Original source SHA already bound; all media imports closed"})
+                    folder=root/("portraits" if kind=="portrait" else "voices")
+                    if folder.is_symlink():
+                        return (400,{"error":"Unsafe private media directory symlink"})
+                    folder.mkdir(parents=True,exist_ok=True)
+                    if folder.is_symlink():
+                        return (400,{"error":"Unsafe private media directory symlink"})
+                    target=folder/name
+                    created=False
+                    try:
+                        with target.open("xb") as file:
+                            created=True
+                            pending=size
+                            while pending:
+                                piece=self.rfile.read(min(pending,1024*1024))
+                                if not piece:raise ValueError("Upload interrupted")
+                                file.write(piece);pending-=len(piece)
+                        if kind=="voice":wav_info(target)
+                        else:
+                            from PIL import Image
+                            with Image.open(target) as im: im.verify()
+                            with Image.open(target) as im:
+                                if im.format!="PNG" or min(im.size)<200:
+                                    raise ValueError("Portrait must be PNG >=200px")
+                        return (201,{"original_local_file_imported":name,
+                                               "portrait_rights_independently_verified":False})
+                    except FileExistsError:
+                        return (409,{"error":"Original exists; refused overwrite"})
+                    except Exception:
+                        if created:target.unlink(missing_ok=True)
+                        return (400,{"error":"Invalid, incomplete or unsupported private media"})
+            except ValueError as err:
+                return (409,{"error":"Cross-process original source lock/blocker: "+str(err)})
+
         def log_message(self,format,*args):pass  # no local portrait or private URL traces
 
     http=ThreadingHTTPServer(("127.0.0.1",port),Handler)
