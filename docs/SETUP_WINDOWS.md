@@ -30,3 +30,13 @@ Keep `PODCAST_WORKSPACE` **outside** the public Git repo and any other Git workt
 ### CPU model setup diagnostics and thread budget
 
 DOCTOR and MODEL now report detected logical CPUs and physical/available RAM where supported. These are host observations, not model memory requirements or performance benchmarks. A low available RAM warning is advisory. `run-cpu --cpu-threads 2` requests two threads in common native thread pools; the default is at most four and leaves one logical CPU free when possible. The actual model may override these hints. Model scratch and output drives each need at least 6 GiB free. Both SadTalker launchers accept a custom existing Python executable when .venv38 is absent. Relative paths supplied via CLI are made absolute before subprocess execution. No third-party model install or license is automatically certified.
+
+### Interrupted model rendering recovery
+
+After a failed model run, inspect the private logs in scratch/model-CHUNK-ID. In the guided launcher select RECOVERY (read-only). If all model and child processes are stopped, the CPU lock is clear, and the attempt has no verified or orphan preview, explicitly archive exactly one attempt using:
+
+```cmd
+.venv\Scripts\python.exe -m podcast_gpt archive-failed-attempt --chunk-id 001-001 --acknowledgment ARCHIVE_STOPPED_ATTEMPT
+```
+
+This moves the entire attempt to a unique private scratch/failed-attempts folder without deleting logs or adopting output. If the private workspace is not the default, supply --workspace before the command. Stale CPU locks and orphan preview files still require manual inspection. After fixing the cause, separately consent to a new model session. READINESS now identifies interrupted scratch as blocked. No automatic model restart or deletion.

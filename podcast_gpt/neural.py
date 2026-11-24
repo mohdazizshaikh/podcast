@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 from .media import FPS, WIDTH, HEIGHT, cmd, streams, full_decode, original_audio, timeline, srt_stamp, subtitle, portrait_card, export_lock
@@ -22,6 +23,31 @@ CHECKPOINT = "cpu-neural-checkpoint.json"
 MODEL_STATUS = "genuine_sadtalker_cpu_preview_structurally_decoded_pending_human_review"
 MAX_BATCH = 5
 MAX_SESSION = 20
+
+
+@contextmanager
+def cpu_session_lock(root: Path):
+    """Shared exclusion for inference and explicitly authorized recovery."""
+    root=workspace_path(root)
+    folder=root/"source"
+    if folder.is_symlink() or not folder.is_dir():
+        raise ValueError("Unsafe or missing private source directory")
+    lock=folder/LOCK
+    marker="LOCAL_CPU_SESSION="+uuid.uuid4().hex+"\n"
+    try:
+        with lock.open("x",encoding="ascii") as f:
+            f.write(marker);f.flush();os.fsync(f.fileno())
+    except FileExistsError as exc:
+        raise ValueError("Another/orphan CPU session lock exists; manual inspection") from exc
+    try:
+        yield
+    finally:
+        if lock.is_file() and not lock.is_symlink():
+            try:
+                if lock.read_text(encoding="ascii")==marker:
+                    lock.unlink()
+            except (OSError,UnicodeError):
+                pass
 
 
 def _clip_paths(root: Path, cid: str) -> tuple[Path,Path]:
@@ -118,6 +144,8 @@ def _model_call(root:Path,row:dict,*,sadtalker_root:Path,sadtalker_python:Path,
     if digest(root/"chunks"/(cid+".wav"))!=row["chunk_sha256"] or digest(root/"portraits"/(row["speaker"]+".png"))!=row["portrait_sha256"]:
         raise ValueError("Original signed chunk/portrait changed before real model")
     scratch=root/"scratch"/("model-"+cid)
+    if scratch.exists() or scratch.is_symlink():
+        raise ValueError("Interrupted model scratch exists for "+cid+"; inspect RECOVERY, then explicitly archive before retry")
     scratch.mkdir(exist_ok=False,parents=True)
     started=time.monotonic()
     if model_runner is None:
@@ -237,10 +265,7 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
         raise ValueError("Another/orphan CPU session lock exists; manual inspection")
     clock=clock or time.monotonic
     completed=[];stopped=False
-    lock_marker="LOCAL_CPU_SESSION="+uuid.uuid4().hex+"\n"
-    with lock.open("x",encoding="ascii") as f:
-        f.write(lock_marker);f.flush();os.fsync(f.fileno())
-    try:
+    with cpu_session_lock(root):
         # A different session may have finished during preflight. Take the
         # baseline after acquiring the exclusive lock, not before.
         source,done=verified_previews(root,allow_short=allow_short)
@@ -271,11 +296,6 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
                 "requested_wall_seconds":wall_seconds,"wall_budget_excludes_cleanup_overhead":True,
                 "requested_native_cpu_threads":cpu_threads,
                 "background_autorun":False,"publication_approved":False}
-    finally:
-        # We created this exclusive local file; do not accidentally remove a
-        # manually substituted foreign lock while model inference ran.
-        if lock.exists() and not lock.is_symlink() and lock.read_text(encoding="ascii")==lock_marker:
-            lock.unlink()
 
 
 def quantize_segment_frames(durations:list[float],*,fps:int=FPS) -> list[int]:

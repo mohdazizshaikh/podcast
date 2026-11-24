@@ -17,12 +17,15 @@ def parse(argv=None):
     subs=p.add_subparsers(dest="operation",required=True)
     for name in ("doctor","init","build-source","verify-source","prepare-chunks","verify-chunks",
                  "render-static","audit-static","progress","budget","readiness","review-pilot","inspect-pilot",
-                 "compose-neural","audit-neural","review-full","web"):
+                 "compose-neural","audit-neural","review-full","recovery","web"):
         cmd=subs.add_parser(name)
         if name=="web":
             cmd.add_argument("--port",type=int,default=7860)
             cmd.add_argument("--open-browser",action="store_true",
                              help="Open default browser only after successful local server bind")
+    recover=subs.add_parser("archive-failed-attempt",help="Preserve one stopped model attempt in a private archive")
+    recover.add_argument("--chunk-id",required=True)
+    recover.add_argument("--acknowledgment",required=True)
     preflight=subs.add_parser("check-sadtalker",help="READ ONLY local SadTalker CPU installation check; NO inference")
     preflight.add_argument("--sadtalker-root",type=Path,required=True)
     preflight.add_argument("--sadtalker-python",type=Path,required=True)
@@ -164,6 +167,12 @@ def execute(a)->dict:
     if action=="readiness":
         from .readiness import inspect
         return inspect(root)
+    if action=="recovery":
+        from .recovery import inspect
+        return inspect(root)
+    if action=="archive-failed-attempt":
+        from .recovery import archive
+        return archive(root,a.chunk_id,acknowledgment=a.acknowledgment)
     if action=="budget":
         from .budget import estimate_cpu_budget
         return estimate_cpu_budget(root)

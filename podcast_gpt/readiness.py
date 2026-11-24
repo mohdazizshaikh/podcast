@@ -206,6 +206,20 @@ def inspect(root: Path, *, allow_short: bool=False) -> dict:
     else:
         mark("face_preview_mp4","not_yet_verifiable")
 
+    if chunks_ok and stages["face_preview_mp4"]["status"]!="blocked":
+        from .recovery import inspect as inspect_recovery
+        try:
+            recovery=inspect_recovery(root,allow_short=allow_short)
+            if recovery["attempts"] or recovery["active_or_orphan_locks"]:
+                mark("interrupted_model_attempts","blocked",
+                     attempts=recovery["attempts"],
+                     active_or_orphan_locks=recovery["active_or_orphan_locks"],
+                     reason="Inspect RECOVERY and private logs; archive only stopped unverified attempts")
+            else:
+                mark("interrupted_model_attempts","clear")
+        except Exception as err:
+            mark("interrupted_model_attempts","blocked",reason=str(err))
+
     record=root/"review"/"three-presenter-human-observations.json"
     if record.is_symlink():
         mark("pilot_human_observation","blocked",reason="Manual review record symlink")
@@ -241,6 +255,8 @@ def inspect(root: Path, *, allow_short: bool=False) -> dict:
     blocked=[k for k,v in stages.items() if v["status"]=="blocked"]
     if blocked:
         result["next_safe_action"]="STOP — manually inspect blocked stages; never overwrite, forge approval or bypass signed originals"
+        if "interrupted_model_attempts" in blocked:
+            result["next_safe_action"]="STOP — RECOVERY: inspect private logs and confirm model processes have stopped before explicitly archiving an unverified failed attempt"
         result["blocked_stages"]=blocked
     elif project is None:
         result["next_safe_action"]="INIT — initialize original 45-turn Hindi private project"

@@ -26,6 +26,7 @@ echo INIT      - NEW private original 45-turn script
  echo BATCH     - max 5 real CPU clips, separate YES consent
  echo SESSION   - bounded real CPU clips, separate YES consent
  echo PROGRESS  - read-only independently decode saved MP4 previews
+ echo RECOVERY  - read-only interrupted model attempt inventory
  echo BUDGET    - READ ONLY estimated CPU hours from measured saved previews
  echo READINESS - READ ONLY stage-by-stage original 45-turn workspace audit
  echo MODEL     - READ ONLY installed SadTalker CPU environment check
@@ -50,6 +51,7 @@ if /I "!STEP!"=="PILOT" (endlocal & goto :cpu_pilot)
 if /I "!STEP!"=="BATCH" (endlocal & goto :cpu_batch)
 if /I "!STEP!"=="SESSION" (endlocal & goto :cpu_session)
 if /I "!STEP!"=="PROGRESS" (endlocal & goto :progress)
+if /I "!STEP!"=="RECOVERY" (endlocal & goto :recovery)
 if /I "!STEP!"=="BUDGET" (endlocal & goto :budget)
 if /I "!STEP!"=="READINESS" (endlocal & goto :readiness)
 if /I "!STEP!"=="MODEL" (endlocal & goto :model)
@@ -90,6 +92,9 @@ call "%~dp0RUN_NEURAL_CPU.bat" "%BASE%" "SESSION"
 exit /b %ERRORLEVEL%
 :progress
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" progress
+exit /b %ERRORLEVEL%
+:recovery
+".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" recovery
 exit /b %ERRORLEVEL%
 :budget
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" budget

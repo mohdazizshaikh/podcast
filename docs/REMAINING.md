@@ -24,3 +24,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Keep every real private workspace outside the Git clone/worktree. If READINESS reports `original_voice_source_session` BLOCKED, check whether an original WAV import, Kokoro/Edge TTS call or BIND is still running; inspect any incomplete WAV/receipt before manually resolving an abandoned cross-process originals lock. This requires local machine access and is not auto-remediated.
 
 - [ ] If READINESS reports `media_export_session` or `cpu_neural_session` BLOCKED, check the private local process and any interrupted output before manually resolving its lock. Never remove an active lock or overwrite partial evidence. Final H.264/48 kHz AAC exports now require independently measured video/audio stream durations with absolute tolerances (0.45/0.5 seconds); actual Windows exports still need human review.
+
+- [ ] On actual Windows, exercise failed-model RECOVERY and explicitly archive a stopped failed attempt before retrying. Never delete an active/orphan lock automatically or accept incomplete preview output.
