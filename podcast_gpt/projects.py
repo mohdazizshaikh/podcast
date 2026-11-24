@@ -161,6 +161,9 @@ def inspect(root:Path,pid:str):
     if result["stage"]=="outline_saved":
         script=script_generation.inspect_saved(folder,result["request"],read_evidence(folder,result["request"]),result["outline"])
         result.update(stage=script["stage"],script_progress=script)
+        if script["stage"]=="script_saved":
+            from . import script_review
+            result["script_review"]=script_review.inspect(root,pid)
     elif any((folder/name).exists() or (folder/name).is_symlink() for name in (script_generation.PARTS,script_generation.FINAL)):
         raise ValueError("Script artifacts require a verified outline")
     return result

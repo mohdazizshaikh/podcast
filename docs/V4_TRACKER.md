@@ -11,8 +11,9 @@ Last update: 2026-11-24. Status means implementation or automated verification o
 | Bounded PDF/DOCX/TXT/MD/custom script and HTTPS input | Done | 6/6 run 45448095544 (fixture-only HTTPS) |
 | Persistent model path configuration / guided installs | Partial | Inventory only |
 | Full dialogue drafting and resumable checkpoints | Done | 6/6 CI run 45449334764 (synthetic 60-minute/10-presenter coverage) |
-| Script human review, manual revision and measured audio timeline | Not implemented | Pending |
-| Explicit multi-source public HTTPS capture and exact-excerpt citations | Implemented | New CI pending; offline fixtures |
+| Versioned manual script editing and human script review | Implemented | New CI pending; synthetic fixtures |
+| Measured audio timeline and actual rendering | Not implemented in V4 | Pending |
+| Explicit multi-source public HTTPS capture and exact-excerpt citations | Implemented | 45451883118: 3 core jobs passed, Windows/packaging pending at check |
 | Automatic research discovery, semantic claim verification and human fact-checking | Not implemented | Pending |
 | AI portrait creation and character memory | Not implemented in V4 | Pending |
 | Multilingual TTS and 1–10 character general source schema | Not implemented in V4 | Pending |
@@ -22,7 +23,7 @@ Last update: 2026-11-24. Status means implementation or automated verification o
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify research/citation CI, then implement human script review and revision, automatic source discovery and claim verification, character/voice profiles, and generalized measured audio/media capabilities. Do not prematurely replace the V3 verified pipeline.
+Verify research and revision/review CI, then implement persistent character/voice profiles, automatic source discovery and claim verification, and generalized measured audio/media capabilities. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

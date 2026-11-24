@@ -31,3 +31,6 @@ Implemented 1–60 one-minute planning units from a verified outline, strict spe
 
 ## Increment 5 — bounded research evidence and citations
 Implemented explicit 2–4 public HTTPS source snapshots, immutable research pack, source-bound outline and script, and exact excerpt/source-ID validation. Automatic search discovery, semantic truth checking and independent human review remain pending. See V4_RESEARCH.md.
+
+## Increment 6 — versioned manual script editing and human approval
+Implemented editable JSON templates, immutable revision chain, current-version inspection, per-turn PASS/FAIL and global script review criteria, self-attestation receipt, stale approval invalidation and reusable PASS gate. Browser editing, arbitrary restructuring, actual duration and media integration remain pending. See V4_SCRIPT_REVIEW.md.

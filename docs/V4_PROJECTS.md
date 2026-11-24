@@ -28,3 +28,5 @@ Only confirm Gemini free-project status after ensuring billing is disabled. Othe
 Non-topic projects now support a bounded source attachment before outline generation. See [V4_INGESTION.md](V4_INGESTION.md). Existing schema-1 topic outlines remain readable; new outlines bind source evidence when present.
 
 After saving an outline, project-script-generate/status/finalize/show provide resumable dialogue drafts; project-list and project-show now reflect script progress. See [V4_SCRIPT_GENERATION.md](V4_SCRIPT_GENERATION.md).
+
+Finalized scripts now support immutable manual revisions and current-version human review. Project inspection reports script_review independently of the original script stage. See V4_SCRIPT_REVIEW.md.

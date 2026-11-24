@@ -57,6 +57,11 @@ def parse(argv=None):
     for name in ("project-script-status","project-script-finalize","project-script-show"):
         s=subs.add_parser(name)
         s.add_argument("--project-id",required=True)
+    for name in ("project-script-edit-template","project-script-revise","project-script-review-template",
+                 "project-script-review-record","project-script-review-status","project-script-current"):
+        r=subs.add_parser(name)
+        r.add_argument("--project-id",required=True)
+        if name=="project-script-review-record":r.add_argument("--acknowledgment",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -237,6 +242,16 @@ def execute(a)->dict:
         return script_generation.generate(private,a.project_id,max_new=a.max_new,credentials=keys,
             allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
             offline_only=a.offline_only,local_model=a.ollama_model)
+    if action in ("project-script-edit-template","project-script-revise","project-script-review-template",
+                  "project-script-review-record","project-script-review-status","project-script-current"):
+        from . import script_review
+        private=a.workspace.expanduser().absolute()
+        if action=="project-script-edit-template":return script_review.template(private,a.project_id)
+        if action=="project-script-revise":return script_review.revise(private,a.project_id)
+        if action=="project-script-review-template":return script_review.template(private,a.project_id,review=True)
+        if action=="project-script-review-record":return script_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
+        if action=="project-script-review-status":return script_review.inspect(private,a.project_id)
+        return script_review.current_script(private,a.project_id)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

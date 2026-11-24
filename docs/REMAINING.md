@@ -50,3 +50,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Script drafting CI verified 6/6 (45449334764), synthetic only.
 - [ ] Verify research snapshot/citation CI and real websites; implement automatic source discovery, semantic claim verification, human review and revisions. Exact excerpt match does not certify truth.
+
+- [ ] Verify research CI 45451883118 final result and new versioned script review CI. Implement browser editor, structural revisions, character profile management, generalized audio/media pipeline and real human acceptance. Manual approval is self-attested text only, never a measured audio or publication receipt.
