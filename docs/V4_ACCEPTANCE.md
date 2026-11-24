@@ -24,3 +24,5 @@ Archive uses an exclusive project lock, rejects links/reparse points and moves t
 ```
 
 The read-only readiness checker walks existing validated state, shows script/audio/chunk counts and the next recommended command. Missing prerequisites return a stage; invalid or tampered evidence blocks with an error. It performs no model calls, edits, publication or automatic repair. In the existing local dashboard, list V4 projects, enter one project ID, then use the new readiness button. The loopback/CSRF guard remains; no new executable path or credential inputs over HTTP. Full visual editing, orchestration, live inference ETA, broader multilingual TTS, automated portraits/research and genuine Windows acceptance are still pending. Auditing large episodes can be slow.
+
+Bounded foreground production orchestration is now available through V4_WORKFLOW.md. It stops at every human approval and missing media gate; no automatic publication.

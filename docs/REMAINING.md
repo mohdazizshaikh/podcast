@@ -74,3 +74,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Verify combined QA/recovery/readiness CI. Extend recovery to incomplete committed clip/export/TTS/master failures without overwriting verified evidence; actual model and human review tests, broader multilingual voices, portrait generation, research discovery, visual editing, measured ETA, and Windows acceptance remain open.
 
 - [ ] Verify acceptance CI 45461563645 and combined configuration/eSpeak/persona CI; test installed executables and genuine language/voice outputs on Windows. Wider natural neural TTS, Edge, dependency installation, portrait generation, cross-episode memory, UI/orchestration and actual model acceptance remain pending.
+
+- [x] Combined full QA/recovery/readiness CI passed 6/6 (45461563645).
+- [ ] Verify model-config/eSpeak/persona and new workflow CI, real pip installation and actual browser editing/export. Third-party model installation, natural multilingual TTS, full GUI, live ETA, audio/video visual QA, automatic media generation and real Windows model acceptance remain pending.

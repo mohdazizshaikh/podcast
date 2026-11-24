@@ -160,10 +160,18 @@ def template(root,pid,*,review=False):
         return {**_status(pid,versions,reviews),"template_path":str(path)}
 
 
-def _template_input(folder,current,*,review=False):
-    path=folder/(("review-" if review else "edit-")+_version_name(current["number"])+".json")
-    projects._plain(path,directory=False)
-    data=source.read_json(path,sg.MAX_FINAL_BYTES)
+def _template_input(folder,current,*,review=False,input_file=None):
+    if input_file is None:
+        path=folder/(("review-" if review else "edit-")+_version_name(current["number"])+".json")
+        projects._plain(path,directory=False)
+        data=source.read_json(path,sg.MAX_FINAL_BYTES)
+    else:
+        import json
+        from . import characters
+        path=Path(input_file).expanduser().absolute()
+        source.workspace_path(path.parent)
+        data=json.loads(characters._read_file(path,sg.MAX_FINAL_BYTES).decode("utf-8-sig"))
+        if not isinstance(data,dict):raise ValueError("Editable template must be a JSON object")
     field="observations" if review else "turns"
     if (set(data)!={"schema","version","version_sha256",field} or data.get("schema")!=1
             or data.get("version")!=current["number"] or data.get("version_sha256")!=current["version_sha256"]):
@@ -171,14 +179,14 @@ def _template_input(folder,current,*,review=False):
     return data[field]
 
 
-def revise(root,pid):
+def revise(root,pid,*,input_file=None):
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         folder,draft,plan,sizes,pack,versions,reviews=_state(root,pid)
         current=versions[-1]
         number=current["number"]+1
         if number>MAX_REVISIONS:raise ValueError("Revision limit reached")
-        turns=_validate_turns(_template_input(folder,current),draft,plan,sizes,pack)
+        turns=_validate_turns(_template_input(folder,current,input_file=input_file),draft,plan,sizes,pack)
         if turns==current["turns"]:raise ValueError("No script changes; edit the template before saving")
         saved={"schema":1,"number":number,"draft_sha256":source.json_digest(draft),
                "parent_sha256":current["version_sha256"],"turns":turns,"turns_sha256":source.json_digest(turns)}
@@ -188,14 +196,14 @@ def revise(root,pid):
         return inspect(root,pid)
 
 
-def record(root,pid,*,acknowledgment):
+def record(root,pid,*,acknowledgment,input_file=None):
     if acknowledgment!=ACK:raise ValueError("Explicit full script review acknowledgment required")
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         *_,versions,reviews=_state(root,pid)
         current=versions[-1];i=current["number"]
         if i in reviews:raise ValueError("Existing review cannot be overwritten; revise script to obtain a new review")
-        observations=_review_values(_template_input(folder,current,review=True),current["turns"])
+        observations=_review_values(_template_input(folder,current,review=True,input_file=input_file),current["turns"])
         saved={"schema":1,"version":i,"version_sha256":current["version_sha256"],"acknowledgment":ACK,
                "observations":observations,"observations_sha256":source.json_digest(observations)}
         dest=folder/FOLDER

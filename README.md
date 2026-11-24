@@ -300,3 +300,5 @@ V4 selected-format neural candidate composition and structural audit: [export gu
 V4 full episode review, stopped neural scratch archive and selected-project readiness: [acceptance and recovery guide](docs/V4_ACCEPTANCE.md). The local dashboard exposes a read-only readiness action; real Windows model acceptance remains pending.
 
 V4 saved local model paths, optional eSpeak non-neural multilingual fallback and opt-in character-aware dialogue: [combined guide](docs/V4_MODEL_VOICES_PERSONA.md). No automatic installation or real model quality certification.
+
+V4 optional dependency setup, offline visual script editor and bounded foreground production runner: [workflow guide](docs/V4_WORKFLOW.md). Actual model acceptance and complete one-click production remain pending.

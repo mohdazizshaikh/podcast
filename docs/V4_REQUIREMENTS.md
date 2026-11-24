@@ -58,3 +58,6 @@ Implemented immutable full candidate per-turn/global human review, non-destructi
 
 ## Increment 14 — combined local configuration, language fallback and personality prompting
 Implemented private saved Kokoro/SadTalker/eSpeak paths with explicit reuse/replacement, opt-in installed eSpeak language inventory and bounded local PCM synthesis, and immutable cast personality snapshots for new dialogue generation. Non-neural eSpeak is a fallback, not realistic multilingual speech. Actual installed model/voice tests, wider neural TTS, automated installations and longitudinal memory remain pending. See V4_MODEL_VOICES_PERSONA.md.
+
+## Increment 15 — combined workflow controls
+Implemented allowlisted optional app-venv dependency plan/install, private offline visual script editor and review JSON export/import, and explicitly bounded foreground orchestration with optional offline AI and measured action durations. Human gates remain mandatory. Third-party models, live ETA, media QA visual UI and real device acceptance remain pending. See V4_WORKFLOW.md.

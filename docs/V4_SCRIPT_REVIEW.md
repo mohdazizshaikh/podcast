@@ -25,3 +25,5 @@ Read the entire current script and original sources. Edit the returned review-rN
 All PASS means the owner self-attested review of this exact text version only. A later revision starts UNREVIEWED; old review remains immutable. Failed versions require changes and another review. The local current_script(require_pass=True) gate is available for future media integration; it is not yet a generalized rendering workflow. No automated claim truth verification, measured audio duration, portrait/voice rights certification or publication approval. No API calls or secret transfer in editing/review. Hash bindings catch ordinary changes, not malicious rewriting of all evidence. Keep private files outside Git.
 
 The current-version PASS gate is now consumed by the read-only character/media preflight (V4_CHARACTERS.md). It still does not generate media or certify voice/face quality.
+
+Offline visual script edit/review pages and explicit --file JSON imports are now supported; see V4_WORKFLOW.md. The existing version validation and immutable review still apply.

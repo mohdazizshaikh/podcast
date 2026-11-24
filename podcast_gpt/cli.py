@@ -62,6 +62,20 @@ def parse(argv=None):
         r=subs.add_parser(name)
         r.add_argument("--project-id",required=True)
         if name=="project-script-review-record":r.add_argument("--acknowledgment",required=True)
+        if name in ("project-script-revise","project-script-review-record"):r.add_argument("--file",type=Path)
+    visual=subs.add_parser("project-script-visual")
+    visual.add_argument("--project-id",required=True)
+    visual.add_argument("--mode",choices=("edit","review"),required=True)
+    for name in ("dependency-plan","dependency-install"):
+        dep=subs.add_parser(name)
+        dep.add_argument("--group",choices=("documents","kokoro"),required=True)
+        if name=="dependency-install":dep.add_argument("--acknowledgment",required=True)
+    auto=subs.add_parser("project-auto-step")
+    auto.add_argument("--project-id",required=True)
+    auto.add_argument("--execute",action="store_true")
+    auto.add_argument("--acknowledgment")
+    auto.add_argument("--max-steps",type=int,default=3)
+    auto.add_argument("--allow-local-ai",action="store_true")
     char=subs.add_parser("character-create",help="Save a reusable local character profile and optional authorized PNG")
     char.add_argument("--profile",type=Path,required=True)
     char.add_argument("--portrait",type=Path)
@@ -325,9 +339,9 @@ def execute(a)->dict:
         from . import script_review
         private=a.workspace.expanduser().absolute()
         if action=="project-script-edit-template":return script_review.template(private,a.project_id)
-        if action=="project-script-revise":return script_review.revise(private,a.project_id)
+        if action=="project-script-revise":return script_review.revise(private,a.project_id,input_file=a.file)
         if action=="project-script-review-template":return script_review.template(private,a.project_id,review=True)
-        if action=="project-script-review-record":return script_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
+        if action=="project-script-review-record":return script_review.record(private,a.project_id,acknowledgment=a.acknowledgment,input_file=a.file)
         if action=="project-script-review-status":return script_review.inspect(private,a.project_id)
         return script_review.current_script(private,a.project_id)
     if action in ("character-create","character-list","character-show","project-cast-assign","project-cast-status","project-media-preflight"):
@@ -401,6 +415,17 @@ def execute(a)->dict:
         paths=model_config.resolve(private,"espeak",{"executable":a.executable},use_config=a.use_config)
         if action=="espeak-inventory":return v4_espeak.inventory(**paths,acknowledgment=a.acknowledgment)
         return v4_espeak.generate(private,a.project_id,**paths,run_local=a.run_local,acknowledgment=a.acknowledgment,max_new=a.max_new)
+    if action=="project-script-visual":
+        from . import visual_script
+        return visual_script.create(a.workspace.expanduser().absolute(),a.project_id,mode=a.mode)
+    if action in ("dependency-plan","dependency-install"):
+        from . import dependency_setup
+        if action=="dependency-plan":return dependency_setup.plan(a.group)
+        return dependency_setup.install(a.group,acknowledgment=a.acknowledgment)
+    if action=="project-auto-step":
+        from . import v4_orchestrator
+        return v4_orchestrator.run(a.workspace.expanduser().absolute(),a.project_id,execute=a.execute,
+            acknowledgment=a.acknowledgment,max_steps=a.max_steps,allow_local_ai=a.allow_local_ai)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

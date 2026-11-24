@@ -32,3 +32,5 @@ Create and assign the cast before generating any script units, then opt in:
 ```
 
 Only personality and speaking style for the current section speakers are added as untrusted prompt data. Snapshot and cast hashes bind checkpoints and final scripts. Portraits, appearance and voice preferences are excluded from this prompt. Explicit cloud text consent applies to these descriptors too. Existing scripts remain unchanged; opt in before any script parts directory exists. Character style is not independently validated, and long-term cross-episode conversational memory remains pending.
+
+Optional app-venv dependency installation for documents/Kokoro is available with explicit consent; see V4_WORKFLOW.md. Model asset and external tool setup is still manual.
