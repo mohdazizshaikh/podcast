@@ -54,3 +54,7 @@ After AUDITFULL, choose REVIEWFULL to watch every turn, then TEMPLATEFULL to cre
 ```
 
 Use --workspace before the command for a non-default studio. INSPECTFULL and READINESS validate the saved record against current decoded video, source, SRT and export report hashes. A stale or failed review cannot be treated as passed. The immutable private record is self-attested only; it never automatically approves quality, rights or publication. Keep both files outside Git.
+
+### Install from a verified source-only ZIP
+
+See [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) for the CI-produced candidate, SHA256 check and installation workflow. Git clone remains the complete developer installation method.

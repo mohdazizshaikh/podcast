@@ -262,3 +262,7 @@ GitHub Actions exercises synthetic source WAV/portrait integrity and Windows/Lin
 ### Guided local model setup and pilot gate
 
 For the separate SadTalker legacy CPU environment, see [guided Windows CPU installation](docs/SADTALKER_CPU_SETUP.md). BATCH and SESSION require a current all-three manual PASS record bound to verified pilot clips before any further inference. The app does not download or authenticate third-party weights, certify quality, or publish.
+
+### Windows source-only ZIP candidate
+
+After all required CI jobs pass, the Windows packaging job builds and verifies a source-only ZIP, smoke-tests clean app setup and uploads the candidate and SHA256 to the successful Actions run. See [release candidate instructions](docs/RELEASE_CANDIDATE.md). Real model weights, private media and migration archives are excluded; this is not real model acceptance.

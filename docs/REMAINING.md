@@ -30,3 +30,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Validate the guided historical CPU installation recipe on a clean actual Windows machine. The enforced BATCH/SESSION gate requires all three private manual PASS observations against current independently verified pilot media; real pilot quality remains unverified.
 
 - [ ] On actual Windows, watch every real final episode turn and complete the 45-turn, five-criterion private review template; record and inspect actual human observations. CI never certifies real quality or publication.
+
+- [ ] Confirm clean Windows source-candidate CI packaging, then validate on a physical Windows 10/11 desktop including actual FFmpeg/model setup and genuine AI rendering. The ZIP does not bundle third-party weights or media.

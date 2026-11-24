@@ -5,6 +5,10 @@ on:
     paths:
       - 'podcast_gpt/**'
       - 'tests/**'
+      - 'scripts/**'
+      - 'docs/**'
+      - 'README.md'
+      - '.gitignore'
       - '*.bat'
       - 'pyproject.toml'
       - '.github/workflows/tests.yml'
@@ -97,3 +101,55 @@ jobs:
         run: python tests/long_ffmpeg_smoke.py
       - name: Document limited scope
         run: python -c "print('Only 45-turn synthetic SHORT voice/video pipeline, not 10-minute SadTalker nor human lip-sync QA')"
+
+  windows-source-candidate:
+    name: Clean Windows source ZIP candidate (not model acceptance)
+    needs: [source-media-tests, synthetic-full-45-turn-composition]
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build and verify committed source archive
+        shell: pwsh
+        run: |
+          python scripts/build_release.py --output dist/podcast-windows-source.zip
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/build_release.py --verify dist/podcast-windows-source.zip
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Extract outside repo and smoke test clean app setup
+        shell: pwsh
+        run: |
+          $base = Join-Path $env:RUNNER_TEMP "Podcast clean release"
+          $app = Join-Path $base "app"
+          $studio = Join-Path $base "private synthetic studio"
+          Expand-Archive -LiteralPath dist/podcast-windows-source.zip -DestinationPath $app
+          Push-Location $app
+          try {
+            python -m venv .venv
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & ".venv/Scripts/python.exe" -m pip install -e .
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & ".venv/Scripts/python.exe" -m podcast_gpt.bootstrap record
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & ".venv/Scripts/python.exe" -m podcast_gpt.bootstrap check
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & ".venv/Scripts/python.exe" -m podcast_gpt --workspace "$studio" init
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & ".venv/Scripts/python.exe" -m podcast_gpt --workspace "$studio" readiness
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            if (-not (Test-Path (Join-Path $studio "project.json"))) { throw "Missing synthetic project" }
+          } finally {
+            Pop-Location
+          }
+      - name: Upload source-only candidate after successful tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: podcast-windows-source-candidate
+          path: |
+            dist/podcast-windows-source.zip
+            dist/podcast-windows-source.zip.sha256
+          if-no-files-found: error
+          retention-days: 30

@@ -34,8 +34,11 @@ def test_complete_receipt_no_overwrite_and_stale_export(bound_review):
     assert result["all_manual_observations_pass"]
     assert result["publication_approved"] is False
     assert final_review.inspect(root,allow_short=True)["manual_turns_reviewed"]==45
-    with pytest.raises(ValueError,match="overwrite"):
+    saved=root/"review"/final_review.RECORD
+    before=saved.read_bytes()
+    with pytest.raises(ValueError,match="overwrit"):
         final_review.record(root,acknowledgment=final_review.ACK,allow_short=True)
+    assert saved.read_bytes()==before
     binding["video_sha256"]="changed"
     with pytest.raises(ValueError,match="stale"):
         final_review.inspect(root,allow_short=True)
