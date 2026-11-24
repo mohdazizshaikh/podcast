@@ -36,3 +36,5 @@ Only personality and speaking style for the current section speakers are added a
 Optional app-venv dependency installation for documents/Kokoro is available with explicit consent; see V4_WORKFLOW.md. Model asset and external tool setup is still manual.
 
 Local model path configuration can also be saved through the dashboard (V4_DASHBOARD_AUTHORING.md); inference remains separately consented CLI-only.
+
+Optional prior-episode continuity snapshot is separate from persona context and bound to current script units (V4_NORMALIZATION_CONTINUITY.md); offline-only drafting.

@@ -16,9 +16,10 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Exact PCM master audio composition and audit | Done | 6/6 CI run 45456602766 (synthetic PCM) |
 | Version-bound human listening review | Done | 6/6 CI run 45457590951 (synthetic fixtures) |
 | Audio-only peak normalization, background bed, intro/outro mix | Done | Corrective CI 45479131328 6/6 passed; synthetic PCM |
-| Optional deterministic speech-driven bed ducking and LUFS/true-peak diagnostics | Implemented | New CI pending; actual listening/target normalization pending |
-| Provider refusal stop, malformed local inventory rejection and no-consent key isolation | Implemented | New CI pending; mocks |
-| Guided model setup plan using saved local configuration | Implemented | New CI pending; no installs or model load |
+| Optional deterministic speech-driven bed ducking and LUFS/true-peak diagnostics | Implemented | CI 45491404566 three core jobs passed at initial check; actual listening pending |
+| Measured bounded static loudness-target gain and per-turn PCM diagnostics | Implemented | New CI pending; no dynamic limiter/denoising |
+| Provider refusal stop, malformed local inventory rejection and no-consent key isolation | Implemented | CI 45491404566 three core jobs passed at initial check; mocks |
+| Guided model setup plan using saved local configuration | Implemented | CI 45491404566 three core jobs passed at initial check; no installs or model load |
 | Mixed audio listening review, intro/outro video, shifted SRT and fresh video QA | Done | 6/6 CI 45479131328; synthetic fixture |
 | Safe incomplete-output archive (ten types) | Implemented | 6/6 CI 45484813520; synthetic tests, not all failure modes |
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
@@ -28,7 +29,8 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Opt-in cast-bound personality-aware dialogue prompts | Done | 6/6 CI 45462475819 (mock provider) |
 | Local profile-based portrait preparation brief | Implemented | 6/6 CI 45482554584; no image synthesis |
 | Authorized portrait attachment as immutable profile revision | Implemented | 6/6 CI 45483234208; no image inference |
-| AI portrait creation and longitudinal memory | Not implemented in V4 | Pending |
+| Explicit selected reviewed prior-episode continuity snapshot for local drafting | Implemented | New CI pending; no automatic memory capture or real quality verification |
+| AI portrait creation and automatic longitudinal memory | Not implemented in V4 | Pending |
 | V4 local Hindi Kokoro adapter with preset/model provenance | Done | 6/6 CI run 45456602766 (fake model fixture) |
 | V4 local CPU SadTalker pilot, source-bound clips and reviewed batch | Done | 6/6 CI 45458379123 (synthetic model runner) |
 | Local eSpeak multilingual fallback and installed language inventory | Done | 6/6 CI 45462475819 (fake executable) |
@@ -64,7 +66,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify audio quality/provider/setup CI. Next actual model setup/pilot, CJK frontends, local portrait inference, free cloud consent workflow, true loudness-target normalization and real device/browser acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify prior audio quality/provider/setup and new normalization/continuity CI. Next actual model setup/pilot, CJK frontends, local portrait inference, free cloud consent workflow, dynamic limiting/denoising and real device/browser acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

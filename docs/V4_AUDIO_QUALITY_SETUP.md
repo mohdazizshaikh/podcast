@@ -30,3 +30,5 @@ Dashboard and CLI combine current application/hardware/storage inventory, saved 
 ## Provider behavior
 
 A structured explicit refusal/filter from OpenRouter or Gemini is terminal; do not try another provider to evade it. Malformed local model inventory fails closed. Cloud environment keys are not read by generate_json without explicit cloud consent. Ordinary invalid JSON or unavailable provider still uses existing bounded eligible free-provider fallback. No paid fallback. These tests use mocked provider responses, not actual provider availability or account billing verification.
+
+Optional measured static gain toward a target and per-turn PCM diagnostics now implemented in V4_NORMALIZATION_CONTINUITY.md. Target may remain unmet; no dynamic limiter or denoising. Existing recipes preserved.

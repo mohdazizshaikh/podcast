@@ -326,3 +326,5 @@ V4 explicit browser local inference, research pack management and measured task 
 V4 browser review/revision imports, cooperative checkpoint stop and structured verbatim script: [review and custom script guide](docs/V4_REVIEW_STOP_MANUAL.md). Actual browser/model acceptance pending.
 
 V4 optional speech-driven music ducking, read-only LUFS/true-peak diagnostics, guided local model setup and provider refusal hardening: [audio quality and setup guide](docs/V4_AUDIO_QUALITY_SETUP.md). Actual model acceptance and target normalization pending.
+
+V4 measured loudness-target static gain, per-turn audio diagnostics and explicit local cross-episode continuity: [normalization and continuity guide](docs/V4_NORMALIZATION_CONTINUITY.md). Real model/device acceptance and dynamic limiting remain pending.

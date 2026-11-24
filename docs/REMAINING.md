@@ -111,3 +111,5 @@ Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 
 
 - [x] Corrective inference/review/stop/manual CI 45488657835 6/6 passed; supersedes 45487824070 and 45488479615 failures.
 - [ ] Verify audio quality/provider/setup CI; actual listening, target LUFS normalization, noise reduction, real model setup, CJK, local portrait inference, cloud consent UI and actual Windows/browser acceptance remain pending.
+
+- [ ] Verify audio quality CI 45491404566 and new normalization/continuity CI. Dynamic limiter/compression, noise reduction, automatic continuity memory, graphical continuity selection, actual model setup, CJK, local portrait synthesis, free cloud consent UI and real Windows/browser acceptance remain pending.

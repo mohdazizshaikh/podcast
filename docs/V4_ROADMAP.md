@@ -70,3 +70,5 @@ Authoring CI 45487275746 five core jobs passed at check; inference CI 4548782407
 Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 45487824070 reported three failing tests in Ubuntu matrix: script progress variable shadowed callback, and offline credential isolation was applied to inventory rather than generate_json. Both code regressions corrected in subsequent commit; existing regression tests retained. Corrective CI pending. Actual model/browser acceptance remains unverified.
 
 Corrective CI 45488657835 6/6 passed. Audio ducking/diagnostics, provider hardening and model setup plan implemented (CI pending). Actual model setup and acceptance, loudness-target processing, CJK, local portrait inference and free cloud consent UI remain pending.
+
+Prior CI 45491404566 had three core jobs passed at initial check. Bounded measured static gain, per-turn diagnostics and selected episode continuity implemented (new CI pending). Next actual model acceptance, CJK, image inference, cloud consent controls, dynamic limiting/denoising and remaining UI.

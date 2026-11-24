@@ -99,3 +99,6 @@ Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 
 
 ## Increment 27 — audio quality, provider reliability and setup plan
 Corrective CI 45488657835 passed 6/6, superseding failed inference and initial review/stop/manual runs. Optional integer speech-driven music ducking, read-only LUFS/true-peak/PCM report, provider refusal stop and guided saved-model setup plan implemented. CI pending; no target loudness normalization, real model installation or physical acceptance. See V4_AUDIO_QUALITY_SETUP.md.
+
+## Increment 28 — measured static gain and episode continuity
+Implemented optional bounded loudness-target static gain with baseline and output measurement, exact sample audit and true-peak ceiling gate; per-turn PCM/DC diagnostics; explicit frozen reviewed prior dialogue with matching character versions for local-only drafting. CI pending; no dynamic limiter, automatic memory capture, actual model/device acceptance. See V4_NORMALIZATION_CONTINUITY.md.

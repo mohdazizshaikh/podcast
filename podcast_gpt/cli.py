@@ -166,6 +166,13 @@ def parse(argv=None):
     subs.add_parser("model-config-status")
     persona4=subs.add_parser("project-persona-enable")
     persona4.add_argument("--project-id",required=True)
+    continuity4=subs.add_parser("project-continuity-enable")
+    continuity4.add_argument("--project-id",required=True)
+    continuity4.add_argument("--prior-project-id",required=True)
+    continuity4.add_argument("--turn-id",action="append",required=True)
+    continuity4.add_argument("--acknowledgment",required=True)
+    contstatus=subs.add_parser("project-continuity-status")
+    contstatus.add_argument("--project-id",required=True)
     for name in ("espeak-inventory","project-tts-espeak"):
         e=subs.add_parser(name)
         e.add_argument("--executable",type=Path)
@@ -181,9 +188,11 @@ def parse(argv=None):
     mix.add_argument("--speech-peak",type=int,default=22000)
     mix.add_argument("--bed-peak",type=int,default=3000)
     mix.add_argument("--duck-percent",type=int,default=0)
+    mix.add_argument("--target-lufs",type=int)
     diagnostic=subs.add_parser("project-audio-diagnostics")
     diagnostic.add_argument("--project-id",required=True)
     diagnostic.add_argument("--kind",choices=("master","mix"),default="master")
+    diagnostic.add_argument("--per-turn",action="store_true")
     subs.add_parser("model-setup-plan")
     mix.add_argument("--acknowledgment",required=True)
     mixaudit=subs.add_parser("project-mix-audit")
@@ -526,7 +535,7 @@ def execute(a)->dict:
         private=a.workspace.expanduser().absolute()
         if action=="project-mix-audit":return v4_post_audio.inspect(private,a.project_id)
         return v4_post_audio.compose(private,a.project_id,intro=a.intro,bed=a.bed,outro=a.outro,
-            speech_peak=a.speech_peak,bed_peak=a.bed_peak,duck_percent=a.duck_percent,acknowledgment=a.acknowledgment)
+            speech_peak=a.speech_peak,bed_peak=a.bed_peak,duck_percent=a.duck_percent,target_lufs=a.target_lufs,acknowledgment=a.acknowledgment)
     if action in ("project-incomplete-status","project-incomplete-archive"):
         from . import v4_partial_recovery
         private=a.workspace.expanduser().absolute()
@@ -598,12 +607,17 @@ def execute(a)->dict:
         return episode_plan.plan(episode_plan.load_request(a.request),credentials=credentials,
             allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
             offline_only=a.offline_only,local_model=a.ollama_model)
+    if action in ("project-continuity-enable","project-continuity-status"):
+        from . import continuity
+        private=a.workspace.expanduser().absolute()
+        if action=="project-continuity-status":return continuity.inspect(private,a.project_id)
+        return continuity.enable(private,a.project_id,a.prior_project_id,a.turn_id,acknowledgment=a.acknowledgment)
     if action=="model-setup-plan":
         from . import model_setup_plan
         return model_setup_plan.inspect(a.workspace.expanduser().absolute())
     if action=="project-audio-diagnostics":
         from . import audio_diagnostics
-        return audio_diagnostics.inspect(a.workspace.expanduser().absolute(),a.project_id,kind=a.kind)
+        return audio_diagnostics.inspect(a.workspace.expanduser().absolute(),a.project_id,kind=a.kind,per_turn=a.per_turn)
     if action=="setup-wizard":
         from . import setup_wizard
         if a.interactive:

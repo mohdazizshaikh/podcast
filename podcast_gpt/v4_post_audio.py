@@ -10,6 +10,7 @@ import io
 import os
 import shutil
 import sys
+import tempfile
 import wave
 from pathlib import Path
 from . import characters, projects, source, v4_audio as audio, v4_master as master
@@ -134,7 +135,11 @@ def _audit(dest,binding,timeline,receipt):
     for name in ("receipt.json",WAV):projects._plain(out/name,directory=False)
     saved=source.read_json(out/"receipt.json",32000)
     settings=saved["settings"]
-    if _settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0))!=settings:raise ValueError("Invalid mix settings")
+    from . import loudness_gain as gain
+    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0))
+    normalization=settings.get("normalization")
+    if normalization is not None:base_settings["normalization"]=gain.validate(normalization)
+    if base_settings!=settings:raise ValueError("Invalid mix settings")
     roles=saved["assets"]
     if not isinstance(roles,dict) or not set(roles)<=set(ROLES):raise ValueError("Invalid mix asset inventory")
     if {p.name for p in out.iterdir()}!={"receipt.json",WAV,*[r+".wav" for r in roles]}:raise ValueError("Incomplete or unexpected mix files")
@@ -142,23 +147,66 @@ def _audit(dest,binding,timeline,receipt):
     total=timeline["total_frames"]+sum(assets[r][1]["frames"] for r in ("intro","outro") if r in assets)
     path=out/WAV
     if path.stat().st_size>total*2+65536:raise ValueError("Oversized mix WAV")
-    digest=hashlib.sha256()
+    digest=hashlib.sha256();baseline_digest=hashlib.sha256();baseline_peak=0
     try:
         with wave.open(str(path),"rb") as w:
             if (w.getnchannels(),w.getsampwidth(),w.getframerate(),w.getcomptype(),w.getnframes())!=(1,2,audio.RATE,"NONE",total):
                 raise ValueError("Mix WAV format or duration differs")
             for block in _mix_blocks(dest,timeline,assets,settings):
+                if normalization is not None:
+                    baseline_digest.update(block)
+                    baseline_peak=max(baseline_peak,max(map(abs,_samples(block)),default=0))
+                    block=gain.apply(block,normalization["gain_ppm"])
                 if w.readframes(len(block)//2)!=block:raise ValueError("Mix PCM differs from verified recipe")
                 digest.update(block)
     except (wave.Error,EOFError):raise ValueError("Invalid mix WAV") from None
+    if normalization is not None and (baseline_digest.hexdigest()!=normalization["baseline_pcm_sha256"] or baseline_peak!=normalization["baseline_pcm_peak"]):
+        raise ValueError("Normalization baseline differs from verified mix recipe")
     expected=_record(binding,timeline,receipt,settings,assets,digest.hexdigest(),source.digest(path))
     if saved!=expected:raise ValueError("Mix receipt differs")
     return expected
 
 
-def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,acknowledgment=None):
+def _write_wav(path,blocks):
+    digest=hashlib.sha256()
+    with path.open("xb") as handle:
+        with wave.open(handle,"wb") as w:
+            w.setnchannels(1);w.setsampwidth(2);w.setframerate(audio.RATE)
+            for block in blocks:
+                w.writeframesraw(block);digest.update(block)
+        handle.flush();os.fsync(handle.fileno())
+    return digest.hexdigest()
+
+
+def _stage_normalized(dest,timeline,assets,settings,target_lufs,temp):
+    from . import audio_diagnostics as diag,loudness_gain as gain
+    baseline=temp/"baseline.wav";candidate=temp/WAV
+    baseline_sha=_write_wav(baseline,_mix_blocks(dest,timeline,assets,settings))
+    stats=diag.pcm_stats(baseline);before=diag.measure(baseline,stats["frames"])
+    ppm=gain.gain_ppm(target_lufs,before,stats["sample_peak_pcm"])
+    def blocks():
+        h=hashlib.sha256()
+        with wave.open(str(baseline),"rb") as w:
+            while True:
+                block=w.readframes(BLOCK)
+                if not block:break
+                h.update(block);yield gain.apply(block,ppm)
+        if h.hexdigest()!=baseline_sha:raise ValueError("Staged baseline changed")
+    pcm_sha=_write_wav(candidate,blocks())
+    after=diag.pcm_stats(candidate)
+    if after["frames"]!=stats["frames"] or after["full_scale_sample_count"]:
+        raise ValueError("Normalized sample coverage or clipping differs")
+    measured=diag.measure(candidate,after["frames"])
+    settings["normalization"]=gain.record(target_lufs,before,stats["sample_peak_pcm"],baseline_sha,measured)
+    return candidate,pcm_sha
+
+
+def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,acknowledgment=None):
     if acknowledgment!=ACK:raise ValueError("Explicit audio usage rights and mix acknowledgment required")
     settings=_settings(speech_peak,bed_peak,duck_percent)
+    if target_lufs is not None:
+        from .loudness_gain import target
+        target(target_lufs)
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         _,dest,binding,timeline,receipt=_ctx(root,pid)
@@ -167,21 +215,21 @@ def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak
         assets={k:_asset(v,k) for k,v in (("intro",intro),("bed",bed),("outro",outro)) if v is not None}
         if duck_percent and "bed" not in assets:raise ValueError("Ducking requires a background bed")
         total=timeline["total_frames"]+sum(assets[r][1]["frames"] for r in ("intro","outro") if r in assets)
-        if shutil.disk_usage(folder).free<total*2+sum(len(v[0]) for v in assets.values())+1024**2:
+        if shutil.disk_usage(folder).free<total*(6 if target_lufs is not None else 2)+sum(len(v[0]) for v in assets.values())+1024**2:
             raise ValueError("Insufficient private disk space")
-        out.mkdir()
-        for role,(raw,info,samples) in assets.items():
-            with (out/(role+".wav")).open("xb") as handle:handle.write(raw)
-        digest=hashlib.sha256()
-        with (out/WAV).open("xb") as handle:
-            with wave.open(handle,"wb") as w:
-                w.setnchannels(1);w.setsampwidth(2);w.setframerate(audio.RATE)
-                for block in _mix_blocks(dest,timeline,assets,settings):
-                    w.writeframesraw(block);digest.update(block)
-            handle.flush();os.fsync(handle.fileno())
-        if _ctx(root,pid)[2:]!=(binding,timeline,receipt):raise ValueError("Original master changed")
-        record=_record(binding,timeline,receipt,settings,assets,digest.hexdigest(),source.digest(out/WAV))
-        source.atomic_json(out/"receipt.json",record,new=True)
+        with tempfile.TemporaryDirectory(prefix="v4-mix-",dir=folder) as tmp:
+            if target_lufs is not None:staged,pcm_sha=_stage_normalized(dest,timeline,assets,settings,target_lufs,Path(tmp))
+            else:
+                staged=Path(tmp)/WAV
+                pcm_sha=_write_wav(staged,_mix_blocks(dest,timeline,assets,settings))
+            if _ctx(root,pid)[2:]!=(binding,timeline,receipt):raise ValueError("Original master changed")
+            out.mkdir()
+            for role,(raw,info,samples) in assets.items():
+                with (out/(role+".wav")).open("xb") as handle:handle.write(raw)
+            with staged.open("rb") as inp,(out/WAV).open("xb") as handle:
+                shutil.copyfileobj(inp,handle);handle.flush();os.fsync(handle.fileno())
+            record=_record(binding,timeline,receipt,settings,assets,pcm_sha,source.digest(out/WAV))
+            source.atomic_json(out/"receipt.json",record,new=True)
         return {"project_id":pid,"mix":_audit(dest,binding,timeline,receipt),"path":str(out/WAV)}
 
 
