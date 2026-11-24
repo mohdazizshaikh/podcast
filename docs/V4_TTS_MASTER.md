@@ -15,3 +15,5 @@ Generate 1–5 missing eligible turns per invocation. Imported turns are retaine
 Once every turn is available, finalize the measured timeline and compose master/episode.wav in the current private audio version. The master contains original speech samples and exact 250 ms silence gaps; audit compares every PCM byte with the source, verifies frame count and hashes. No audio normalization, clipping, stretching, noise removal, background music or audio quality claim. Target duration remains informational. Human listening review, wider TTS languages, Edge, audio mixing and video rendering remain pending.
 
 After master composition, complete the human listening workflow and selected static video preview using V4_PREVIEW.md. No lip-sync or production acceptance claim.
+
+Optional saved local paths and eSpeak non-neural multilingual fallback are now available. See V4_MODEL_VOICES_PERSONA.md. Wider natural neural TTS still pending.

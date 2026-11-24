@@ -90,6 +90,15 @@ def _read_parts(dest,binding,turns):
                 raise ValueError("Invalid local speech provenance")
             expected.pop("rights_and_text_match_self_attested")
             expected.update(origin="local_kokoro_hindi",generation=extra,model_usage_rights_self_attested=True)
+        if saved.get("origin")=="local_espeak":
+            from .v4_espeak import PRESET
+            extra=saved.get("generation")
+            if (not isinstance(extra,dict) or set(extra)!={"voice_preset","executable_sha256","inventory_sha256"}
+                    or not isinstance(extra["voice_preset"],str) or not PRESET.fullmatch(extra["voice_preset"])
+                    or any(not isinstance(extra[k],str) or len(extra[k])!=64 or any(c not in "0123456789abcdef" for c in extra[k]) for k in ("executable_sha256","inventory_sha256"))):
+                raise ValueError("Invalid eSpeak speech provenance")
+            expected.pop("rights_and_text_match_self_attested")
+            expected.update(origin="local_espeak",generation=extra,model_usage_rights_self_attested=True)
         if saved!=expected:raise ValueError("Audio receipt, PCM hash or turn binding differs")
         items[child.name]=saved
     if len({v["pcm_sha256"] for v in items.values()})!=len(items):
@@ -130,7 +139,7 @@ def _summary(pid,dest,binding,turns,items,req):
     missing=[t["id"] for t in turns if t["id"] not in items]
     return {"project_id":pid,"binding":binding,"total_turns":len(turns),"imported_turns":len(items),
             "missing_turn_ids":missing,"measured_imported_speech_seconds":sum(v["frames"] for v in items.values() if v["origin"]=="authorized_import")/RATE,
-            "completed_audio_turns":len(items),"generated_turns":sum(v["origin"]=="local_kokoro_hindi" for v in items.values()),
+            "completed_audio_turns":len(items),"generated_turns":sum(v["origin"] in ("local_kokoro_hindi","local_espeak") for v in items.values()),
             "measured_total_speech_seconds":sum(v["frames"] for v in items.values())/RATE,
             "timeline_finalized":saved is not None,"measured_audio_seconds":saved["measured_audio_seconds"] if saved else None,
             "within_target_10_percent":saved["within_target_10_percent"] if saved else None,
@@ -151,13 +160,14 @@ def voice_status(root,pid):
                      "status":"authorized_wav_import_supported" if engine=="imported" else
                               "select_import_or_future_tts" if engine=="undecided" else
                               "local_hindi_kokoro_candidate" if engine=="kokoro" and voice["language"].casefold() in ("hindi","hi","hi-in","हिन्दी","हिंदी") else
+                              "local_espeak_inventory_required" if engine=="espeak" else
                               "generalized_tts_adapter_pending",
                      "actual_language_voice_compatibility_verified":False})
     return {"project_id":pid,"cast_assigned":cast["cast_assigned"],"voices":rows,
             "import_pcm_supported_for_any_language":True,"network_requests":0,"model_inference_calls":0}
 
 
-def _save_turn(dest,binding,turn,raw,info,*,generation=None):
+def _save_turn(dest,binding,turn,raw,info,*,generation=None,origin="local_kokoro_hindi"):
     dest.mkdir(parents=True,exist_ok=True);projects._plain(dest)
     out=dest/turn["id"];out.mkdir()
     with (out/"speech.wav").open("xb") as handle:
@@ -165,7 +175,7 @@ def _save_turn(dest,binding,turn,raw,info,*,generation=None):
     receipt={"schema":1,"binding":binding,"turn_id":turn["id"],"turn_sha256":_turn_binding(turn),
              "speaker":turn["speaker"],**info}
     if generation is None:receipt.update(origin="authorized_import",rights_and_text_match_self_attested=True)
-    else:receipt.update(origin="local_kokoro_hindi",generation=generation,model_usage_rights_self_attested=True)
+    else:receipt.update(origin=origin,generation=generation,model_usage_rights_self_attested=True)
     source.atomic_json(out/"receipt.json",receipt,new=True)
 
 

@@ -40,3 +40,5 @@ Static preview CI 45457590951 had four core jobs passed at initial check. Genera
 Static preview/listening review CI passed 6/6 (45457590951). Neural pilot CI 45458379123 had both Ubuntu jobs pass at initial check. Selected-format neural composition and audit implemented (new CI pending); next full human QA and safe failure recovery, broader voice/image/UI workflows. See V4_EXPORT.md.
 
 Neural pilot and candidate export CI completed 6/6 each (45458379123, 45458841874). Combined full QA, stopped scratch recovery and selected-project dashboard readiness implemented (CI pending). Next broader voice/language and character-aware prompting, persistent model setup, interactive visual controls and safe orchestration; real device acceptance remains mandatory.
+
+Combined acceptance CI 45461563645 had four core jobs passed at initial check. Saved local model paths, eSpeak fallback and character-aware prompts implemented (new CI pending). Next visual editing/review, orchestration, safe installation workflow and wider neural TTS; actual hardware acceptance remains mandatory.

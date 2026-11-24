@@ -86,8 +86,9 @@ def parse(argv=None):
         v.add_argument("--project-id",required=True)
     tts=subs.add_parser("project-tts-kokoro",help="Explicit local Hindi Kokoro generation")
     tts.add_argument("--project-id",required=True)
-    tts.add_argument("--model",type=Path,required=True)
-    tts.add_argument("--voices",type=Path,required=True)
+    tts.add_argument("--model",type=Path)
+    tts.add_argument("--voices",type=Path)
+    tts.add_argument("--use-config",action="store_true")
     tts.add_argument("--run-local",action="store_true")
     tts.add_argument("--acknowledgment",required=True)
     tts.add_argument("--max-new",type=int,default=1)
@@ -101,8 +102,9 @@ def parse(argv=None):
         if name=="project-audio-review-record":r.add_argument("--acknowledgment",required=True)
     neural4=subs.add_parser("project-neural-run",help="Explicit local SadTalker CPU pilot or reviewed batch")
     neural4.add_argument("--project-id",required=True)
-    neural4.add_argument("--model",type=Path,required=True)
-    neural4.add_argument("--python",type=Path,required=True)
+    neural4.add_argument("--model",type=Path)
+    neural4.add_argument("--python",type=Path)
+    neural4.add_argument("--use-config",action="store_true")
     neural4.add_argument("--mode",choices=("pilot","batch"),default="pilot")
     neural4.add_argument("--max-new",type=int,default=1)
     neural4.add_argument("--timeout",type=int,default=1800)
@@ -122,6 +124,22 @@ def parse(argv=None):
         q.add_argument("--project-id",required=True)
         if name in ("project-final-review-record","project-neural-archive"):q.add_argument("--acknowledgment",required=True)
         if name=="project-neural-archive":q.add_argument("--chunk-id",required=True)
+    config=subs.add_parser("model-configure")
+    config.add_argument("--engine",choices=("kokoro","sadtalker","espeak"),required=True)
+    for key in ("model","voices","python","executable"):config.add_argument("--"+key,type=Path)
+    config.add_argument("--replace",action="store_true")
+    subs.add_parser("model-config-status")
+    persona4=subs.add_parser("project-persona-enable")
+    persona4.add_argument("--project-id",required=True)
+    for name in ("espeak-inventory","project-tts-espeak"):
+        e=subs.add_parser(name)
+        e.add_argument("--executable",type=Path)
+        e.add_argument("--use-config",action="store_true")
+        e.add_argument("--acknowledgment",required=True)
+        if name=="project-tts-espeak":
+            e.add_argument("--project-id",required=True)
+            e.add_argument("--run-local",action="store_true")
+            e.add_argument("--max-new",type=int,default=1)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -330,8 +348,10 @@ def execute(a)->dict:
         if action=="project-audio-finalize":return v4_audio.finalize(private,a.project_id)
         return v4_audio.show(private,a.project_id)
     if action=="project-tts-kokoro":
-        from . import v4_tts
-        return v4_tts.generate(a.workspace.expanduser().absolute(),a.project_id,model=a.model,voices=a.voices,
+        from . import v4_tts,model_config
+        private=a.workspace.expanduser().absolute()
+        paths=model_config.resolve(private,"kokoro",{"model":a.model,"voices":a.voices},use_config=a.use_config)
+        return v4_tts.generate(private,a.project_id,**paths,
             run_local=a.run_local,acknowledgment=a.acknowledgment,max_new=a.max_new)
     if action in ("project-master-compose","project-master-audit"):
         from . import v4_master
@@ -352,7 +372,9 @@ def execute(a)->dict:
         if action=="project-neural-status":return v4_neural.inspect(private,a.project_id)
         if action=="project-neural-pilot-template":return v4_neural.template(private,a.project_id)
         if action=="project-neural-pilot-record":return v4_neural.record(private,a.project_id,acknowledgment=a.acknowledgment)
-        return v4_neural.generate(private,a.project_id,model=a.model,python=a.python,mode=a.mode,max_new=a.max_new,
+        from . import model_config
+        paths=model_config.resolve(private,"sadtalker",{"model":a.model,"python":a.python},use_config=a.use_config)
+        return v4_neural.generate(private,a.project_id,**paths,mode=a.mode,max_new=a.max_new,
             timeout=a.timeout,cpu_threads=a.cpu_threads,run_local=a.run_local,acknowledgment=a.acknowledgment)
     if action in ("project-neural-compose","project-neural-audit"):
         from . import v4_export
@@ -368,6 +390,17 @@ def execute(a)->dict:
         if action=="project-neural-recovery-status":return v4_recovery.inspect(private,a.project_id)
         if action=="project-neural-archive":return v4_recovery.archive(private,a.project_id,a.chunk_id,acknowledgment=a.acknowledgment)
         return v4_readiness.inspect(private,a.project_id)
+    if action in ("model-configure","model-config-status","project-persona-enable","espeak-inventory","project-tts-espeak"):
+        from . import model_config,persona,v4_espeak
+        private=a.workspace.expanduser().absolute()
+        if action=="model-config-status":return model_config.status(private)
+        if action=="model-configure":
+            paths={k:getattr(a,k) for k in ("model","voices","python","executable") if getattr(a,k) is not None}
+            return model_config.save(private,a.engine,paths,replace=a.replace)
+        if action=="project-persona-enable":return persona.enable(private,a.project_id)
+        paths=model_config.resolve(private,"espeak",{"executable":a.executable},use_config=a.use_config)
+        if action=="espeak-inventory":return v4_espeak.inventory(**paths,acknowledgment=a.acknowledgment)
+        return v4_espeak.generate(private,a.project_id,**paths,run_local=a.run_local,acknowledgment=a.acknowledgment,max_new=a.max_new)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

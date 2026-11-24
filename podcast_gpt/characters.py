@@ -21,7 +21,7 @@ CAST="cast.json"
 MAX_PORTRAIT=12_000_000
 ACK="I_HAVE_RIGHTS_TO_USE_THIS_PORTRAIT"
 FIELDS={"name","personality","speaking_style","appearance","voice_preferences"}
-ENGINES=("undecided","imported","kokoro","edge")
+ENGINES=("undecided","imported","kokoro","edge","espeak")
 
 
 def _text(value,limit,*,optional=False):

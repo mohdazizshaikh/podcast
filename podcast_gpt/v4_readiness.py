@@ -27,7 +27,7 @@ def inspect(root,pid):
     if not cast.get("all_portraits_present"):return stop("cast_required","character-create / project-cast-assign")
     info=audio.inspect(root,pid)
     result["checks"]["audio_turns"]={"completed":info["completed_audio_turns"],"total":info["total_turns"]}
-    if info["missing_turn_ids"]:return stop("audio_required","project-audio-import / project-tts-kokoro")
+    if info["missing_turn_ids"]:return stop("audio_required","project-audio-import / project-tts-kokoro / project-tts-espeak")
     if not info["timeline_finalized"]:return stop("timeline_required","project-audio-finalize")
     _,dest,_,_,_,_=audio._context(root,pid)
     if not (dest/master.FOLDER).exists() and not (dest/master.FOLDER).is_symlink():return stop("master_required","project-master-compose")

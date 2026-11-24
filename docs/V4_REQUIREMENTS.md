@@ -55,3 +55,6 @@ Implemented cumulative PCM-derived 25 fps frame plan, normalized facial clip com
 
 ## Increment 13 — combined acceptance, recovery and readiness
 Implemented immutable full candidate per-turn/global human review, non-destructive stopped current neural scratch archive, and read-only staged project readiness with dashboard selection. No automatic publication, orphan-process detection, lock deletion, generalized failure recovery or measured ETA. See V4_ACCEPTANCE.md.
+
+## Increment 14 — combined local configuration, language fallback and personality prompting
+Implemented private saved Kokoro/SadTalker/eSpeak paths with explicit reuse/replacement, opt-in installed eSpeak language inventory and bounded local PCM synthesis, and immutable cast personality snapshots for new dialogue generation. Non-neural eSpeak is a fallback, not realistic multilingual speech. Actual installed model/voice tests, wider neural TTS, automated installations and longitudinal memory remain pending. See V4_MODEL_VOICES_PERSONA.md.

@@ -298,3 +298,5 @@ V4 source-bound local SadTalker CPU pilot, resumable clips and human pilot batch
 V4 selected-format neural candidate composition and structural audit: [export guide](docs/V4_EXPORT.md). Requires complete reviewed source-bound facial clips, preserves original master as sole audio input, and emits synchronized SRT. Genuine model and full human QA remain pending.
 
 V4 full episode review, stopped neural scratch archive and selected-project readiness: [acceptance and recovery guide](docs/V4_ACCEPTANCE.md). The local dashboard exposes a read-only readiness action; real Windows model acceptance remains pending.
+
+V4 saved local model paths, optional eSpeak non-neural multilingual fallback and opt-in character-aware dialogue: [combined guide](docs/V4_MODEL_VOICES_PERSONA.md). No automatic installation or real model quality certification.
