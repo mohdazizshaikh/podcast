@@ -145,7 +145,7 @@ def _read_review(dest,receipt,turns):
     return saved
 
 
-def qa(root,pid,operation,*,acknowledgment=None):
+def qa(root,pid,operation,*,acknowledgment=None,input_file=None):
     if operation=="status":
         _,dest,receipt,turns=_qa_context(root,pid)
         return review._summary(pid,receipt,_read_review(dest,receipt,turns))
@@ -161,8 +161,13 @@ def qa(root,pid,operation,*,acknowledgment=None):
             source.atomic_json(path,value,new=True)
             return {"project_id":pid,"template_path":str(path),"video_path":str(dest/FOLDER/VIDEO),"subtitle_path":str(dest/FOLDER/SRT)}
         if acknowledgment!=ACK:raise ValueError("Explicit full studio viewing acknowledgment required")
-        projects._plain(path,directory=False)
-        value=review._validate(source.read_json(path,2_000_000),receipt,turns)
+        if input_file is None:
+            projects._plain(path,directory=False)
+            data=source.read_json(path,2_000_000)
+        else:
+            from .visual_media_review import read_input
+            data=read_input(input_file,2_000_000)
+        value=review._validate(data,receipt,turns)
         saved={"observations":value,"observations_sha256":source.json_digest(value),"acknowledgment":ACK}
         source.atomic_json(dest/REVIEW,saved,new=True)
         return review._summary(pid,receipt,saved)

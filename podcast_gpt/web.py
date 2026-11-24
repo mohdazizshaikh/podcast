@@ -24,7 +24,7 @@ from .readiness import inspect as inspect_readiness
 from .setup_wizard import inspect as inspect_setup
 from .projects import list_projects,ID_RE
 from .v4_readiness import inspect as inspect_v4_readiness
-from . import production_overview, dashboard_actions, dashboard_authoring, projects
+from . import production_overview, dashboard_actions, dashboard_authoring, dashboard_review, projects
 
 STYLE="""body{font:16px system-ui;background:#121b2b;color:#f4f7ff;margin:auto;max-width:1100px;padding:28px}
 header{padding:18px;border-bottom:1px solid #53627c}.panel{padding:18px;margin:18px 0;border:1px solid #4c5a70;border-radius:12px}
@@ -100,6 +100,15 @@ def html_page(token:str)->str:
 <label>2–4 distinct public HTTPS source URLs (one per line) <textarea id="v4ResearchUrls" rows="4" maxlength="8200"></textarea></label>
 <label><input id="v4ResearchConsent" type="checkbox"> I authorize the selected public internet search or source retrieval</label>
 <button id="v4ResearchDiscover">Discover Wikipedia candidates</button><button id="v4ResearchCapture">Capture selected research sources</button><button id="v4ResearchStatus">Inspect saved research pack</button>
+<button id="v4ManualScript">Import captured structured script verbatim (knowledge mode)</button>
+<h3>Import script edits and record reviewed observations</h3>
+<label>Review type <select id="v4ReviewKind"><option value="script-edit">Script revision (no approval)</option><option value="script">Script review</option><option value="audio">Master audio review</option><option value="pilot">Pilot review</option><option value="final">Final video review</option><option value="studio">Neural studio review</option><option value="mix">Mix listening review</option><option value="mixed">Mixed video review</option><option value="mixed-studio">Mixed studio review</option><option value="fact">Factual review</option></select></label>
+<button id="v4ReviewTemplate">Create private JSON template</button>
+<label>Completed JSON file <input id="v4ReviewFile" type="file" accept=".json"></label>
+<label>Exact full-review declaration (shown below, not needed for script revision) <input id="v4ReviewAck" maxlength="100"></label>
+<p id="v4ReviewDeclaration"></p>
+<button id="v4ReviewImport">Import selected completed JSON</button>
+<small>Review all current media and criteria yourself before recording. No automatic PASS; existing review receipts cannot be overwritten.</small>
 <h3>Explicit local AI production</h3>
 <label>Engine <select id="v4InferenceEngine"><option value="ollama">Ollama — local script</option><option value="kokoro">Kokoro — voice</option><option value="espeak">eSpeak — voice</option><option value="sadtalker">SadTalker — neural clips</option></select></label>
 <label>Maximum actions <input id="v4InferenceSteps" type="number" min="1" max="5" value="1"></label>
@@ -116,7 +125,7 @@ def html_page(token:str)->str:
 <p id="v4MediaInfo">Audit first, then select the matching local file (128 MiB maximum for browser hash check).</p>
 <input type="file" id="v4LocalMedia" accept=".wav,.mp4" disabled><video id="v4Player" controls preload="none" style="max-width:100%;display:none"></video>
 <p><small>File bytes stay in this browser tab; no upload or HTTP media endpoint. Large files: use the displayed local path in your own player.</small></p>
-<small>Cloud AI consent, API keys and recorded human approvals remain CLI-only.</small></section>
+<small>Cloud AI consent and API keys remain CLI-only. Review imports require explicit full-review declarations.</small></section>
 <section class="panel"><h2>1. Original 45-turn episode</h2>
 <button data-action="init">Create NEW original 45-turn project</button>
 <button data-action="doctor">Check tools</button>
@@ -139,7 +148,7 @@ def html_page(token:str)->str:
 <button data-action="progress">Check genuine saved neural previews</button>
 <button data-action="readiness">READINESS — read-only all-stage SHA/video audit and next safe step</button>
 <p><small>Static is NOT lip-sync. Real SadTalker CPU models and one-per-presenter PILOT use the separate explicit-consent Windows launcher.</small></p></section>
-<section class="panel"><h2>Local task log</h2><p id="v4TaskProgress" aria-live="polite">Idle</p><button id="v4RefreshTask">Refresh task status</button><pre id="status" aria-live="polite">Ready. Nothing running.</pre></section>
+<section class="panel"><h2>Local task log</h2><p id="v4TaskProgress" aria-live="polite">Idle</p><button id="v4RefreshTask">Refresh task status</button><button id="v4StopTask" disabled>Stop after current verified action</button><pre id="status" aria-live="polite">Ready. Nothing running.</pre></section>
 <script>
 'use strict';const token='''+json.dumps(token)+''';const out=document.getElementById('status');
 async function send(endpoint,data,portraitRights=false){let opt={method:'POST',headers:{'X-CSRF-Token':token}};
@@ -169,12 +178,13 @@ function showResult(status){
   document.getElementById('v4LocalMedia').disabled=!data.browser_check_supported;
  }
 }
-let pollTimer=null;
+let pollTimer=null,currentTask=null;
 async function refresh(){
  if(pollTimer!==null){clearTimeout(pollTimer);pollTimer=null}
  let r=await fetch('/api/status',{cache:'no-store'});let status=await r.json();
  out.textContent=JSON.stringify(status,null,2);showResult(status);
- const progress=status.progress;document.getElementById('v4TaskProgress').textContent=status.phase+' | '+(status.command||'No task')+' | elapsed '+(status.elapsed_seconds??0)+' s'+(progress?' | '+progress.action+' | verified actions '+progress.completed_actions+'/'+progress.action_limit:'');
+ currentTask=status.task_id;document.getElementById("v4StopTask").disabled=!(status.phase==="running"&&status.command==="author-local-inference"&&!status.stop_requested);
+ const progress=status.progress;document.getElementById('v4TaskProgress').textContent=status.phase+' | '+(status.command||'No task')+' | elapsed '+(status.elapsed_seconds??0)+' s'+(status.stop_requested?' | stop requested at next checkpoint':'')+(progress?' | '+progress.action+' | verified actions '+progress.completed_actions+'/'+progress.action_limit:'');
  if(status.phase==='running')pollTimer=setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
 }
 async function action(name,pid=null,kind=null,consent=false){try{
@@ -223,6 +233,19 @@ onAuthor('v4ResearchCapture',()=>{researchConsent();return author('research-capt
 onAuthor('v4ResearchStatus',()=>author('research-status',{project_id:currentPid()}));
 onAuthor('v4InferenceRun',()=>{if(!field('v4InferenceConsent').checked)throw new Error('Explicit local model trust and usage rights required');field('v4InferenceConsent').checked=false;return author('local-inference',{project_id:currentPid(),engine:val('v4InferenceEngine'),max_steps:Number(val('v4InferenceSteps')),model_consent:true},true)});
 onAuthor('v4RefreshTask',()=>refresh());
+onAuthor('v4StopTask',async()=>{if(!currentTask)throw new Error('Refresh current task first');await send('/api/stop?task_id='+encodeURIComponent(currentTask));await refresh()});
+onAuthor('v4ManualScript',()=>author('manual-script',{project_id:currentPid()},true));
+const reviewAcks='''+json.dumps(dashboard_review.ATTEST)+''';
+function reviewDeclaration(){field('v4ReviewAck').value='';field('v4ReviewDeclaration').textContent=reviewAcks[val('v4ReviewKind')]||'Script edit only — no approval declaration'}
+field('v4ReviewKind').addEventListener('change',reviewDeclaration);reviewDeclaration();
+onAuthor('v4ReviewTemplate',()=>author('review-template',{project_id:currentPid(),kind:val('v4ReviewKind')},true));
+onAuthor('v4ReviewImport',async()=>{
+ const kind=val('v4ReviewKind'),file=field('v4ReviewFile').files[0],ack=val('v4ReviewAck');
+ if(!file||!file.name.toLowerCase().endsWith('.json'))throw new Error('Select completed JSON');
+ if(ack!==(reviewAcks[kind]||''))throw new Error('Enter the exact full review declaration');
+ authorConsent();field('v4ReviewAck').value='';
+ out.textContent=JSON.stringify(await send('/api/review-import?project_id='+encodeURIComponent(currentPid())+'&kind='+encodeURIComponent(kind)+'&consent=YES&attestation='+encodeURIComponent(ack),file),null,2);await refresh();
+});
 onAuthor('v4ModelStatus',()=>author('model-status',{}));
 onAuthor('v4ModelSave',()=>{const engine=val('v4ModelEngine'),paths=engine==='kokoro'?{model:val('v4ModelPath'),voices:val('v4VoicesPath')}:engine==='sadtalker'?{model:val('v4ModelPath'),python:val('v4PythonPath')}:{executable:val('v4ExePath')};const replace=field('v4ModelReplace').checked;field('v4ModelReplace').checked=false;return author('model-configure',{engine,paths,replace},true)});
 field('v4ProjectId').addEventListener('input',()=>{castPid=null;field('v4CastRows').replaceChildren()});
@@ -262,6 +285,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
     token=secrets.token_hex(32)
     status={"phase":"idle","command":None,"result":None,"progress":None,"elapsed_seconds":0}
     started=None
+    active_stop=None
     lock=threading.Lock()
     state_lock=threading.Lock()
     actions={"init":lambda:init(root),"doctor":lambda:doctor(root),
@@ -297,14 +321,34 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                 return self._json(200,snapshot)
             return self._json(404,{"error":"No HTTP media or private filesystem routes"})
         def do_POST(self):
-            nonlocal started
+            nonlocal started,active_stop
             if not self._allowed() or not secrets.compare_digest(self.headers.get("X-CSRF-Token",""),token):
                 return self._json(403,{"error":"Blocked external/cross-origin/CSRF request"})
             size_str=self.headers.get("Content-Length","")
             if not size_str.isdecimal():return self._json(411,{"error":"Content-Length required"})
             size=int(size_str);url=urlsplit(self.path);query=parse_qs(url.query)
-            if url.path in ("/api/action","/api/project-create","/api/author","/api/author-file"):
-                if url.path in ("/api/author","/api/author-file"):
+            if url.path=="/api/stop":
+                if size!=0:return self._json(400,{"error":"Stop body must be empty"})
+                with state_lock:
+                    if status["phase"]!="running" or status["command"]!="author-local-inference" or query.get("task_id",[""])[0]!=status.get("task_id") or active_stop is None:
+                        accepted=False
+                    else:
+                        active_stop.set();status["stop_requested"]=True;accepted=True
+                return self._json(202 if accepted else 409,{"stop_requested":accepted,"note":"Current action is not forcibly interrupted"})
+            stop_event=threading.Event()
+            if url.path in ("/api/action","/api/project-create","/api/author","/api/author-file","/api/review-import"):
+                if url.path=="/api/review-import":
+                    pid=query.get("project_id",[""])[0];kind=query.get("kind",[""])[0]
+                    if not ID_RE.fullmatch(pid) or kind not in dashboard_review.KINDS or not 1<=size<=dashboard_review.LIMIT or self.headers.get("Content-Type")!="application/octet-stream":return self._json(400,{"error":"Invalid review upload"})
+                    if query.get("consent",[""])[0]!="YES":return self._json(403,{"error":"Explicit review import consent required"})
+                    ack=query.get("attestation",[None])[0]
+                    if kind!="script-edit" and ack!=dashboard_review.ATTEST[kind]:return self._json(403,{"error":"Exact selected review declaration required"})
+                    try:
+                        self.connection.settimeout(20);raw=self.rfile.read(size)
+                        if len(raw)!=size:raise ValueError("Incomplete review upload")
+                    except (ValueError,OSError) as err:return self._json(400,{"error":str(err)})
+                    command="review-import";selected=lambda:dashboard_review.upload(root,pid,kind,raw,acknowledgment=dashboard_review.ACK,attestation=ack)
+                elif url.path in ("/api/author","/api/author-file"):
                     is_file=url.path=="/api/author-file"
                     kind=query.get("kind",[""])[0]
                     action=query.get("cmd",[""])[0]
@@ -332,7 +376,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                             command="author-"+action
                             def report(value):
                                 with state_lock:status["progress"]=dict(value)
-                            selected=lambda:dashboard_authoring.run(root,action,data,acknowledgment=consent,progress=report)
+                            selected=lambda:dashboard_authoring.run(root,action,data,acknowledgment=consent,progress=report,should_stop=stop_event.is_set)
                     except (ValueError,OSError) as err:return self._json(400,{"error":str(err)})
                 elif url.path=="/api/project-create":
                     if not 1<=size<=dashboard_actions.CREATE_LIMIT or self.headers.get("Content-Type")!="application/json":return self._json(400,{"error":"Bounded JSON project request required"})
@@ -345,7 +389,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                 else:
                     if size!=0:return self._json(400,{"error":"Action body must be empty"})
                     command=query.get("cmd",[""])[0]
-                if url.path in ("/api/project-create","/api/author","/api/author-file"):pass
+                if url.path in ("/api/project-create","/api/author","/api/author-file","/api/review-import"):pass
                 elif command in dashboard_actions.ACTIONS:
                     pid=query.get("project_id",[""])[0]
                     if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})
@@ -366,7 +410,8 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                     accepted=lock.acquire(blocking=False)
                     if accepted:
                         started=time.monotonic()
-                        status.update(phase="running",command=command,result=None,progress=None,elapsed_seconds=0)
+                        active_stop=stop_event
+                        status.update(phase="running",command=command,result=None,progress=None,elapsed_seconds=0,task_id=secrets.token_hex(16),stop_requested=False)
                 if not accepted:
                     return self._json(409,{"error":"Another explicit local task is running"})
                 def run():

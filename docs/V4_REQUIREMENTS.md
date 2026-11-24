@@ -91,3 +91,6 @@ Implemented browser character profile/revision creation, authorized portrait att
 
 ## Increment 25 — graphical local inference, research and task status
 Implemented explicitly consented selected-engine bounded local inference, research discovery/capture/status, offline cloud-key isolation and measured elapsed/checkpoint task reporting. No live internal model percentage, cloud AI, automatic downloads or approval recording. CI pending; see V4_DASHBOARD_INFERENCE.md.
+
+## Increment 26 — review import, cooperative stop and structured custom script
+Implemented ten-kind browser JSON review/revision import with exact declarations, task-ID scoped cooperative stop after current action, and structured verbatim knowledge-mode custom source import with manual provenance and existing timed-unit validation. CI pending; no automatic approval, force kill or unrestricted script input. See V4_REVIEW_STOP_MANUAL.md.

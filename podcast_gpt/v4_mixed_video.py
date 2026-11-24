@@ -216,7 +216,7 @@ def _qa_context(root,pid,kind):
     return folder,dest,timeline,receipt,files
 
 
-def qa(root,pid,kind,operation,*,acknowledgment=None):
+def qa(root,pid,kind,operation,*,acknowledgment=None,input_file=None):
     folder=projects.project(root,pid)
     if operation=="status":
         _,dest,timeline,receipt,_=_qa_context(root,pid,kind)
@@ -233,7 +233,12 @@ def qa(root,pid,kind,operation,*,acknowledgment=None):
             return {"project_id":pid,"template_path":str(path),"media_paths":files,"review_status":"UNREVIEWED"}
         ack={"mix":MIX_ACK,"video":VIDEO_ACK,"studio":STUDIO_ACK}[kind]
         if acknowledgment!=ack:raise ValueError("Explicit full media review acknowledgment required")
-        projects._plain(path,directory=False)
-        value=source.read_json(path,2_000_000);passed=_validate(value,receipt,timeline,kind)
+        if input_file is None:
+            projects._plain(path,directory=False)
+            value=source.read_json(path,2_000_000)
+        else:
+            from .visual_media_review import read_input
+            value=read_input(input_file,2_000_000)
+        passed=_validate(value,receipt,timeline,kind)
         source.atomic_json(_review_file(dest,kind),{"observations":value,"sha256":source.json_digest(value),"acknowledgment":ack},new=True)
         return {"project_id":pid,"review_status":"PASS" if passed else "FAIL","publication_approved":False}

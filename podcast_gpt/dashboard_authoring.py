@@ -3,12 +3,12 @@ import json
 import re
 import tempfile
 from pathlib import Path
-from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference
+from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script
 
 JSON_LIMIT=32768
 READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status")
 ACTIONS=("character-list","character-show","character-create","cast-assign","cast-status","cast-choices",
-         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference")
+         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script")
 UPLOADS={"portrait":characters.MAX_PORTRAIT,"source":ingestion.MAX_FILE}
 ACK="I_AUTHORIZE_THIS_LOCAL_AUTHORING_ACTION"
 
@@ -35,7 +35,7 @@ def _local_path(value):
     return Path(value)
 
 
-def run(root,action,data,*,acknowledgment=None,progress=None):
+def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
     if action not in ACTIONS:raise ValueError("Unknown authoring action")
     if action in ("character-list","model-status"):
         _keys(data,())
@@ -57,7 +57,13 @@ def run(root,action,data,*,acknowledgment=None,progress=None):
         _keys(data,("project_id","engine","max_steps","model_consent"))
         if data["model_consent"] is not True:raise ValueError("Explicit model execution consent required")
         return dashboard_inference.run(root,data["project_id"],engine=data["engine"],max_steps=data["max_steps"],
-            acknowledgment=dashboard_inference.ACK,progress=progress)
+            acknowledgment=dashboard_inference.ACK,progress=progress,should_stop=should_stop)
+    if action=="review-template":
+        _keys(data,("project_id","kind"))
+        return dashboard_review.template(root,data["project_id"],data["kind"])
+    if action=="manual-script":
+        _keys(data,("project_id",))
+        return manual_script.import_saved(root,data["project_id"],acknowledgment=manual_script.ACK)
     if action=="research-discover":
         _keys(data,("project_id","query","allow_web_search"))
         return research_discovery.discover(root,data["project_id"],query=data["query"],allow_web_search=data["allow_web_search"])

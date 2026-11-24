@@ -148,7 +148,10 @@ def _inspect_planning(root:Path,pid:str):
         value=episode_plan.validate_plan(saved.get("outline"),req)
         if saved.get("outline_sha256")!=source.json_digest(value):
             raise ValueError("Saved outline hash differs")
-        if saved.get("provider") not in ("openrouter","gemini","ollama"):
+        if saved.get("provider")=="manual_source":
+            from .manual_script import parse
+            if parse(req,evidence)[0]!=value:raise ValueError("Manual outline differs from captured script")
+        elif saved.get("provider") not in ("openrouter","gemini","ollama"):
             raise ValueError("Unknown saved provider")
         result.update(stage="outline_saved",outline=value,provider=saved["provider"])
     return result

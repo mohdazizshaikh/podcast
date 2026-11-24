@@ -27,3 +27,5 @@ All PASS means the owner self-attested review of this exact text version only. A
 The current-version PASS gate is now consumed by the read-only character/media preflight (V4_CHARACTERS.md). It still does not generate media or certify voice/face quality.
 
 Offline visual script edit/review pages and explicit --file JSON imports are now supported; see V4_WORKFLOW.md. The existing version validation and immutable review still apply.
+
+Browser JSON review/revision imports and structured verbatim knowledge-mode custom script are available through V4_REVIEW_STOP_MANUAL.md. Current timing and version validators still apply.

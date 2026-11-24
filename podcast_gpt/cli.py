@@ -47,6 +47,9 @@ def parse(argv=None):
     outline.add_argument("--confirm-gemini-free-project",action="store_true")
     outline.add_argument("--offline-only",action="store_true")
     outline.add_argument("--ollama-model")
+    manual=subs.add_parser("project-script-import-verbatim")
+    manual.add_argument("--project-id",required=True)
+    manual.add_argument("--acknowledgment",required=True)
     script=subs.add_parser("project-script-generate",help="Generate 1–5 new source-bound planned minutes")
     script.add_argument("--project-id",required=True)
     script.add_argument("--max-new",type=int,default=1)
@@ -396,6 +399,9 @@ def execute(a)->dict:
         private=a.workspace.expanduser().absolute()
         if action=="project-research-status":return research.inspect(private,a.project_id)
         return research.capture(private,a.project_id,a.url,allow_web_fetch=a.allow_web_fetch)
+    if action=="project-script-import-verbatim":
+        from . import manual_script
+        return manual_script.import_saved(a.workspace.expanduser().absolute(),a.project_id,acknowledgment=a.acknowledgment)
     if action in ("project-script-generate","project-script-status","project-script-finalize","project-script-show"):
         from . import script_generation,credentials
         private=a.workspace.expanduser().absolute()

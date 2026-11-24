@@ -71,13 +71,18 @@ def create(root,pid):
                 "review_status":"UNREVIEWED"}
 
 
-def record(root,pid,*,acknowledgment):
+def record(root,pid,*,acknowledgment,input_file=None):
     if acknowledgment!=ACK:raise ValueError("Explicit factual review acknowledgment required")
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         _,template=_context(root,pid);path,receipt=_paths(folder,template)
         if _read(receipt,template) is not None:raise ValueError("Immutable factual review already recorded")
-        projects._plain(path,directory=False)
-        value=_validate(source.read_json(path,8_000_000),template)
+        if input_file is None:
+            projects._plain(path,directory=False)
+            data=source.read_json(path,8_000_000)
+        else:
+            from .visual_media_review import read_input
+            data=read_input(input_file,8_000_000)
+        value=_validate(data,template)
         source.atomic_json(receipt,{"observations":value,"sha256":source.json_digest(value),"acknowledgment":ACK},new=True)
         return _summary(pid,template,value)

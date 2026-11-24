@@ -104,3 +104,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Verify graphical authoring CI and browser/device operation. Real inference, full acceptance, research pack UI, browser inference and approval recording, CJK and image synthesis remain open.
 
 - [ ] Verify authoring CI 45487275746 and new local inference/research/status CI. Actual browser interaction, local model inference, cloud consent UI, approval recording, cancellation, CJK, portrait inference and full Windows acceptance remain open.
+
+- [ ] Verify authoring packaging, inference CI and review/stop/manual script CI; actual browser/device operation, model acceptance, unrestricted custom scripts, force cancellation/process-tree management, cloud consent UI, CJK and local portrait inference remain open.

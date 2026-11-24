@@ -5,7 +5,7 @@ ENGINES=("ollama","kokoro","espeak","sadtalker")
 ACK="I_AUTHORIZE_SELECTED_LOCAL_ENGINE_AND_TRUST_ITS_MODELS_AND_HAVE_USAGE_RIGHTS"
 
 
-def run(root,pid,*,engine,max_steps,acknowledgment,progress=None):
+def run(root,pid,*,engine,max_steps,acknowledgment,progress=None,should_stop=None):
     if acknowledgment!=ACK:raise ValueError("Explicit local model trust, execution and usage rights required")
     if engine not in ENGINES or type(max_steps) is not int or not 1<=max_steps<=5:
         raise ValueError("Choose one local engine and 1–5 bounded actions")
@@ -16,5 +16,5 @@ def run(root,pid,*,engine,max_steps,acknowledgment,progress=None):
         "espeak":{"espeak_ack":v4_espeak.ACK,"allowed_stages":("audio_required",)},
         "sadtalker":{"neural_ack":v4_neural.ACK,"allowed_stages":("pilot_required","neural_batch_required")},
     }[engine]
-    result=auto.run(root,pid,execute=True,acknowledgment=auto.ACK,max_steps=max_steps,progress=progress,**options)
+    result=auto.run(root,pid,execute=True,acknowledgment=auto.ACK,max_steps=max_steps,progress=progress,should_stop=should_stop,**options)
     return {**result,"selected_engine":engine,"cloud_calls_authorized":False,"automatic_downloads_authorized":False}

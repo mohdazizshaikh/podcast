@@ -8,3 +8,5 @@ The local task display reports running/complete/blocked, command, measured elaps
 Enter an optional public query, authorize the internet request and authoring, and discover English Wikipedia candidate links. Copy suitable distinct HTTPS URLs to the list and separately authorize capture of 2–4 sources. The existing public HTTPS retrieval and immutable research pack limits apply. Inspect the saved pack through the dashboard. Neither discovery nor capture verifies factual truth or independent corroboration. Cloud AI credentials and recorded human approvals remain CLI-only.
 
 Tests exercise selected-engine gating, checkpoint reporting, research delegation and offline key isolation with mocks. Actual browser interaction, live service availability, installed models, full-length realistic video and physical Windows acceptance remain pending.
+
+Local inference now supports cooperative stop at the next action boundary, with current task ID validation. Browser review imports also available. See V4_REVIEW_STOP_MANUAL.md; cloud AI remains CLI-only.

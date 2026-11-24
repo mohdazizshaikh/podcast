@@ -322,3 +322,5 @@ V4 dashboard project creation, bounded local non-inference controls and mixed ne
 V4 browser character and cast management, private source imports and saved local model paths: [graphical authoring guide](docs/V4_DASHBOARD_AUTHORING.md). Real browser and model acceptance pending.
 
 V4 explicit browser local inference, research pack management and measured task status: [dashboard inference guide](docs/V4_DASHBOARD_INFERENCE.md). Cloud AI and approval recording remain CLI-only; actual device acceptance pending.
+
+V4 browser review/revision imports, cooperative checkpoint stop and structured verbatim script: [review and custom script guide](docs/V4_REVIEW_STOP_MANUAL.md). Actual browser/model acceptance pending.
