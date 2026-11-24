@@ -290,3 +290,5 @@ V4 reusable local characters, authorized PNG portraits, voice identity preferenc
 V4 authorized speech import, per-turn PCM receipts and measured audio timeline: [audio guide](docs/V4_AUDIO.md). Generalized TTS and video rendering remain pending.
 
 V4 local Hindi Kokoro adapter and exact PCM master WAV composition/audit: [TTS and master audio guide](docs/V4_TTS_MASTER.md). Actual local model acceptance, broader TTS languages and video remain pending.
+
+V4 human listening review, selected three-format static preview and measured SRT: [preview guide](docs/V4_PREVIEW.md). Static previews are explicitly not lip-sync; real generalized neural media remains pending.

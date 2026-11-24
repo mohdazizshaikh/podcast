@@ -32,3 +32,5 @@ Research CI passed 6/6 (45451883118). Script review CI 45452467622 had four core
 Script review and character library CI passed 6/6 each (45452467622, 45453165135). Version-bound authorized PCM import and measured timeline implemented (CI pending). Next priorities actual generalized TTS, composed audio and QA, followed by video composition and neural rendering. See V4_AUDIO.md.
 
 Audio import/timeline CI passed 6/6 (45455331211). Local Hindi Kokoro adapter and exact master WAV implemented (CI pending). Next: human audio QA, generalized three-format static video and subtitles, broader TTS and actual neural rendering. See V4_TTS_MASTER.md.
+
+Local Hindi TTS/master CI passed 6/6 (45456602766). Human listening review and selected three-format static preview/SRT implemented (CI pending); next priority generalized CPU neural pilot and per-turn checkpoint pipeline. See V4_PREVIEW.md.

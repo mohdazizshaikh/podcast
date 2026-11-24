@@ -7,10 +7,10 @@ from podcast_gpt import v4_audio as audio, v4_master as master, v4_tts as tts, c
 from PIL import Image
 
 
-def ready(tmp_path,monkeypatch,engine="imported"):
+def ready(tmp_path,monkeypatch,engine="imported",video_format="square"):
     root=tmp_path/"private"
     req={"topic":"Science","language":"Hindi","duration_minutes":1,"presenters":["A","B"],
-         "video_format":"square","workflow":"manual","input_kind":"topic","research_mode":"knowledge"}
+         "video_format":video_format,"workflow":"manual","input_kind":"topic","research_mode":"knowledge"}
     pid=projects.create(root,req)["project_id"];ids={}
     for name,color,preset in (("A","red","hm_omega"),("B","blue","hf_alpha")):
         p=tmp_path/(name+".png");Image.new("RGB",(200,200),color).save(p)

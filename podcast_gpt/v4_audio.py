@@ -66,8 +66,10 @@ def _read_parts(dest,binding,turns):
     for child in dest.iterdir():
         if child.name==TIMELINE:
             projects._plain(child,directory=False);continue
-        if child.name=="master":
+        if child.name in ("master","static-preview"):
             projects._plain(child);continue
+        if child.name=="audio-review.json":
+            projects._plain(child,directory=False);continue
         projects._plain(child)
         if child.name not in by_id:raise ValueError("Unknown or interrupted audio turn directory")
         if {p.name for p in child.iterdir()}!={"speech.wav","receipt.json"}:

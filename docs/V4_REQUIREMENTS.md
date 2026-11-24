@@ -43,3 +43,6 @@ Implemented current approved script/cast-bound PCM WAV import, immutable per-tur
 
 ## Increment 9 — local Hindi TTS and master audio
 Implemented explicit local Kokoro Hindi adapter, up to four distinct supported Hindi presets with mixed authorized WAV imports, resumable generated receipts and exact PCM master composition/audit. Other languages, Edge, real voice acceptance, audio QA/mixing and video remain pending. See V4_TTS_MASTER.md.
+
+## Increment 10 — listening review and static video preview
+Implemented immutable master-specific per-turn and global listening self-attestation, explicit PASS gate, selected 16:9/9:16/1:1 static portrait preview and measured UTF-8 SRT sidecar, structural video audit. Not neural lip-sync, full video acceptance, or independent human quality verification. See V4_PREVIEW.md.

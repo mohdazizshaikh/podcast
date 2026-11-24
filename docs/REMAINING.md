@@ -61,3 +61,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Audio import/timeline CI passed 6/6 (45455331211).
 - [ ] Verify local Hindi TTS/master CI and genuine local model inference on physical Windows. Implement wider language and Edge adapters, listening QA, audio processing and generalized static/neural video. At most four distinct Hindi Kokoro presets in current adapter.
+
+- [x] Local Hindi TTS/master CI completed 6/6 (45456602766); fake inference only.
+- [ ] Verify listening review and three-format preview CI; actual human listening/visual acceptance and real model generation remain pending. Implement generalized CPU neural pilot and resumable clips, wider TTS, audio processing, graphical workflows, recovery and full production acceptance.

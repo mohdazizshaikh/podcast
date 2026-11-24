@@ -94,6 +94,11 @@ def parse(argv=None):
     for name in ("project-master-compose","project-master-audit"):
         m=subs.add_parser(name)
         m.add_argument("--project-id",required=True)
+    for name in ("project-audio-review-template","project-audio-review-record","project-audio-review-status",
+                 "project-preview-render","project-preview-audit"):
+        r=subs.add_parser(name)
+        r.add_argument("--project-id",required=True)
+        if name=="project-audio-review-record":r.add_argument("--acknowledgment",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -309,6 +314,15 @@ def execute(a)->dict:
         from . import v4_master
         fn=v4_master.compose if action=="project-master-compose" else v4_master.inspect
         return fn(a.workspace.expanduser().absolute(),a.project_id)
+    if action in ("project-audio-review-template","project-audio-review-record","project-audio-review-status",
+                  "project-preview-render","project-preview-audit"):
+        from . import v4_audio_review,v4_preview
+        private=a.workspace.expanduser().absolute()
+        if action=="project-audio-review-template":return v4_audio_review.template(private,a.project_id)
+        if action=="project-audio-review-record":return v4_audio_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
+        if action=="project-audio-review-status":return v4_audio_review.inspect(private,a.project_id)
+        if action=="project-preview-render":return v4_preview.render(private,a.project_id)
+        return v4_preview.inspect(private,a.project_id)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()
