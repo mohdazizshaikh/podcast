@@ -12,3 +12,6 @@ Preflight checks local model directory, safetensors inventory hashes, installed 
 
 ## CI reconciliation
 Batch 29 CI 45494573255 passed 6/6. Batch 30 CI 45495706179, 45495798832, 45495891248 all completed successfully, latest combined run 6/6. Actual model and physical acceptance remain pending.
+
+## Multilingual research discovery and review coverage
+The existing Wikipedia discovery supports 17 explicitly allowlisted editions (en, hi, mr, bn, gu, ta, te, ur, es, fr, it, pt, de, ja, zh, ar, ru). `project-research-discover --project-id ID --edition hi --allow-web-search` or choose the dashboard edition. Query sent only to the selected host using existing pinned HTTPS checks. This is not broad web search; no translation or cross-edition automatic retrieval. Candidate links remain uncaptured until separately authorized. `project-research-coverage --project-id ID` reports exact validated citations, per-turn uncited/single-host/multi-host priority and per-source usage; distinct host count does not prove source independence or claim truth. Browser coverage and local portrait brief buttons included. 28 new research test cases authored, CI pending. Previous 12 portrait cases plus these make 40 new authored tests, not independent feature tasks.

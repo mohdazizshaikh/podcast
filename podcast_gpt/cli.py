@@ -219,6 +219,9 @@ def parse(argv=None):
     discover.add_argument("--project-id",required=True)
     discover.add_argument("--query")
     discover.add_argument("--limit",type=int,default=5)
+    discover.add_argument("--edition",default="en")
+    coverage=subs.add_parser("project-research-coverage")
+    coverage.add_argument("--project-id",required=True)
     discover.add_argument("--allow-web-search",action="store_true")
     subs.add_parser("kokoro-language-catalog")
     for name in ("project-fact-review-template","project-fact-review-record","project-fact-review-status"):
@@ -566,9 +569,12 @@ def execute(a)->dict:
     if action=="kokoro-language-catalog":
         from . import kokoro_languages
         return kokoro_languages.catalog()
+    if action=="project-research-coverage":
+        from . import research_coverage
+        return research_coverage.inspect(a.workspace.expanduser().absolute(),a.project_id)
     if action=="project-research-discover":
         from . import research_discovery
-        return research_discovery.discover(a.workspace.expanduser().absolute(),a.project_id,query=a.query,limit=a.limit,allow_web_search=a.allow_web_search)
+        return research_discovery.discover(a.workspace.expanduser().absolute(),a.project_id,query=a.query,limit=a.limit,edition=a.edition,allow_web_search=a.allow_web_search)
     if action in ("project-fact-review-template","project-fact-review-record","project-fact-review-status"):
         from . import fact_review
         private=a.workspace.expanduser().absolute()

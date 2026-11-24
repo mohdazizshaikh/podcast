@@ -64,7 +64,7 @@ def html_page(token:str)->str:
 <div id="v4Summary" aria-live="polite"></div>
 <h3>Character library and cast</h3>
 <button id="v4CharList">List characters</button>
-<label>Character ID / optional parent <input id="v4CharId" maxlength="32"></label><button id="v4CharShow">Load profile</button>
+<label>Character ID / optional parent <input id="v4CharId" maxlength="32"></label><button id="v4CharShow">Load profile</button><button id="v4PortraitBrief">Show local portrait prompt</button>
 <label>Name <input id="v4CharName" maxlength="80"></label>
 <label>Personality <input id="v4CharPersonality" maxlength="600"></label>
 <label>Speaking style <input id="v4CharStyle" maxlength="600"></label>
@@ -98,9 +98,10 @@ def html_page(token:str)->str:
 <small>Selected files go only to this localhost application. Use trusted sources and model paths. No AI inference or dependency install in these authoring controls.</small>
 <h3>Research pack</h3>
 <label>Optional public search query <input id="v4ResearchQuery" maxlength="200"></label>
+<label>Wikipedia edition <select id="v4ResearchEdition"><option>en</option><option>hi</option><option>mr</option><option>bn</option><option>gu</option><option>ta</option><option>te</option><option>ur</option><option>es</option><option>fr</option><option>it</option><option>pt</option><option>de</option><option>ja</option><option>zh</option><option>ar</option><option>ru</option></select></label>
 <label>2–4 distinct public HTTPS source URLs (one per line) <textarea id="v4ResearchUrls" rows="4" maxlength="8200"></textarea></label>
 <label><input id="v4ResearchConsent" type="checkbox"> I authorize the selected public internet search or source retrieval</label>
-<button id="v4ResearchDiscover">Discover Wikipedia candidates</button><button id="v4ResearchCapture">Capture selected research sources</button><button id="v4ResearchStatus">Inspect saved research pack</button>
+<button id="v4ResearchDiscover">Discover Wikipedia candidates</button><button id="v4ResearchCapture">Capture selected research sources</button><button id="v4ResearchStatus">Inspect saved research pack</button><button id="v4ResearchCoverage">Inspect exact citation coverage</button>
 <button id="v4ManualScript">Import captured structured script verbatim (knowledge mode)</button>
 <h3>Import script edits and record reviewed observations</h3>
 <label>Review type <select id="v4ReviewKind"><option value="script-edit">Script revision (no approval)</option><option value="script">Script review</option><option value="audio">Master audio review</option><option value="pilot">Pilot review</option><option value="final">Final video review</option><option value="studio">Neural studio review</option><option value="mix">Mix listening review</option><option value="mixed">Mixed video review</option><option value="mixed-studio">Mixed studio review</option><option value="fact">Factual review</option></select></label>
@@ -258,6 +259,7 @@ async function author(action,data,write=false){
 function onAuthor(id,fn){field(id).addEventListener('click',async()=>{try{await fn()}catch(e){out.textContent='BLOCKED: '+e.message}})}
 onAuthor('v4CharList',()=>author('character-list',{}));
 onAuthor('v4CharShow',()=>author('character-show',{character_id:val('v4CharId').trim()}));
+onAuthor('v4PortraitBrief',()=>author('portrait-brief',{character_id:val('v4CharId').trim()}));
 onAuthor('v4CharCreate',()=>author('character-create',{parent_id:val('v4CharId').trim()||null,profile:{name:val('v4CharName'),personality:val('v4CharPersonality'),speaking_style:val('v4CharStyle'),appearance:val('v4CharAppearance'),voice_preferences:{engine:val('v4CharEngine'),language:val('v4CharLanguage'),preset:val('v4CharPreset'),style_notes:val('v4CharNotes')}}},true));
 onAuthor('v4CastLoad',()=>author('cast-choices',{project_id:currentPid()}));
 onAuthor('v4CastAssign',()=>{if(castPid!==currentPid())throw new Error('Load cast choices for selected project');const mapping=Object.fromEntries(Array.from(field('v4CastRows').querySelectorAll('select'),s=>[s.dataset.speaker,s.value]));return author('cast-assign',{project_id:currentPid(),mapping},true)});
@@ -290,9 +292,10 @@ onAuthor('v4ContinuityStatus',()=>author('continuity-status',{project_id:current
 onAuthor('v4CloudDraft',()=>{if(!field('v4CloudConsent').checked)throw new Error('Explicit cloud text consent required');const gemini=field('v4GeminiConsent').checked;field('v4CloudConsent').checked=false;field('v4GeminiConsent').checked=false;return author('cloud-draft',{project_id:currentPid(),cloud_consent:true,confirm_gemini_free_project:gemini},true)});
 onAuthor('v4SourceWeb',()=>{if(!field('v4WebConsent').checked)throw new Error('Explicit internet retrieval consent required');field('v4WebConsent').checked=false;return author('source-url',{project_id:currentPid(),url:val('v4SourceUrl').trim(),allow_web_fetch:true},true)});
 function researchConsent(){if(!field('v4ResearchConsent').checked)throw new Error('Explicit public internet consent required');field('v4ResearchConsent').checked=false}
-onAuthor('v4ResearchDiscover',()=>{researchConsent();return author('research-discover',{project_id:currentPid(),query:val('v4ResearchQuery').trim()||null,allow_web_search:true},true)});
+onAuthor('v4ResearchDiscover',()=>{researchConsent();return author('research-discover',{project_id:currentPid(),query:val('v4ResearchQuery').trim()||null,edition:val('v4ResearchEdition'),allow_web_search:true},true)});
 onAuthor('v4ResearchCapture',()=>{researchConsent();return author('research-capture',{project_id:currentPid(),urls:val('v4ResearchUrls').split(/\\r?\\n/).map(s=>s.trim()).filter(Boolean),allow_web_fetch:true},true)});
 onAuthor('v4ResearchStatus',()=>author('research-status',{project_id:currentPid()}));
+onAuthor('v4ResearchCoverage',()=>author('research-coverage',{project_id:currentPid()}));
 onAuthor('v4InferenceRun',()=>{if(!field('v4InferenceConsent').checked)throw new Error('Explicit local model trust and usage rights required');field('v4InferenceConsent').checked=false;return author('local-inference',{project_id:currentPid(),engine:val('v4InferenceEngine'),max_steps:Number(val('v4InferenceSteps')),model_consent:true},true)});
 onAuthor('v4RefreshTask',()=>refresh());
 onAuthor('v4StopTask',async()=>{if(!currentTask)throw new Error('Refresh current task first');await send('/api/stop?task_id='+encodeURIComponent(currentTask));await refresh()});

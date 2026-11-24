@@ -24,6 +24,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Safe incomplete-output archive (ten types) | Implemented | 6/6 CI 45484813520; synthetic tests, not all failure modes |
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
 | Explicit Wikipedia candidate discovery and source-bound optional human factual review | Implemented | 6/6 CI 45481266847 (offline fixtures) |
+| 17 allowlisted Wikipedia editions and exact citation-coverage report | Implemented | New CI pending; fixture network and review data |
 | Broad web search, automated semantic claim verification and corroboration | Not implemented | Pending |
 | Reusable character profiles, authorized PNG library and cast binding | Done | 6/6 CI run 45453165135 (synthetic PNGs) |
 | Opt-in cast-bound personality-aware dialogue prompts | Done | 6/6 CI 45462475819 (mock provider) |

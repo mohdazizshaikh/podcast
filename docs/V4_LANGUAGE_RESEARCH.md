@@ -28,3 +28,5 @@ This is optional human self-attestation, not independent claim verification or a
 English US/UK frontend and optional dependency group are now implemented; see V4_STUDIO_ENGLISH.md. CJK remains pending.
 
 Mandarin v1.0 frontend and eight candidate presets now implemented with optional dependency group; Japanese still pending. See V4_BATCH29.md.
+
+Batch 31 adds 17 allowlisted Wikipedia discovery editions, exact citation coverage and browser portrait brief/coverage controls. New CI pending; broad web search, semantic verification and independent corroboration remain pending. See V4_BATCH31.md.

@@ -3,12 +3,12 @@ import json
 import re
 import tempfile
 from pathlib import Path
-from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script, continuity, studio_preview, v4_audio, dashboard_cloud, voice_preflight, device_acceptance, audio_diagnostics
+from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script, continuity, studio_preview, v4_audio, dashboard_cloud, voice_preflight, device_acceptance, audio_diagnostics, research_coverage
 
 JSON_LIMIT=32768
-READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status","voice-preflight","device-acceptance","turn-diagnostics")
+READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief")
 ACTIONS=("character-list","character-show","character-create","cast-assign","cast-status","cast-choices",
-         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft","voice-preflight","device-acceptance","turn-diagnostics")
+         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief")
 UPLOADS={"portrait":characters.MAX_PORTRAIT,"source":ingestion.MAX_FILE,"audio-turn":v4_audio.MAX_WAV,"studio-background":characters.MAX_PORTRAIT}
 ACK="I_AUTHORIZE_THIS_LOCAL_AUTHORING_ACTION"
 
@@ -49,6 +49,12 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
         result={"project_id":pid,"presenters":projects.load(root,pid)["presenters"],"cast":characters.status(root,pid)}
         if action=="cast-choices":result.update(characters.list_characters(root))
         return result
+    if action=="portrait-brief":
+        _keys(data,("character_id",))
+        return portrait_brief.create(root,data["character_id"])
+    if action=="research-coverage":
+        _keys(data,("project_id",))
+        return research_coverage.inspect(root,data["project_id"])
     if action=="research-status":
         _keys(data,("project_id",))
         return research.inspect(root,data["project_id"])
@@ -85,8 +91,9 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
         _keys(data,("project_id",))
         return manual_script.import_saved(root,data["project_id"],acknowledgment=manual_script.ACK)
     if action=="research-discover":
-        _keys(data,("project_id","query","allow_web_search"))
-        return research_discovery.discover(root,data["project_id"],query=data["query"],allow_web_search=data["allow_web_search"])
+        if isinstance(data,dict) and set(data)=={"project_id","query","allow_web_search"}:data={**data,"edition":"en"}
+        _keys(data,("project_id","query","allow_web_search","edition"))
+        return research_discovery.discover(root,data["project_id"],query=data["query"],edition=data["edition"],allow_web_search=data["allow_web_search"])
     if action=="research-capture":
         _keys(data,("project_id","urls","allow_web_fetch"))
         urls=data["urls"]
