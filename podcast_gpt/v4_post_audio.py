@@ -44,10 +44,17 @@ def _asset(path,role):
     return raw,info,_samples(pcm)
 
 
-def _master_peak(dest,timeline):
-    peak=0
+def _speech_blocks(dest,timeline,cleanup):
+    from .speech_cleanup import centered
     for block in master._chunks(dest,timeline):
-        peak=max(peak,max(map(abs,_samples(block)),default=0))
+        samples=_samples(block)
+        yield centered(samples) if cleanup and cleanup["remove_dc"] else samples
+
+
+def _master_peak(dest,timeline,cleanup=None):
+    peak=0
+    for samples in _speech_blocks(dest,timeline,cleanup):
+        peak=max(peak,max(map(abs,samples),default=0))
     if not peak:raise ValueError("Master has no nonzero PCM")
     return peak
 
@@ -58,7 +65,8 @@ def _scale(value,num,den):
 
 
 def _mix_blocks(dest,timeline,assets,settings):
-    peak=_master_peak(dest,timeline)
+    cleanup=settings.get("cleanup")
+    peak=_master_peak(dest,timeline,cleanup)
     speech_target=settings["speech_peak"]
     bed_target=settings["bed_peak"]
     bed=assets.get("bed")
@@ -74,11 +82,14 @@ def _mix_blocks(dest,timeline,assets,settings):
     floor=10000-duck*100
     from .speech_compressor import step
     compressor=settings.get('compressor');envelope=0
-    for chunk in master._chunks(dest,timeline):
-        samples=_samples(chunk)
+    from .speech_cleanup import step as gate_step
+    gate=cleanup['gate_threshold_pcm'] if cleanup else 0
+    gate_env=0;gate_level=10000
+    for samples in _speech_blocks(dest,timeline,cleanup):
         mixed=array.array("h")
         for s in samples:
             voice=_scale(s,speech_target,peak)
+            if gate:voice,gate_env,gate_level=gate_step(voice,gate_env,gate_level,gate)
             if compressor is not None:voice,envelope=step(voice,envelope,compressor)
             music=0
             if bed_samples and duck:
@@ -106,7 +117,7 @@ def _mix_blocks(dest,timeline,assets,settings):
         yield _bytes(_scale(s,PEAK,p) for s in samples)
 
 
-def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_threshold=12000):
+def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0):
     if type(speech_peak) is not int or not 8000<=speech_peak<=24000 or type(bed_peak) is not int or not 0<=bed_peak<=6000:
         raise ValueError("Speech peak must be 8000–24000 and bed peak 0–6000 PCM units")
     if type(duck_percent) is not int or not 0<=duck_percent<=90:raise ValueError("Duck percent must be 0–90")
@@ -115,6 +126,9 @@ def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_thre
     from .speech_compressor import settings as compressor_settings
     comp=compressor_settings(compress_ratio,compress_threshold)
     if comp is not None:result["compressor"]=comp
+    from .speech_cleanup import settings as cleanup_settings
+    cleanup=cleanup_settings(remove_dc,gate_threshold)
+    if cleanup is not None:result["cleanup"]=cleanup
     return result
 
 
@@ -144,7 +158,9 @@ def _audit(dest,binding,timeline,receipt):
     from . import loudness_gain as gain
     comp=settings.get("compressor",{})
     if not isinstance(comp,dict):raise ValueError("Invalid compressor settings")
-    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000))
+    cleanup=settings.get("cleanup",{})
+    if not isinstance(cleanup,dict):raise ValueError("Invalid cleanup settings")
+    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000),cleanup.get("remove_dc",False),cleanup.get("gate_threshold_pcm",0))
     normalization=settings.get("normalization")
     if normalization is not None:base_settings["normalization"]=gain.validate(normalization)
     if base_settings!=settings:raise ValueError("Invalid mix settings")
@@ -209,9 +225,9 @@ def _stage_normalized(dest,timeline,assets,settings,target_lufs,temp):
     return candidate,pcm_sha
 
 
-def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,acknowledgment=None):
+def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,acknowledgment=None):
     if acknowledgment!=ACK:raise ValueError("Explicit audio usage rights and mix acknowledgment required")
-    settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold)
+    settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold,remove_dc,gate_threshold)
     if target_lufs is not None:
         from .loudness_gain import target
         target(target_lufs)

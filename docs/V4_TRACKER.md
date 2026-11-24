@@ -69,6 +69,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Optional deterministic speech compression and exact mix audit | Implemented | 6/6 combined CI 45495891248; 135 test cases authored; no dynamic true-peak limiter/denoising |
 | Static project voice preflight, device acceptance checklist and browser per-turn diagnostics | Implemented | 6/6 combined CI 45495891248; no physical certification |
 | Graphical bounded audio mix composition | Implemented | 6/6 combined CI 45495891248; 19 additional test cases; actual browser interaction pending |
+| Optional deterministic DC correction and soft low-level gate | Implemented | New CI pending; not intelligent denoising; actual listening pending |
 | Full dashboard, automatic/manual orchestration, ETA | Partial | Overview/playback, authoring, explicit bounded local inference, research and live task status; review import and cooperative stop; explicit free-policy cloud drafting (keys CLI-only); live model ETA pending |
 | Real Windows model run and acceptance | Not verified | Local user hardware required |
 | V4 production release | Not released | Pending actual acceptance |

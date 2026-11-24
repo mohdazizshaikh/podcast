@@ -21,10 +21,12 @@ def parse(raw):
 def run(root,data,*,acknowledgment):
     keys={"project_id","assets","speech_peak","bed_peak","duck_percent","target_lufs","compress_ratio","compress_threshold","rights"}
     if acknowledgment!=ACK:raise ValueError("Explicit local mix consent required")
+    if isinstance(data,dict) and set(data)==keys:data={**data,"remove_dc":False,"gate_threshold":0}
+    keys|={"remove_dc","gate_threshold"}
     if not isinstance(data,dict) or set(data)!=keys or data["rights"] is not True:
         raise ValueError("Exact mix settings and audio rights required")
     pid=data["project_id"];projects.project(root,pid)
-    mix._settings(data["speech_peak"],data["bed_peak"],data["duck_percent"],data["compress_ratio"],data["compress_threshold"])
+    mix._settings(data["speech_peak"],data["bed_peak"],data["duck_percent"],data["compress_ratio"],data["compress_threshold"],data["remove_dc"],data["gate_threshold"])
     if data["target_lufs"] is not None:loudness_gain.target(data["target_lufs"])
     assets=data["assets"]
     if not isinstance(assets,dict) or not set(assets)<=set(mix.ROLES):raise ValueError("Unknown mix asset role")
@@ -43,4 +45,4 @@ def run(root,data,*,acknowledgment):
             paths[role]=path
         return mix.compose(root,pid,**paths,speech_peak=data["speech_peak"],bed_peak=data["bed_peak"],
             duck_percent=data["duck_percent"],target_lufs=data["target_lufs"],compress_ratio=data["compress_ratio"],
-            compress_threshold=data["compress_threshold"],acknowledgment=mix.ACK)
+            compress_threshold=data["compress_threshold"],remove_dc=data["remove_dc"],gate_threshold=data["gate_threshold"],acknowledgment=mix.ACK)
