@@ -1,7 +1,7 @@
 """Version-bound V4 PCM audio imports and exact sample timeline.
 
-No speech synthesis, external network requests, voice cloning, or
-automatic voice/rights quality approval. Imported voices are self-attested.
+Local TTS can supply separately attributed audio receipts. No external
+network requests, voice cloning or automatic voice/rights quality approval.
 """
 from __future__ import annotations
 
@@ -66,6 +66,8 @@ def _read_parts(dest,binding,turns):
     for child in dest.iterdir():
         if child.name==TIMELINE:
             projects._plain(child,directory=False);continue
+        if child.name=="master":
+            projects._plain(child);continue
         projects._plain(child)
         if child.name not in by_id:raise ValueError("Unknown or interrupted audio turn directory")
         if {p.name for p in child.iterdir()}!={"speech.wav","receipt.json"}:
@@ -76,6 +78,16 @@ def _read_parts(dest,binding,turns):
         expected={"schema":1,"binding":binding,"turn_id":child.name,
                   "turn_sha256":_turn_binding(by_id[child.name]),"speaker":by_id[child.name]["speaker"],
                   "origin":"authorized_import","rights_and_text_match_self_attested":True,**info}
+        if saved.get("origin")=="local_kokoro_hindi":
+            from .kokoro import VOICE_CHOICES
+            extra=saved.get("generation")
+            if (not isinstance(extra,dict) or set(extra)!={"voice_preset","model_sha256","voices_sha256"}
+                    or extra["voice_preset"] not in VOICE_CHOICES
+                    or any(not isinstance(extra[k],str) or len(extra[k])!=64 or any(c not in "0123456789abcdef" for c in extra[k])
+                           for k in ("model_sha256","voices_sha256"))):
+                raise ValueError("Invalid local speech provenance")
+            expected.pop("rights_and_text_match_self_attested")
+            expected.update(origin="local_kokoro_hindi",generation=extra,model_usage_rights_self_attested=True)
         if saved!=expected:raise ValueError("Audio receipt, PCM hash or turn binding differs")
         items[child.name]=saved
     if len({v["pcm_sha256"] for v in items.values()})!=len(items):
@@ -115,7 +127,9 @@ def _summary(pid,dest,binding,turns,items,req):
     saved=_check_timeline(dest,binding,turns,items,req)
     missing=[t["id"] for t in turns if t["id"] not in items]
     return {"project_id":pid,"binding":binding,"total_turns":len(turns),"imported_turns":len(items),
-            "missing_turn_ids":missing,"measured_imported_speech_seconds":sum(v["frames"] for v in items.values())/RATE,
+            "missing_turn_ids":missing,"measured_imported_speech_seconds":sum(v["frames"] for v in items.values() if v["origin"]=="authorized_import")/RATE,
+            "completed_audio_turns":len(items),"generated_turns":sum(v["origin"]=="local_kokoro_hindi" for v in items.values()),
+            "measured_total_speech_seconds":sum(v["frames"] for v in items.values())/RATE,
             "timeline_finalized":saved is not None,"measured_audio_seconds":saved["measured_audio_seconds"] if saved else None,
             "within_target_10_percent":saved["within_target_10_percent"] if saved else None,
             "human_audio_quality_approved":False,"actual_video_generated":False,"publication_approved":False}
@@ -134,10 +148,23 @@ def voice_status(root,pid):
         rows.append({"speaker":item["speaker"],"preferences":voice,
                      "status":"authorized_wav_import_supported" if engine=="imported" else
                               "select_import_or_future_tts" if engine=="undecided" else
+                              "local_hindi_kokoro_candidate" if engine=="kokoro" and voice["language"].casefold() in ("hindi","hi","hi-in","हिन्दी","हिंदी") else
                               "generalized_tts_adapter_pending",
                      "actual_language_voice_compatibility_verified":False})
     return {"project_id":pid,"cast_assigned":cast["cast_assigned"],"voices":rows,
             "import_pcm_supported_for_any_language":True,"network_requests":0,"model_inference_calls":0}
+
+
+def _save_turn(dest,binding,turn,raw,info,*,generation=None):
+    dest.mkdir(parents=True,exist_ok=True);projects._plain(dest)
+    out=dest/turn["id"];out.mkdir()
+    with (out/"speech.wav").open("xb") as handle:
+        handle.write(raw);handle.flush();os.fsync(handle.fileno())
+    receipt={"schema":1,"binding":binding,"turn_id":turn["id"],"turn_sha256":_turn_binding(turn),
+             "speaker":turn["speaker"],**info}
+    if generation is None:receipt.update(origin="authorized_import",rights_and_text_match_self_attested=True)
+    else:receipt.update(origin="local_kokoro_hindi",generation=generation,model_usage_rights_self_attested=True)
+    source.atomic_json(out/"receipt.json",receipt,new=True)
 
 
 def import_turn(root,pid,turn_id,path,*,acknowledgment):
@@ -156,15 +183,7 @@ def import_turn(root,pid,turn_id,path,*,acknowledgment):
             raise ValueError("Audio exceeds maximum total duration")
         if shutil.disk_usage(folder).free<len(raw)+1024**2:raise ValueError("Insufficient private workspace disk space")
         if _context(root,pid)[2]!=binding:raise ValueError("Script or cast changed during import")
-        dest.mkdir(parents=True,exist_ok=True);projects._plain(dest)
-        out=dest/turn_id
-        out.mkdir()
-        with (out/"speech.wav").open("xb") as handle:
-            handle.write(raw);handle.flush();os.fsync(handle.fileno())
-        receipt={"schema":1,"binding":binding,"turn_id":turn_id,"turn_sha256":_turn_binding(by_id[turn_id]),
-                 "speaker":by_id[turn_id]["speaker"],"origin":"authorized_import",
-                 "rights_and_text_match_self_attested":True,**info}
-        source.atomic_json(out/"receipt.json",receipt,new=True)
+        _save_turn(dest,binding,by_id[turn_id],raw,info)
         return _summary(pid,dest,binding,turns,_read_parts(dest,binding,turns),req)
 
 

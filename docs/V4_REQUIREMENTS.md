@@ -40,3 +40,6 @@ Implemented immutable reusable profile versions, explicit authorized PNG import,
 
 ## Increment 8 — authorized audio import and measured timeline
 Implemented current approved script/cast-bound PCM WAV import, immutable per-turn receipts, version isolation, missing-turn progress and exact integer sample timeline with fixed gaps and duration tolerance indicator. Voice inventory is metadata only; actual generalized TTS, audio composition, quality review and video rendering remain pending. See V4_AUDIO.md.
+
+## Increment 9 — local Hindi TTS and master audio
+Implemented explicit local Kokoro Hindi adapter, up to four distinct supported Hindi presets with mixed authorized WAV imports, resumable generated receipts and exact PCM master composition/audit. Other languages, Edge, real voice acceptance, audio QA/mixing and video remain pending. See V4_TTS_MASTER.md.

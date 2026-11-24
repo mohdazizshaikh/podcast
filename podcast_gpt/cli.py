@@ -84,6 +84,16 @@ def parse(argv=None):
     for name in ("project-voice-status","project-audio-status","project-audio-finalize","project-audio-show"):
         v=subs.add_parser(name)
         v.add_argument("--project-id",required=True)
+    tts=subs.add_parser("project-tts-kokoro",help="Explicit local Hindi Kokoro generation")
+    tts.add_argument("--project-id",required=True)
+    tts.add_argument("--model",type=Path,required=True)
+    tts.add_argument("--voices",type=Path,required=True)
+    tts.add_argument("--run-local",action="store_true")
+    tts.add_argument("--acknowledgment",required=True)
+    tts.add_argument("--max-new",type=int,default=1)
+    for name in ("project-master-compose","project-master-audit"):
+        m=subs.add_parser(name)
+        m.add_argument("--project-id",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -291,6 +301,14 @@ def execute(a)->dict:
         if action=="project-audio-status":return v4_audio.inspect(private,a.project_id)
         if action=="project-audio-finalize":return v4_audio.finalize(private,a.project_id)
         return v4_audio.show(private,a.project_id)
+    if action=="project-tts-kokoro":
+        from . import v4_tts
+        return v4_tts.generate(a.workspace.expanduser().absolute(),a.project_id,model=a.model,voices=a.voices,
+            run_local=a.run_local,acknowledgment=a.acknowledgment,max_new=a.max_new)
+    if action in ("project-master-compose","project-master-audit"):
+        from . import v4_master
+        fn=v4_master.compose if action=="project-master-compose" else v4_master.inspect
+        return fn(a.workspace.expanduser().absolute(),a.project_id)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

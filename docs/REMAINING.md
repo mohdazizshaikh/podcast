@@ -58,3 +58,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Script review and character library CI passed 6/6 each (45452467622, 45453165135); physical media assets remain unverified.
 - [ ] Verify V4 PCM import/timeline CI; implement generalized free/local TTS with real language/preset verification, audio composition/normalization, human audio review and dynamic rendering. No actual generated speech proof yet.
+
+- [x] Audio import/timeline CI passed 6/6 (45455331211).
+- [ ] Verify local Hindi TTS/master CI and genuine local model inference on physical Windows. Implement wider language and Edge adapters, listening QA, audio processing and generalized static/neural video. At most four distinct Hindi Kokoro presets in current adapter.

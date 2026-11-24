@@ -288,3 +288,5 @@ V4 manual script editing, immutable revisions and per-version human approval: [r
 V4 reusable local characters, authorized PNG portraits, voice identity preferences and cast assignment: [character guide](docs/V4_CHARACTERS.md). The media preflight binds current reviewed text and portrait hashes; actual image/voice generation and generalized rendering remain pending.
 
 V4 authorized speech import, per-turn PCM receipts and measured audio timeline: [audio guide](docs/V4_AUDIO.md). Generalized TTS and video rendering remain pending.
+
+V4 local Hindi Kokoro adapter and exact PCM master WAV composition/audit: [TTS and master audio guide](docs/V4_TTS_MASTER.md). Actual local model acceptance, broader TTS languages and video remain pending.
