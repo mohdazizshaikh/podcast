@@ -10,3 +10,5 @@ Enter an optional public query, authorize the internet request and authoring, an
 Tests exercise selected-engine gating, checkpoint reporting, research delegation and offline key isolation with mocks. Actual browser interaction, live service availability, installed models, full-length realistic video and physical Windows acceptance remain pending.
 
 Local inference now supports cooperative stop at the next action boundary, with current task ID validation. Browser review imports also available. See V4_REVIEW_STOP_MANUAL.md; cloud AI remains CLI-only.
+
+Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 45487824070 reported three failing tests in Ubuntu matrix: script progress variable shadowed callback, and offline credential isolation was applied to inventory rather than generate_json. Both code regressions corrected in subsequent commit; existing regression tests retained. Corrective CI pending. Actual model/browser acceptance remains unverified.

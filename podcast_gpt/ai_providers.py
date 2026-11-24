@@ -113,7 +113,7 @@ def _local_model(request,preferred):
 
 
 def inventory(credentials=None):
-    c=Credentials() if offline_only else (credentials or Credentials.environment())
+    c=credentials or Credentials.environment()
     return {"provider_order":["openrouter","gemini","ollama"],
             "openrouter_key_present":bool(_key(c.openrouter)),
             "gemini_key_present":bool(_key(c.gemini)),
@@ -136,7 +136,7 @@ def generate_json(prompt:str,validator:Callable,*,credentials=None,allow_cloud_t
         raise ValueError("Local model must be an approved explicit under-3B tag")
     if offline_only and allow_cloud_text:
         raise ValueError("Offline-only mode conflicts with cloud text consent")
-    c=credentials or Credentials.environment()
+    c=Credentials() if offline_only else (credentials or Credentials.environment())
     request=request or _request
     attempts=[]
     cloud=allow_cloud_text is True and not offline_only

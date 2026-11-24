@@ -94,3 +94,5 @@ Implemented explicitly consented selected-engine bounded local inference, resear
 
 ## Increment 26 — review import, cooperative stop and structured custom script
 Implemented ten-kind browser JSON review/revision import with exact declarations, task-ID scoped cooperative stop after current action, and structured verbatim knowledge-mode custom source import with manual provenance and existing timed-unit validation. CI pending; no automatic approval, force kill or unrestricted script input. See V4_REVIEW_STOP_MANUAL.md.
+
+Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 45487824070 reported three failing tests in Ubuntu matrix: script progress variable shadowed callback, and offline credential isolation was applied to inventory rather than generate_json. Both code regressions corrected in subsequent commit; existing regression tests retained. Corrective CI pending. Actual model/browser acceptance remains unverified.

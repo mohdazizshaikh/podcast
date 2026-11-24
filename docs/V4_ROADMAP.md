@@ -66,3 +66,5 @@ Dashboard overview CI 45484187245 and mixed studio CI 45484813520 each passed 6/
 Authoring CI 45487275746 running at check. Browser local inference, research pack controls and live elapsed/checkpoint status implemented (new CI pending). Next real model acceptance, CJK, image inference and graphical approval recording.
 
 Authoring CI 45487275746 five core jobs passed at check; inference CI 45487824070 running. Review/revision imports, checkpoint stop and structured manual script implemented (new CI pending). Next real model acceptance, CJK, image inference and free cloud consent controls.
+
+Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 45487824070 reported three failing tests in Ubuntu matrix: script progress variable shadowed callback, and offline credential isolation was applied to inventory rather than generate_json. Both code regressions corrected in subsequent commit; existing regression tests retained. Corrective CI pending. Actual model/browser acceptance remains unverified.

@@ -47,10 +47,10 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Offline audio/pilot/final visual QA and JSON import | Done | 6/6 CI 45464174884; browser interaction pending |
 | Selected-project dashboard overview and hash-checked local browser playback | Implemented | 6/6 CI 45484187245; browser interaction pending |
 | Browser project creation and explicit local non-inference production actions | Done | 6/6 CI 45484813520; browser interaction pending |
-| Browser character profiles, cast assignment, source imports and local model configuration | Implemented | CI 45487275746 five core jobs passed; packaging running at check |
-| Explicit browser local Ollama/Kokoro/eSpeak/SadTalker bounded inference | Implemented | CI 45487824070 running at check; mock inference |
-| Browser Wikipedia discovery and research pack capture/status | Implemented | CI 45487824070 running at check; offline mocks |
-| Live elapsed task status and verified action checkpoints | Implemented | CI 45487824070 running at check; no internal model percentage |
+| Browser character profiles, cast assignment, source imports and local model configuration | Implemented | 6/6 CI 45487275746; browser interaction pending |
+| Explicit browser local Ollama/Kokoro/eSpeak/SadTalker bounded inference | Implemented | CI 45487824070 Ubuntu matrix failed callback/credential regressions; corrected, retest pending; mock inference |
+| Browser Wikipedia discovery and research pack capture/status | Implemented | CI 45487824070 Ubuntu matrix failed callback/credential regressions; corrected, retest pending; offline mocks |
+| Live elapsed task status and verified action checkpoints | Implemented | CI 45487824070 Ubuntu matrix failed callback/credential regressions; corrected, retest pending; no internal model percentage |
 | Browser source-bound review and revision JSON import (ten kinds) | Implemented | New CI pending; human declaration mandatory |
 | Task-ID scoped cooperative stop at action checkpoint | Implemented | New CI pending; no force kill |
 | Structured verbatim timed custom script import | Implemented | New CI pending; knowledge mode and existing size/timing limits |

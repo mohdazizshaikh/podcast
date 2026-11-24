@@ -24,8 +24,8 @@ def run(root,pid,*,execute=False,acknowledgment=None,max_steps=3,allow_local_ai=
         if stage=="outline_required" and allow_local_ai:
             fn=lambda:projects.generate_outline(root,pid,offline_only=True)
         elif stage=="script_required":
-            progress=state["checks"]["script_units"]
-            if progress["completed"]==progress["total"]:fn=lambda:scripts.finalize(root,pid)
+            script_progress=state["checks"]["script_units"]
+            if script_progress["completed"]==script_progress["total"]:fn=lambda:scripts.finalize(root,pid)
             elif allow_local_ai:fn=lambda:scripts.generate(root,pid,max_new=1,offline_only=True)
             else:break
         elif stage=="audio_required" and (kokoro_ack or espeak_ack):
