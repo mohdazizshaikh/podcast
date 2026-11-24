@@ -40,3 +40,7 @@ After a failed model run, inspect the private logs in scratch/model-CHUNK-ID. In
 ```
 
 This moves the entire attempt to a unique private scratch/failed-attempts folder without deleting logs or adopting output. If the private workspace is not the default, supply --workspace before the command. Stale CPU locks and orphan preview files still require manual inspection. After fixing the cause, separately consent to a new model session. READINESS now identifies interrupted scratch as blocked. No automatic model restart or deletion.
+
+### Guided local CPU installation and enforced pilot gate
+
+See [SADTALKER_CPU_SETUP.md](SADTALKER_CPU_SETUP.md) for the separate legacy Python environment, official CPU wheel recipe, checkpoint guidance, and limitations. Before BATCH or SESSION, the launcher and core CPU command require a current all-three manual PASS record bound to the independently verified original sample hashes. A missing/failed/stale record blocks new inference. No approval of publication or actual quality is inferred.

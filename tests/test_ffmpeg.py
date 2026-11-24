@@ -74,3 +74,45 @@ def test_real_video_decoder_rejects_audio_only_file(chunk_studio,tmp_path):
     media.cmd(["ffmpeg","-y","-v","error","-i",str(wav),"-c:a","aac",str(fake)])
     with pytest.raises(ValueError,match="EXACTLY"):
         media.full_decode(fake,seconds=1)
+
+def test_expensive_batches_require_current_all_three_manual_pass(chunk_studio):
+    root=chunk_studio
+    calls=[]
+    def runner(*args):
+        calls.append(args[1]["id"])
+        return _unit_only_fake_model(*args)
+    options={"rights_confirmed":True,"wall_seconds":300,
+             "per_chunk_timeout":120,"allow_short":True,"model_runner":runner}
+    with pytest.raises(ValueError,match="preview missing"):
+        neural.run_cpu(root,mode="batch",max_new=1,**options)
+    assert calls==[]
+    neural.run_cpu(root,mode="pilot",max_new=3,**options)
+    assert len(calls)==3
+    for mode in ("batch","session"):
+        with pytest.raises(ValueError,match="review record missing"):
+            neural.run_cpu(root,mode=mode,max_new=1,**options)
+    assert len(calls)==3
+    decisions={sp:"PASS" for sp in source.SPEAKERS}
+    decisions["meera"]="FAIL"
+    review.record_pilot(root,decisions,review.ACK,allow_short=True)
+    with pytest.raises(ValueError,match="manual FAIL"):
+        neural.run_cpu(root,mode="session",max_new=1,**options)
+    assert len(calls)==3
+    # TEST ONLY: rebuild the synthetic review record to cover a separate PASS
+    # case. Production review records are never overwritten by the CLI.
+    record=root/"review"/"three-presenter-human-observations.json"
+    record.unlink()
+    review.record_pilot(root,{sp:"PASS" for sp in source.SPEAKERS},
+                        review.ACK,allow_short=True)
+    assert review.check_batch_pilot(root,allow_short=True)["batch_pilot_gate_passed"]
+    done=neural.run_cpu(root,mode="batch",max_new=1,**options)
+    assert done["new_chunk_ids"]==["004-001"]
+    assert len(calls)==4
+    assert review.check_batch_pilot(root,allow_short=True)["publication_approved"] is False
+    payload=source.read_json(record)
+    payload["source_bound_face_samples"]["presenters"]["aarav"]["sha256"]="bad"
+    record.write_text(json.dumps(payload),encoding="utf-8")
+    with pytest.raises(ValueError,match="stale"):
+        neural.run_cpu(root,mode="batch",max_new=1,**options)
+    assert len(calls)==4
+    assert not (root/"source"/neural.LOCK).exists()

@@ -26,3 +26,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] If READINESS reports `media_export_session` or `cpu_neural_session` BLOCKED, check the private local process and any interrupted output before manually resolving its lock. Never remove an active lock or overwrite partial evidence. Final H.264/48 kHz AAC exports now require independently measured video/audio stream durations with absolute tolerances (0.45/0.5 seconds); actual Windows exports still need human review.
 
 - [ ] On actual Windows, exercise failed-model RECOVERY and explicitly archive a stopped failed attempt before retrying. Never delete an active/orphan lock automatically or accept incomplete preview output.
+
+- [ ] Validate the guided historical CPU installation recipe on a clean actual Windows machine. The enforced BATCH/SESSION gate requires all three private manual PASS observations against current independently verified pilot media; real pilot quality remains unverified.

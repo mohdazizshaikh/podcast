@@ -240,6 +240,9 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
     lock=root/"source"/LOCK
     if lock.is_symlink() or lock.exists():
         raise ValueError("Another/orphan CPU session lock exists; manual inspection")
+    if mode!="pilot":
+        from .review import _require_batch_pilot
+        _require_batch_pilot(root,source,done)
     if model_runner is None:
         # Production CLI always preflights user-installed pretrained model
         # assets BEFORE taking a lock or initiating an expensive model run.
@@ -273,6 +276,10 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
         begin=clock()
         for _ in range(max_new):
             source,done=verified_previews(root,allow_short=allow_short)
+            if mode!="pilot":
+                # Recheck the same current independently decoded evidence
+                # under the CPU lock before each expensive model call.
+                _require_batch_pilot(root,source,done)
             target=pilot_targets(source,done) if mode=="pilot" else [x["id"] for x in source["chunks"] if x["id"] not in done]
             if not target:break
             elapsed=clock()-begin

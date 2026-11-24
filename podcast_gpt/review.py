@@ -18,8 +18,13 @@ ACK="I_REVIEWED_ALL_THREE_ORIGINAL_HINDI_FACES"
 
 
 def _pilot_binding(root:Path,*,allow_short:bool=False) -> dict:
-    original=verify_source(root,allow_short=allow_short)
     manifest,done=verified_previews(root,allow_short=allow_short)
+    return _binding_from_verified(manifest,done)
+
+
+def _binding_from_verified(manifest:dict,done:dict) -> dict:
+    # Internal helper: the caller MUST have just independently verified all
+    # source and preview hashes/decodes. No CLI accepts a supplied binding.
     entries={}
     for speaker in SPEAKERS:
         rows=[row for row in manifest["chunks"] if row["speaker"]==speaker and row["id"] in done]
@@ -27,7 +32,7 @@ def _pilot_binding(root:Path,*,allow_short:bool=False) -> dict:
         row=rows[0]
         entries[speaker]={"id":row["id"],"sha256":done[row["id"]],
                           "duration":row["duration"],"portrait_sha256":row["portrait_sha256"]}
-    return {"schema":3,"original_source_binding":json_digest(original),
+    return {"schema":3,"original_source_binding":manifest["source_binding"],
             "chunks_binding":json_digest(manifest),"presenters":entries}
 
 
@@ -83,7 +88,15 @@ def record_pilot(root:Path,decisions:dict,acknowledgment:str,*,allow_short:bool=
 def inspect_pilot(root:Path,*,allow_short:bool=False) -> dict:
     root=workspace_path(root)
     actual=_pilot_binding(root,allow_short=allow_short)
-    previous=read_json(root/"review"/"three-presenter-human-observations.json")
+    return _inspect_binding(root,actual)
+
+
+def _inspect_binding(root:Path,actual:dict) -> dict:
+    folder=root/"review"
+    record=folder/"three-presenter-human-observations.json"
+    if folder.is_symlink() or record.is_symlink() or not record.is_file():
+        raise ValueError("Three-presenter manual pilot review record missing or unsafe; use REVIEW and RECORD")
+    previous=read_json(record)
     if (previous.get("status")!="private_self_attested_three_presenter_human_observation_not_publication_approval"
             or previous.get("source_bound_face_samples")!=actual
             or set(previous.get("decisions",{}))!=set(SPEAKERS)
@@ -95,6 +108,21 @@ def inspect_pilot(root:Path,*,allow_short:bool=False) -> dict:
             "decisions":previous["decisions"],
             "every_presenter_manual_pass":previous["every_presenter_manual_pass"],
             "publication_approved":False,"full_ten_minute_neural_video_completed":False}
+
+
+def _require_batch_pilot(root:Path,manifest:dict,done:dict) -> dict:
+    """Internal gate using only a just-verified manifest and preview set."""
+    state=_inspect_binding(root,_binding_from_verified(manifest,done))
+    if state["every_presenter_manual_pass"] is not True:
+        raise ValueError("Three-presenter pilot manual FAIL; do not start BATCH or SESSION")
+    return state
+
+
+def check_batch_pilot(root:Path,*,allow_short:bool=False) -> dict:
+    root=workspace_path(root)
+    manifest,done=verified_previews(root,allow_short=allow_short)
+    state=_require_batch_pilot(root,manifest,done)
+    return {**state,"batch_pilot_gate_passed":True,"new_model_inference_calls":0}
 
 
 def review_full(root:Path,*,allow_short:bool=False) -> dict:

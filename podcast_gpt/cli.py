@@ -17,7 +17,7 @@ def parse(argv=None):
     subs=p.add_subparsers(dest="operation",required=True)
     for name in ("doctor","init","build-source","verify-source","prepare-chunks","verify-chunks",
                  "render-static","audit-static","progress","budget","readiness","review-pilot","inspect-pilot",
-                 "compose-neural","audit-neural","review-full","recovery","web"):
+                 "compose-neural","audit-neural","review-full","recovery","check-pilot-gate","web"):
         cmd=subs.add_parser(name)
         if name=="web":
             cmd.add_argument("--port",type=int,default=7860)
@@ -190,6 +190,7 @@ def execute(a)->dict:
     if action=="record-pilot":return review.record_pilot(root,
            {name:getattr(a,name) for name in source.SPEAKERS},a.acknowledgment)
     if action=="inspect-pilot":return review.inspect_pilot(root)
+    if action=="check-pilot-gate":return review.check_batch_pilot(root)
     if action=="compose-neural":return neural.compose_neural(root)
     if action=="audit-neural":return neural.audit_neural(root)
     if action=="review-full":return review.review_full(root)

@@ -23,6 +23,11 @@ if /I "!MODE!"=="SESSION" (endlocal & set "MODE=session" & goto :mode_ok)
 endlocal
 goto :cancel
 :mode_ok
+if /I "%MODE%"=="pilot" goto :pilot_ok
+echo [VERIFY] BATCH and SESSION require a current three-presenter manual PASS record.
+".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" check-pilot-gate
+if errorlevel 1 goto :failed
+:pilot_ok
 set "COUNT=3"
 if /I "%MODE%"=="batch" set "COUNT=1"
 if /I "%MODE%"=="session" set "COUNT=3"

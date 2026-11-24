@@ -259,3 +259,6 @@ python -m pytest -q tests
 ```
 
 GitHub Actions exercises synthetic source WAV/portrait integrity and Windows/Linux combinations. Local FFmpeg synthetic smoke is separate from the external real model test. See [reconstruction ledger](docs/RECONSTRUCTION_LEDGER.md), [Windows setup](docs/SETUP_WINDOWS.md), [architecture](docs/ARCHITECTURE.md) and [remaining acceptance](docs/REMAINING.md).
+### Guided local model setup and pilot gate
+
+For the separate SadTalker legacy CPU environment, see [guided Windows CPU installation](docs/SADTALKER_CPU_SETUP.md). BATCH and SESSION require a current all-three manual PASS record bound to verified pilot clips before any further inference. The app does not download or authenticate third-party weights, certify quality, or publish.
