@@ -44,3 +44,13 @@ This moves the entire attempt to a unique private scratch/failed-attempts folder
 ### Guided local CPU installation and enforced pilot gate
 
 See [SADTALKER_CPU_SETUP.md](SADTALKER_CPU_SETUP.md) for the separate legacy Python environment, official CPU wheel recipe, checkpoint guidance, and limitations. Before BATCH or SESSION, the launcher and core CPU command require a current all-three manual PASS record bound to the independently verified original sample hashes. A missing/failed/stale record blocks new inference. No approval of publication or actual quality is inferred.
+
+### Full 45-turn manual QA record
+
+After AUDITFULL, choose REVIEWFULL to watch every turn, then TEMPLATEFULL to create the private review/full-45-turn-review-template.json. Edit only each turn's five UNREVIEWED fields (lip_sync, voice, identity, captions, transitions) and rights_self_attested to honest PASS or FAIL. Do not edit candidate hashes. Save locally. Run:
+
+```cmd
+.venv\Scripts\python.exe -m podcast_gpt record-full-review --acknowledgment I_REVIEWED_ALL_45_ORIGINAL_HINDI_TURNS
+```
+
+Use --workspace before the command for a non-default studio. INSPECTFULL and READINESS validate the saved record against current decoded video, source, SRT and export report hashes. A stale or failed review cannot be treated as passed. The immutable private record is self-attested only; it never automatically approves quality, rights or publication. Keep both files outside Git.

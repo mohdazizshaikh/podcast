@@ -28,3 +28,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] On actual Windows, exercise failed-model RECOVERY and explicitly archive a stopped failed attempt before retrying. Never delete an active/orphan lock automatically or accept incomplete preview output.
 
 - [ ] Validate the guided historical CPU installation recipe on a clean actual Windows machine. The enforced BATCH/SESSION gate requires all three private manual PASS observations against current independently verified pilot media; real pilot quality remains unverified.
+
+- [ ] On actual Windows, watch every real final episode turn and complete the 45-turn, five-criterion private review template; record and inspect actual human observations. CI never certifies real quality or publication.

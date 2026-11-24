@@ -69,6 +69,11 @@ def main():
         assert temp_roots==[root/"scratch"]
         audited=neural.audit_neural(root,allow_short=True)
         review.review_full(root,allow_short=True)
+        from podcast_gpt import final_review
+        template=final_review.template(root,allow_short=True)
+        assert template["turns"]==45
+        assert audited["candidate_binding"]["video_sha256"]==source.digest(root/"exports"/"original_hindi_full_neural.mp4")
+        # Do not create a fake human PASS receipt in the synthetic smoke.
         assert audited["complete_45_turn_video_structurally_audited"] is True
         assert full["synthetic_short_test_only"] is True
         assert full["publication_approved"] is False

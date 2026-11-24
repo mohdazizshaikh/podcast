@@ -66,6 +66,7 @@ def _run(windows_stage,tmp_path,answer:str):
     ("REVIEW","review-pilot"),
     ("INSPECT","inspect-pilot"),("COMPOSE","compose-neural"),
     ("AUDITFULL","audit-neural"),("REVIEWFULL","review-full"),
+    ("TEMPLATEFULL","template-full-review"),("INSPECTFULL","inspect-full-review"),
 ])
 def test_one_original_hindi_stage_only(windows_stage,tmp_path,mode,expected):
     result,lines,base=_run(windows_stage,tmp_path,mode+"\n")

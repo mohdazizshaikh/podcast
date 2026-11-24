@@ -252,6 +252,16 @@ def inspect(root: Path, *, allow_short: bool=False) -> dict:
     else:
         mark("full_neural_candidate","missing")
 
+    from . import final_review
+    full_record=root/"review"/final_review.RECORD
+    if full_record.exists() or full_record.is_symlink():
+        if full_ok:
+            gate("full_human_observations",lambda:final_review.inspect(root,allow_short=allow_short))
+        else:
+            mark("full_human_observations","blocked",reason="Cannot verify observations without a current audited full candidate")
+    else:
+        mark("full_human_observations","missing")
+
     blocked=[k for k,v in stages.items() if v["status"]=="blocked"]
     if blocked:
         result["next_safe_action"]="STOP — manually inspect blocked stages; never overwrite, forge approval or bypass signed originals"
@@ -281,8 +291,12 @@ def inspect(root: Path, *, allow_short: bool=False) -> dict:
         result["next_safe_action"]="BUDGET then separately consented BATCH/SESSION for remaining authentic face clips"
     elif not full_ok:
         result["next_safe_action"]="COMPOSE then AUDITFULL — combine all verified previews with original Hindi audio"
+    elif stages["full_human_observations"]["status"]!="verified":
+        result["next_safe_action"]="REVIEWFULL and TEMPLATEFULL — watch/listen to all 45 turns, edit the private PASS/FAIL template and explicitly record observations"
+    elif stages["full_human_observations"].get("all_manual_observations_pass") is not True:
+        result["next_safe_action"]="STOP — full manual observation FAIL; inspect issues, never overwrite original evidence"
     else:
-        result["next_safe_action"]="REVIEWFULL — watch/listen to all 45 turns; personally verify lips/voice/rights BEFORE any publishing"
+        result["next_safe_action"]="All 45 manual observations recorded PASS; independently verify rights and quality yourself. No automatic publication or certification."
 
     result["all_source_and_media_structurally_verified"]=bool(
         src_ok and chunks_ok and static_ok and full_ok)

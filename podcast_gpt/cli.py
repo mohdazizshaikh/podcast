@@ -17,12 +17,15 @@ def parse(argv=None):
     subs=p.add_subparsers(dest="operation",required=True)
     for name in ("doctor","init","build-source","verify-source","prepare-chunks","verify-chunks",
                  "render-static","audit-static","progress","budget","readiness","review-pilot","inspect-pilot",
-                 "compose-neural","audit-neural","review-full","recovery","check-pilot-gate","web"):
+                 "compose-neural","audit-neural","review-full","recovery","check-pilot-gate",
+                 "template-full-review","inspect-full-review","web"):
         cmd=subs.add_parser(name)
         if name=="web":
             cmd.add_argument("--port",type=int,default=7860)
             cmd.add_argument("--open-browser",action="store_true",
                              help="Open default browser only after successful local server bind")
+    full_review=subs.add_parser("record-full-review",help="Record all 45 manually reviewed turn observations")
+    full_review.add_argument("--acknowledgment",required=True)
     recover=subs.add_parser("archive-failed-attempt",help="Preserve one stopped model attempt in a private archive")
     recover.add_argument("--chunk-id",required=True)
     recover.add_argument("--acknowledgment",required=True)
@@ -194,6 +197,11 @@ def execute(a)->dict:
     if action=="compose-neural":return neural.compose_neural(root)
     if action=="audit-neural":return neural.audit_neural(root)
     if action=="review-full":return review.review_full(root)
+    if action in ("template-full-review","record-full-review","inspect-full-review"):
+        from . import final_review
+        if action=="template-full-review":return final_review.template(root)
+        if action=="record-full-review":return final_review.record(root,acknowledgment=a.acknowledgment)
+        return final_review.inspect(root)
     if action=="tts-kokoro":
         from .kokoro import generate
         return generate(root,model=a.model,voices=a.voices,turn=a.turn,

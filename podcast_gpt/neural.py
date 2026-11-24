@@ -357,10 +357,8 @@ def _compose_neural_locked(root:Path,*,allow_short:bool=False) -> dict:
     root=workspace_path(root);src=verify_source(root,allow_short=allow_short)
     chunks,done=verified_previews(root,allow_short=allow_short)
     if len(done)!=chunks["count"]:raise ValueError("All genuine original face previews must be decoded first")
-    from .review import inspect_pilot
-    review=inspect_pilot(root,allow_short=allow_short)
-    if review.get("every_presenter_manual_pass") is not True:
-        raise ValueError("Human 3-presenter pilot PASS observations required before costly final composition")
+    from .review import _require_batch_pilot
+    _require_batch_pilot(root,chunks,done)
     target=root/"exports"/"original_hindi_full_neural.mp4"
     report=root/"exports"/"original_hindi_full_neural.json"
     captions=root/"exports"/"original_hindi_full_neural.srt"
@@ -439,7 +437,9 @@ def _compose_neural_locked(root:Path,*,allow_short:bool=False) -> dict:
         measure=full_decode(staged,seconds=src["original_seconds"],require_720=True)
         verify_source(root,allow_short=allow_short)
         verified_chunks,again=verified_previews(root,allow_short=allow_short)
-        if again!=done:raise ValueError("Neural speaking clips changed while composing")
+        if again!=done or verified_chunks!=chunks:
+            raise ValueError("Neural speaking clips changed while composing")
+        _require_batch_pilot(root,verified_chunks,again)
         with captions.open("x", encoding="utf-8") as handle:
             handle.write(subtitle(rows))
         with staged.open("rb") as src_video, target.open("xb") as dst_video:
@@ -460,10 +460,18 @@ def audit_neural(root:Path,*,allow_short:bool=False) -> dict:
     root=workspace_path(root)
     src=verify_source(root,allow_short=allow_short)
     chunks,done=verified_previews(root,allow_short=allow_short)
+    if len(done)!=chunks["count"]:
+        raise ValueError("All genuine original face previews must be decoded before final audit")
+    from .review import _require_batch_pilot
+    _require_batch_pilot(root,chunks,done)
     report=read_json(root/"exports"/"original_hindi_full_neural.json",3_000_000)
     video=root/"exports"/"original_hindi_full_neural.mp4"
     captions=root/"exports"/"original_hindi_full_neural.srt"
-    if (report.get("status")!="candidate_full_original_hindi_neural_video_independently_decoded"
+    if (report.get("schema")!=3 or report.get("turns")!=45
+            or report.get("human_lipsync_approved") is not False
+            or report.get("synthetic_short_test_only") is not allow_short
+            or report.get("full_ten_minute_neural_video_structurally_audited") is not (not allow_short)
+            or report.get("status")!="candidate_full_original_hindi_neural_video_independently_decoded"
             or report.get("source_binding")!=json_digest(src)
             or report.get("chunks_binding")!=json_digest(chunks)
             or report.get("verified_preview_sha256")!=done
@@ -474,6 +482,11 @@ def audit_neural(root:Path,*,allow_short:bool=False) -> dict:
             or report.get("publication_approved") is not False):
         raise ValueError("Candidate full video/SRT/provenance differs from current original Hindi source")
     return {"complete_45_turn_video_structurally_audited":True,
+            "candidate_binding":{"source_sha256":json_digest(src),
+                                 "chunks_sha256":json_digest(chunks),
+                                 "video_sha256":report["video_sha256"],
+                                 "srt_sha256":report["srt_sha256"],
+                                 "export_report_sha256":digest(root/"exports"/"original_hindi_full_neural.json")},
             "media":full_decode(video,seconds=src["original_seconds"],require_720=True),
             "original_ten_minute_duration_required":not allow_short,
             "human_hindi_lipsync_accuracy_verified":False,

@@ -36,6 +36,8 @@ echo INIT      - NEW private original 45-turn script
  echo COMPOSE   - full face candidate from ALL real model clips
  echo AUDITFULL - independently decode full face MP4/AAC/SRT
  echo REVIEWFULL- private 45-turn human review navigator
+ echo TEMPLATEFULL - create private 45-turn manual PASS/FAIL template
+ echo INSPECTFULL - read-only final human observation record audit
  echo NO        - exit without action
  echo.
 set "STEP="
@@ -61,6 +63,8 @@ if /I "!STEP!"=="INSPECT" (endlocal & goto :inspect)
 if /I "!STEP!"=="COMPOSE" (endlocal & goto :compose)
 if /I "!STEP!"=="AUDITFULL" (endlocal & goto :auditfull)
 if /I "!STEP!"=="REVIEWFULL" (endlocal & goto :reviewfull)
+if /I "!STEP!"=="TEMPLATEFULL" (endlocal & goto :templatefull)
+if /I "!STEP!"=="INSPECTFULL" (endlocal & goto :inspectfull)
 endlocal
 exit /b 2
 :init
@@ -122,4 +126,10 @@ exit /b %ERRORLEVEL%
 exit /b %ERRORLEVEL%
 :reviewfull
 ".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" review-full
+exit /b %ERRORLEVEL%
+:templatefull
+".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" template-full-review
+exit /b %ERRORLEVEL%
+:inspectfull
+".venv\Scripts\python.exe" -m podcast_gpt --workspace "%BASE%" inspect-full-review
 exit /b %ERRORLEVEL%
