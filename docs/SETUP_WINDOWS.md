@@ -62,3 +62,7 @@ See [RELEASE_CANDIDATE.md](RELEASE_CANDIDATE.md) for the CI-produced candidate, 
 ### Setup without opening the dashboard
 
 For installation diagnostics, run START_PODCAST_WINDOWS.bat --setup-only from CMD. This performs the same prerequisite and dependency checks and exits without launching a browser or server; it does not pause on errors. Normal double-click behavior is unchanged. Hindi JSON remains valid under legacy Windows redirected encodings, using Unicode escapes when necessary.
+
+### CPU session verification efficiency
+
+Within one exclusive CPU session, unchanged preview bytes with the same SHA256, source binding and signed duration reuse an in-memory decode result. Every verification pass still hashes each MP4, validates sidecars, checks exact source PCM and validates checkpoint consistency. Newly produced or changed bytes are independently decoded. The baseline and final audit remain fresh, and public PROGRESS/AUDIT commands never consume the session cache. No persisted cache or hardware speed guarantee. The session refuses unexpected source/preview changes instead of advancing its checkpoint.

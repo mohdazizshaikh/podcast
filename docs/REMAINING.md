@@ -34,3 +34,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Confirm clean Windows source-candidate CI packaging, then validate on a physical Windows 10/11 desktop including actual FFmpeg/model setup and genuine AI rendering. The ZIP does not bundle third-party weights or media.
 
 - [ ] Verify the native setup-only launcher and legacy Windows JSON output in clean ZIP CI, then run normal browser startup on the physical Windows desktop.
+
+- [ ] Measure real CPU-session performance on the user's hardware after the in-memory hash-bound verification optimization; tests establish decoder call reduction, not model speedup or real lip-sync quality.

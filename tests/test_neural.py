@@ -125,3 +125,62 @@ def test_original_speaker_frame_plan_no_monotone_overrun():
     assert sum(frames)==round(sum(durations)*24)
     assert max(abs(sum(frames[:i+1]) /24 - sum(durations[:i+1]))
                for i in range(len(frames)))<=.5/24 + 1e-8
+
+
+def test_session_decode_cache_rehashes_every_file_and_public_audit_is_fresh(chunk_studio,monkeypatch):
+    root=chunk_studio
+    manifest=source.verify_chunks(root,allow_short=True)
+    row=manifest["chunks"][0]
+    cid=row["id"]
+    mp4=root/"previews"/(cid+".mp4")
+    receipt=root/"previews"/(cid+".json")
+    mp4.write_bytes(b"synthetic media only")
+    data={"schema":3,"status":neural.MODEL_STATUS,"chunk_id":cid,"speaker":row["speaker"],
+          "chunk_sha256":row["chunk_sha256"],"portrait_sha256":row["portrait_sha256"],
+          "source_binding":manifest["source_binding"],"mp4_sha256":source.digest(mp4),
+          "authorized_portraits_self_attested":True,"human_lipsync_approved":False,
+          "full_ten_minute_neural_video_completed":False}
+    source.atomic_json(receipt,data,new=True)
+    calls=[]
+    def decoder(path,seconds):
+        calls.append(path)
+        return {"duration":seconds,"video_duration":seconds}
+    monkeypatch.setattr(neural,"_verify_model_clip",decoder)
+    cache={}
+    for _ in range(5):
+        assert neural._verified_previews(root,allow_short=True,decoded=cache)[1]=={cid:data["mp4_sha256"]}
+    assert calls==[mp4]
+    neural.verified_previews(root,allow_short=True)
+    assert calls==[mp4,mp4]
+    # Same file size, different bytes: cache must never use only mtime/size.
+    mp4.write_bytes(b"synthetic media ONLY")
+    with pytest.raises(ValueError,match="SHA"):
+        neural._verified_previews(root,allow_short=True,decoded=cache)
+    assert calls==[mp4,mp4]
+    # Even changing the sidecar to match the new bytes forces a fresh decode.
+    data["mp4_sha256"]=source.digest(mp4)
+    receipt.write_text(json.dumps(data),encoding="utf-8")
+    neural._verified_previews(root,allow_short=True,decoded=cache)
+    assert calls==[mp4,mp4,mp4]
+
+
+def test_preview_changed_during_decode_is_never_cached(chunk_studio,monkeypatch):
+    root=chunk_studio
+    manifest=source.verify_chunks(root,allow_short=True)
+    row=manifest["chunks"][0];cid=row["id"]
+    mp4=root/"previews"/(cid+".mp4")
+    mp4.write_bytes(b"synthetic")
+    source.atomic_json(root/"previews"/(cid+".json"),{
+        "schema":3,"status":neural.MODEL_STATUS,"chunk_id":cid,"speaker":row["speaker"],
+        "chunk_sha256":row["chunk_sha256"],"portrait_sha256":row["portrait_sha256"],
+        "source_binding":manifest["source_binding"],"mp4_sha256":source.digest(mp4),
+        "authorized_portraits_self_attested":True,"human_lipsync_approved":False,
+        "full_ten_minute_neural_video_completed":False},new=True)
+    def changing(path,seconds):
+        path.write_bytes(b"changed")
+        return {"duration":seconds,"video_duration":seconds}
+    monkeypatch.setattr(neural,"_verify_model_clip",changing)
+    cache={}
+    with pytest.raises(ValueError,match="changed during independent decoding"):
+        neural._verified_previews(root,allow_short=True,decoded=cache)
+    assert cache=={}

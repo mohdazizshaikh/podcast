@@ -67,7 +67,17 @@ def _verify_model_clip(mp4:Path, seconds:float) -> dict:
 
 
 def verified_previews(root:Path,*, allow_short:bool=False) -> tuple[dict,dict]:
-    """Always independent SHA/decoder check of every existing MP4+sidecar."""
+    """Public audits always independently decode every existing MP4."""
+    return _verified_previews(root,allow_short=allow_short,decoded=None)
+
+
+def _verified_previews(root:Path,*,allow_short:bool,decoded:dict|None) -> tuple[dict,dict]:
+    """Optional session-local cache; only exact bytes and signed duration qualify.
+
+    The CPU session owns this dictionary. It is never loaded from disk, exposed
+    by CLI, or reused across sessions. All original PCM, sidecar and checkpoint
+    checks still execute on every pass, including SHA256 of every saved MP4.
+    """
     root=workspace_path(root)
     source=verify_chunks(root,allow_short=allow_short)
     all_rows={x["id"]:x for x in source["chunks"]}
@@ -90,12 +100,18 @@ def verified_previews(root:Path,*, allow_short:bool=False) -> tuple[dict,dict]:
                   "source_binding":source["source_binding"],
                   "authorized_portraits_self_attested":True,
                   "human_lipsync_approved":False,"full_ten_minute_neural_video_completed":False}
-        if any(saved.get(k)!=v for k,v in expected.items()) or saved.get("mp4_sha256")!=digest(mp4):
+        current_sha=digest(mp4)
+        if any(saved.get(k)!=v for k,v in expected.items()) or saved.get("mp4_sha256")!=current_sha:
             raise ValueError("Real neural preview SHA/speaker/source rights marker differs")
-        media=_verify_model_clip(mp4,row["duration"])
-        if abs(media["duration"]-row["duration"])>max(.45,.025*row["duration"]):
-            raise ValueError("Neural clip voice timeline changed")
-        confirmed[cid]=saved["mp4_sha256"]
+        key=(current_sha,row["duration"],source["source_binding"])
+        if decoded is None or decoded.get(cid)!=key:
+            media=_verify_model_clip(mp4,row["duration"])
+            if abs(media["duration"]-row["duration"])>max(.45,.025*row["duration"]):
+                raise ValueError("Neural clip voice timeline changed")
+            if digest(mp4)!=current_sha:
+                raise ValueError("Neural clip changed during independent decoding")
+            if decoded is not None:decoded[cid]=key
+        confirmed[cid]=current_sha
     checkpoint=root/"source"/CHECKPOINT
     if checkpoint.is_symlink():
         raise ValueError("Checkpoint symlink refused")
@@ -110,6 +126,10 @@ def verified_previews(root:Path,*, allow_short:bool=False) -> tuple[dict,dict]:
 
 def progress(root:Path,*,allow_short:bool=False) -> dict:
     manifest,done=verified_previews(root,allow_short=allow_short)
+    return _progress_from_verified(manifest,done)
+
+
+def _progress_from_verified(manifest:dict,done:dict) -> dict:
     missing=[x["id"] for x in manifest["chunks"] if x["id"] not in done]
     count={sp:0 for sp in SPEAKERS}
     for x in manifest["chunks"]:
@@ -271,11 +291,14 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
     with cpu_session_lock(root):
         # A different session may have finished during preflight. Take the
         # baseline after acquiring the exclusive lock, not before.
-        source,done=verified_previews(root,allow_short=allow_short)
-        before=len(done)
+        decoded={}
+        session_source,session_done=_verified_previews(root,allow_short=allow_short,decoded=decoded)
+        source,done=session_source,session_done
         begin=clock()
         for _ in range(max_new):
-            source,done=verified_previews(root,allow_short=allow_short)
+            source,done=_verified_previews(root,allow_short=allow_short,decoded=decoded)
+            if source!=session_source or done!=session_done:
+                raise ValueError("Original source or saved previews changed during CPU session")
             if mode!="pilot":
                 # Recheck the same current independently decoded evidence
                 # under the CPU lock before each expensive model call.
@@ -291,13 +314,24 @@ def run_cpu(root:Path,*,mode:str,rights_confirmed:bool,max_new:int=3,
             _model_call(root,row,sadtalker_root=Path(sadtalker_root or ""),
                         sadtalker_python=Path(sadtalker_python or ""),timeout=timeout,
                         allow_short=allow_short,model_runner=model_runner,cpu_threads=cpu_threads)
-            # Independently re-audit before progressing; never trust JSON alone.
-            _,confirmed=verified_previews(root,allow_short=allow_short)
-            if len(confirmed)!=before+len(completed)+1:raise ValueError("Checkpoint advanced unexpectedly")
-            completed.append(row["id"])
+            # Rehash all existing clips and decode every new one. Require
+            # exactly the expected new ID and byte-identical old previews.
+            current_source,confirmed=_verified_previews(root,allow_short=allow_short,decoded=decoded)
+            cid=row["id"]
+            if (current_source!=session_source or set(confirmed)!=set(session_done)|{cid}
+                    or any(confirmed.get(k)!=v for k,v in session_done.items())):
+                raise ValueError("Checkpoint advanced unexpectedly or original source changed")
+            if mode!="pilot":
+                _require_batch_pilot(root,current_source,confirmed)
+            completed.append(cid)
             atomic_json(root/"source"/CHECKPOINT,{"schema":3,"source_binding":source["source_binding"],
                          "verified_previews":confirmed})
-        final=progress(root,allow_short=allow_short)
+            session_done=confirmed
+        # End-of-session audit intentionally bypasses the in-memory cache.
+        final_source,final_done=verified_previews(root,allow_short=allow_short)
+        if final_source!=session_source or final_done!=session_done:
+            raise ValueError("Original source or saved previews changed before final CPU audit")
+        final=_progress_from_verified(final_source,final_done)
         return {**final,"session_new_real_neural_calls":len(completed),
                 "new_chunk_ids":completed,"mode":mode,"stopped_for_budget":stopped,
                 "requested_wall_seconds":wall_seconds,"wall_budget_excludes_cleanup_overhead":True,
