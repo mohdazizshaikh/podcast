@@ -17,8 +17,8 @@ See [V4_REQUIREMENTS.md](V4_REQUIREMENTS.md) for the user's confirmed personal-u
 
 ## Execution sequence after confirmed scope
 1. Setup and free text provider foundation — CI verified.
-2. Private project storage and DPAPI credentials — core CI passed; clean packaging pending at last observation.
-3. Bounded source ingestion — implemented, CI pending.
-4. Chunked full dialogue generation and resume, then multi-source research and citation verification.
+2. Private project storage and DPAPI credentials — 6/6 CI passed (45447184831).
+3. Bounded source ingestion — 6/6 CI passed (45448095544).
+4. Chunked full dialogue drafting and resume — implemented, CI pending; see V4_SCRIPT_GENERATION.md. Next: multi-source research, citation verification and manual script review/revision.
 5. Character/voice profiles, actual multilingual media compatibility, generalized signed source, layout rendering, orchestration.
 6. Physical Windows acceptance and V4 release. Track evidence in [V4_TRACKER.md](V4_TRACKER.md).

@@ -121,7 +121,7 @@ def import_source(root,pid,**options):
                 "text_sha256":evidence["text_sha256"],"live_research_performed":False}
 
 
-def inspect(root:Path,pid:str):
+def _inspect_planning(root:Path,pid:str):
     folder=project(root,pid)
     req=load(root,pid)
     result={"project_id":pid,"request":req,"stage":"request_saved","publication_approved":False}
@@ -144,6 +144,18 @@ def inspect(root:Path,pid:str):
         if saved.get("provider") not in ("openrouter","gemini","ollama"):
             raise ValueError("Unknown saved provider")
         result.update(stage="outline_saved",outline=value,provider=saved["provider"])
+    return result
+
+
+def inspect(root:Path,pid:str):
+    result=_inspect_planning(root,pid)
+    folder=project(root,pid)
+    from . import script_generation
+    if result["stage"]=="outline_saved":
+        script=script_generation.inspect_saved(folder,result["request"],read_evidence(folder,result["request"]),result["outline"])
+        result.update(stage=script["stage"],script_progress=script)
+    elif any((folder/name).exists() or (folder/name).is_symlink() for name in (script_generation.PARTS,script_generation.FINAL)):
+        raise ValueError("Script artifacts require a verified outline")
     return result
 
 

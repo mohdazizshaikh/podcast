@@ -26,3 +26,5 @@ Windows persistent credentials use native current-user DPAPI; no plaintext fallb
 Only confirm Gemini free-project status after ensuring billing is disabled. Otherwise omit that flag. Default offline execution does not decrypt stored keys. No credentials or user content belong in Git, screenshots or chat. Keep private projects outside Git and back up nonsecret project data separately. Real provider execution and physical desktop acceptance remain unverified.
 
 Non-topic projects now support a bounded source attachment before outline generation. See [V4_INGESTION.md](V4_INGESTION.md). Existing schema-1 topic outlines remain readable; new outlines bind source evidence when present.
+
+After saving an outline, project-script-generate/status/finalize/show provide resumable dialogue drafts; project-list and project-show now reflect script progress. See [V4_SCRIPT_GENERATION.md](V4_SCRIPT_GENERATION.md).

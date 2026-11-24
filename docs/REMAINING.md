@@ -44,3 +44,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Verify V4 project/DPAPI CI and real Windows credentials; implement document/URL/custom-script ingestion and chunked script generation. Current project manager stores topic outlines only.
 
 - [ ] Validate bounded source ingestion CI and real public HTTPS/PDF/DOCX sources; implement large/multiple-source ingestion, verified live research, full chunked dialogue generation and timed custom script import. See V4_TRACKER.md for consolidated status.
+
+- [x] Project/DPAPI and bounded ingestion CI: 6/6 each (45447184831, 45448095544); real user hardware/URL/API tests remain pending.
+- [ ] Verify V4 dialogue drafting CI; validate actual free-provider outputs, multilingual quality and timing. Implement human script review/revisions, live research/citations and generalized source/media rendering. Planned seconds are not actual audio duration.

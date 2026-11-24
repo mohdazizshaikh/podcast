@@ -41,6 +41,16 @@ def parse(argv=None):
     outline.add_argument("--confirm-gemini-free-project",action="store_true")
     outline.add_argument("--offline-only",action="store_true")
     outline.add_argument("--ollama-model")
+    script=subs.add_parser("project-script-generate",help="Generate 1–5 new source-bound planned minutes")
+    script.add_argument("--project-id",required=True)
+    script.add_argument("--max-new",type=int,default=1)
+    script.add_argument("--allow-cloud-text",action="store_true")
+    script.add_argument("--confirm-gemini-free-project",action="store_true")
+    script.add_argument("--offline-only",action="store_true")
+    script.add_argument("--ollama-model")
+    for name in ("project-script-status","project-script-finalize","project-script-show"):
+        s=subs.add_parser(name)
+        s.add_argument("--project-id",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -204,6 +214,16 @@ def execute(a)->dict:
         if action=="key-remove":return credentials.remove(private,a.provider,pid=a.project_id)
         keys=credentials.resolve(private,pid=a.project_id) if a.allow_cloud_text and not a.offline_only else None
         return projects.generate_outline(private,a.project_id,credentials=keys,
+            allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
+            offline_only=a.offline_only,local_model=a.ollama_model)
+    if action in ("project-script-generate","project-script-status","project-script-finalize","project-script-show"):
+        from . import script_generation,credentials
+        private=a.workspace.expanduser().absolute()
+        if action=="project-script-status":return script_generation.inspect(private,a.project_id)
+        if action=="project-script-finalize":return script_generation.finalize(private,a.project_id)
+        if action=="project-script-show":return script_generation.show(private,a.project_id)
+        keys=credentials.resolve(private,pid=a.project_id) if a.allow_cloud_text and not a.offline_only else None
+        return script_generation.generate(private,a.project_id,max_new=a.max_new,credentials=keys,
             allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
             offline_only=a.offline_only,local_model=a.ollama_model)
     if action=="ai-provider-status":

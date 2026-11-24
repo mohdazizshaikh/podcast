@@ -25,3 +25,6 @@ Implemented isolated immutable topic request/outline storage, project inventory,
 
 ## Increment 3 — bounded source ingestion
 Implemented one immutable source attachment per V4 project, PDF text (optional parser), DOCX/TXT/Markdown, custom script reference text and explicit public HTTPS page retrieval. Source hashes bind the outline. Live research, large/multiple sources, OCR and timed script import remain pending. See V4_INGESTION.md and V4_TRACKER.md.
+
+## Increment 4 — resumable AI dialogue drafting
+Implemented 1–60 one-minute planning units from a verified outline, strict speaker and text validation, bounded 1–5 unit invocations, immutable source-bound checkpoints, resume and final script assembly. Planned seconds are not actual measured voice timing. Human approval, manual revisions, exact custom-script import and generalized media remain pending. See V4_SCRIPT_GENERATION.md and V4_TRACKER.md.

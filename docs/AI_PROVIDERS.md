@@ -35,3 +35,5 @@ Official references:
 - https://ai.google.dev/gemini-api/docs/pricing
 - https://ollama.com/library/qwen3
 - https://ollama.com/library/qwen3.5
+
+The same provider policy now serves project-script-generate. Each invocation explicitly generates up to five planned minutes with at most one attempt per eligible provider per unit. Previously saved valid units are reused. See V4_SCRIPT_GENERATION.md.
