@@ -34,3 +34,5 @@ Script review and character library CI passed 6/6 each (45452467622, 45453165135
 Audio import/timeline CI passed 6/6 (45455331211). Local Hindi Kokoro adapter and exact master WAV implemented (CI pending). Next: human audio QA, generalized three-format static video and subtitles, broader TTS and actual neural rendering. See V4_TTS_MASTER.md.
 
 Local Hindi TTS/master CI passed 6/6 (45456602766). Human listening review and selected three-format static preview/SRT implemented (CI pending); next priority generalized CPU neural pilot and per-turn checkpoint pipeline. See V4_PREVIEW.md.
+
+Static preview CI 45457590951 had four core jobs passed at initial check. Generalized SadTalker CPU pilot/checkpoints and reviewed batch implemented (CI pending). Next: final neural composition, source-bound full video QA, safe recovery, then broader voice/image/UI workflows. See V4_NEURAL.md.

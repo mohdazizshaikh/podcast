@@ -99,6 +99,20 @@ def parse(argv=None):
         r=subs.add_parser(name)
         r.add_argument("--project-id",required=True)
         if name=="project-audio-review-record":r.add_argument("--acknowledgment",required=True)
+    neural4=subs.add_parser("project-neural-run",help="Explicit local SadTalker CPU pilot or reviewed batch")
+    neural4.add_argument("--project-id",required=True)
+    neural4.add_argument("--model",type=Path,required=True)
+    neural4.add_argument("--python",type=Path,required=True)
+    neural4.add_argument("--mode",choices=("pilot","batch"),default="pilot")
+    neural4.add_argument("--max-new",type=int,default=1)
+    neural4.add_argument("--timeout",type=int,default=1800)
+    neural4.add_argument("--cpu-threads",type=int)
+    neural4.add_argument("--run-local",action="store_true")
+    neural4.add_argument("--acknowledgment",required=True)
+    for name in ("project-neural-status","project-neural-pilot-template","project-neural-pilot-record"):
+        n=subs.add_parser(name)
+        n.add_argument("--project-id",required=True)
+        if name=="project-neural-pilot-record":n.add_argument("--acknowledgment",required=True)
     for name in ("key-store","key-remove","key-status"):
         k=subs.add_parser(name)
         k.add_argument("--project-id")
@@ -323,6 +337,14 @@ def execute(a)->dict:
         if action=="project-audio-review-status":return v4_audio_review.inspect(private,a.project_id)
         if action=="project-preview-render":return v4_preview.render(private,a.project_id)
         return v4_preview.inspect(private,a.project_id)
+    if action in ("project-neural-run","project-neural-status","project-neural-pilot-template","project-neural-pilot-record"):
+        from . import v4_neural
+        private=a.workspace.expanduser().absolute()
+        if action=="project-neural-status":return v4_neural.inspect(private,a.project_id)
+        if action=="project-neural-pilot-template":return v4_neural.template(private,a.project_id)
+        if action=="project-neural-pilot-record":return v4_neural.record(private,a.project_id,acknowledgment=a.acknowledgment)
+        return v4_neural.generate(private,a.project_id,model=a.model,python=a.python,mode=a.mode,max_new=a.max_new,
+            timeout=a.timeout,cpu_threads=a.cpu_threads,run_local=a.run_local,acknowledgment=a.acknowledgment)
     if action=="ai-provider-status":
         from .ai_providers import inventory
         return inventory()

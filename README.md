@@ -292,3 +292,5 @@ V4 authorized speech import, per-turn PCM receipts and measured audio timeline: 
 V4 local Hindi Kokoro adapter and exact PCM master WAV composition/audit: [TTS and master audio guide](docs/V4_TTS_MASTER.md). Actual local model acceptance, broader TTS languages and video remain pending.
 
 V4 human listening review, selected three-format static preview and measured SRT: [preview guide](docs/V4_PREVIEW.md). Static previews are explicitly not lip-sync; real generalized neural media remains pending.
+
+V4 source-bound local SadTalker CPU pilot, resumable clips and human pilot batch gate: [neural guide](docs/V4_NEURAL.md). Full neural episode composition and physical Windows model acceptance remain pending.

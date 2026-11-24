@@ -46,3 +46,6 @@ Implemented explicit local Kokoro Hindi adapter, up to four distinct supported H
 
 ## Increment 10 — listening review and static video preview
 Implemented immutable master-specific per-turn and global listening self-attestation, explicit PASS gate, selected 16:9/9:16/1:1 static portrait preview and measured UTF-8 SRT sidecar, structural video audit. Not neural lip-sync, full video acceptance, or independent human quality verification. See V4_PREVIEW.md.
+
+## Increment 11 — generalized CPU neural clips and pilot gate
+Implemented exact sample chunk planning, explicit local SadTalker CPU invocation, clip receipts, resume, per-presenter pilot self-attestation and reviewed batch gate. No final neural episode composition or genuine model acceptance yet. See V4_NEURAL.md.
