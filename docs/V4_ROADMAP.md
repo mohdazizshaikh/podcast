@@ -78,3 +78,5 @@ CI 45491404566 and 45492395979 passed 6/6 each. Batch 29 expanded authoring and 
 Batch 29 CI 45494573255 five core jobs passed at check. Batch 30 optional speech compressor implemented, new CI pending. Continue graphical mixing, preflight and actual device acceptance.
 
 Batch 30 adds CLI/browser voice preflight and read-only device checklist, plus browser per-turn audio diagnostics. New CI pending. Real model inference, physical acceptance and browser interaction remain pending. See V4_BATCH30.md.
+
+Batch 30 also implements graphical local mix composition with bounded WAV inputs, compression, ducking and optional static loudness target. Total 157 authored regression cases across the three commits; CI pending. Actual browser and Windows/model acceptance remain open. See V4_BATCH30.md.

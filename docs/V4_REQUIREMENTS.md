@@ -110,3 +110,5 @@ Batch 27 and 28 CI each 6/6. Implemented Mandarin candidate presets and frontend
 Optional deterministic speech compressor integrated with exact mix audit, ducking and static target gain; 135 tests authored, CI pending. See V4_BATCH30.md. No dynamic true-peak limiting or denoising.
 
 Batch 30 adds CLI/browser voice preflight and read-only device checklist, plus browser per-turn audio diagnostics. New CI pending. Real model inference, physical acceptance and browser interaction remain pending. See V4_BATCH30.md.
+
+Batch 30 also implements graphical local mix composition with bounded WAV inputs, compression, ducking and optional static loudness target. Total 157 authored regression cases across the three commits; CI pending. Actual browser and Windows/model acceptance remain open. See V4_BATCH30.md.

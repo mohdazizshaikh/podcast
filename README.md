@@ -334,3 +334,5 @@ V4 expanded dashboard WAV/studio/continuity authoring, explicitly consented free
 V4 optional speech compression: [batch 30 guide](docs/V4_BATCH30.md). Actual model/device acceptance pending.
 
 Batch 30 adds CLI/browser voice preflight and read-only device checklist, plus browser per-turn audio diagnostics. New CI pending. Real model inference, physical acceptance and browser interaction remain pending. See V4_BATCH30.md.
+
+Batch 30 also implements graphical local mix composition with bounded WAV inputs, compression, ducking and optional static loudness target. Total 157 authored regression cases across the three commits; CI pending. Actual browser and Windows/model acceptance remain open. See V4_BATCH30.md.

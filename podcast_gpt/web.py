@@ -114,6 +114,19 @@ def html_page(token:str)->str:
 <button id="v4VoicePreflight">Check voice selections and saved paths</button>
 <button id="v4DeviceAcceptance">Inspect device acceptance checklist</button>
 <button id="v4TurnDiagnostics">Measure individual master dialogue levels</button>
+<h3>Audio post-production</h3>
+<label>Optional intro WAV (max 30 s) <input id="v4MixIntro" type="file" accept=".wav"></label>
+<label>Optional background WAV (max 120 s) <input id="v4MixBed" type="file" accept=".wav"></label>
+<label>Optional outro WAV (max 30 s) <input id="v4MixOutro" type="file" accept=".wav"></label>
+<label>Speech peak PCM <input id="v4MixSpeech" type="number" min="8000" max="24000" value="22000"></label>
+<label>Music peak PCM <input id="v4MixMusic" type="number" min="0" max="6000" value="3000"></label>
+<label>Ducking percent <input id="v4MixDuck" type="number" min="0" max="90" value="0"></label>
+<label>Optional LUFS target (blank disables) <input id="v4MixTarget" type="number" min="-24" max="-14"></label>
+<label>Speech compression ratio (1 disables) <input id="v4MixRatio" type="number" min="1" max="6" value="1"></label>
+<label>Compression threshold PCM <input id="v4MixThreshold" type="number" min="2000" max="20000" value="12000"></label>
+<label><input id="v4MixRights" type="checkbox"> I authorize this mix and have rights to all added audio</label>
+<button id="v4MixCompose">Compose separate audio mix</button>
+<small>Local files only, mono PCM16 16 kHz. Existing mix cannot be replaced. Listen to the whole candidate before approval.</small>
 <h3>Voice import and studio settings</h3>
 <label>Approved script turn ID <input id="v4TurnId" maxlength="4"></label>
 <label>Matching local mono PCM16 16 kHz WAV <input id="v4TurnWav" type="file" accept=".wav"></label>
@@ -254,6 +267,21 @@ onAuthor('v4SourceImport',()=>authorFile('source',currentPid(),field('v4SourceFi
 onAuthor('v4VoicePreflight',()=>author('voice-preflight',{project_id:currentPid()}));
 onAuthor('v4DeviceAcceptance',()=>author('device-acceptance',{project_id:currentPid()}));
 onAuthor('v4TurnDiagnostics',()=>author('turn-diagnostics',{project_id:currentPid()}));
+async function encodeWav(file,limit){
+ if(!file||file.size<44||file.size>limit||!file.name.toLowerCase().endsWith('.wav'))throw new Error('Select a bounded WAV file');
+ const bytes=new Uint8Array(await file.arrayBuffer());let parts=[];
+ for(let i=0;i<bytes.length;i+=16384)parts.push(String.fromCharCode(...bytes.subarray(i,i+16384)));
+ return btoa(parts.join(''));
+}
+onAuthor('v4MixCompose',async()=>{
+ if(!field('v4MixRights').checked)throw new Error('Confirm audio rights and mix processing');
+ const pid=currentPid(),files={intro:field('v4MixIntro').files[0],bed:field('v4MixBed').files[0],outro:field('v4MixOutro').files[0]};
+ const data={project_id:pid,assets:{},speech_peak:Number(val('v4MixSpeech')),bed_peak:Number(val('v4MixMusic')),duck_percent:Number(val('v4MixDuck')),target_lufs:val('v4MixTarget')===''?null:Number(val('v4MixTarget')),compress_ratio:Number(val('v4MixRatio')),compress_threshold:Number(val('v4MixThreshold')),rights:true};
+ authorConsent();field('v4MixRights').checked=false;
+ for(const role of Object.keys(files))if(files[role])data.assets[role]=await encodeWav(files[role],(role==='bed'?120:30)*32000+65536);
+ if(pid!==currentPid())throw new Error('Project selection changed; reconfirm mix');
+ out.textContent=JSON.stringify(await send('/api/mix-compose?consent=YES',data),null,2);await refresh();
+});
 onAuthor('v4TurnImport',()=>{if(!field('v4TurnRights').checked)throw new Error('Confirm matching dialogue and rights');field('v4TurnRights').checked=false;return authorFile('audio-turn',currentPid(),field('v4TurnWav').files[0],true,'&unit='+encodeURIComponent(val('v4TurnId').trim()))});
 onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout');if(!file)return author('studio-configure',{project_id:currentPid(),layout},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout))});
 onAuthor('v4StudioStatus',()=>author('studio-status',{project_id:currentPid()}));
@@ -316,7 +344,7 @@ if(!files.length)throw new Error('Select WAVs');await upload(files,'voice')}catc
 
 def serve(root:Path,port:int=7860,*,open_browser:bool=False):
     if type(port)!=int or not 1024<=port<=65535:raise ValueError("Private loopback port 1024..65535")
-    from . import model_setup_plan,audio_diagnostics
+    from . import model_setup_plan,audio_diagnostics,dashboard_mix
     root=workspace_path(root);root.mkdir(parents=True,exist_ok=True)
     token=secrets.token_hex(32)
     status={"phase":"idle","command":None,"result":None,"progress":None,"elapsed_seconds":0}
@@ -373,8 +401,17 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                         active_stop.set();status["stop_requested"]=True;accepted=True
                 return self._json(202 if accepted else 409,{"stop_requested":accepted,"note":"Current action is not forcibly interrupted"})
             stop_event=threading.Event()
-            if url.path in ("/api/action","/api/project-create","/api/author","/api/author-file","/api/review-import"):
-                if url.path=="/api/review-import":
+            if url.path in ("/api/action","/api/project-create","/api/author","/api/author-file","/api/review-import","/api/mix-compose"):
+                if url.path=="/api/mix-compose":
+                    if not 1<=size<=dashboard_mix.LIMIT or self.headers.get("Content-Type")!="application/json":return self._json(400,{"error":"Invalid bounded mix request"})
+                    if query.get("consent",[""])[0]!="YES":return self._json(403,{"error":"Explicit mix consent required"})
+                    try:
+                        self.connection.settimeout(20);raw=self.rfile.read(size)
+                        if len(raw)!=size:raise ValueError("Incomplete mix request")
+                        data=dashboard_mix.parse(raw)
+                    except (ValueError,OSError) as err:return self._json(400,{"error":str(err)})
+                    command="mix-compose";selected=lambda:dashboard_mix.run(root,data,acknowledgment=dashboard_mix.ACK)
+                elif url.path=="/api/review-import":
                     pid=query.get("project_id",[""])[0];kind=query.get("kind",[""])[0]
                     if not ID_RE.fullmatch(pid) or kind not in dashboard_review.KINDS or not 1<=size<=dashboard_review.LIMIT or self.headers.get("Content-Type")!="application/octet-stream":return self._json(400,{"error":"Invalid review upload"})
                     if query.get("consent",[""])[0]!="YES":return self._json(403,{"error":"Explicit review import consent required"})
@@ -427,7 +464,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                 else:
                     if size!=0:return self._json(400,{"error":"Action body must be empty"})
                     command=query.get("cmd",[""])[0]
-                if url.path in ("/api/project-create","/api/author","/api/author-file","/api/review-import"):pass
+                if url.path in ("/api/project-create","/api/author","/api/author-file","/api/review-import","/api/mix-compose"):pass
                 elif command in dashboard_actions.ACTIONS:
                     pid=query.get("project_id",[""])[0]
                     if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})

@@ -120,3 +120,5 @@ Corrective note: graphical authoring CI 45487275746 completed 6/6. Inference CI 
 - [ ] Verify batch 29 packaging and batch 30 CI. Graphical mix controls, device preflight, actual model inference, noise reduction and dynamic true-peak limiting remain pending.
 
 Batch 30 adds CLI/browser voice preflight and read-only device checklist, plus browser per-turn audio diagnostics. New CI pending. Real model inference, physical acceptance and browser interaction remain pending. See V4_BATCH30.md.
+
+Batch 30 also implements graphical local mix composition with bounded WAV inputs, compression, ducking and optional static loudness target. Total 157 authored regression cases across the three commits; CI pending. Actual browser and Windows/model acceptance remain open. See V4_BATCH30.md.
