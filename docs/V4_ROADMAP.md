@@ -14,3 +14,11 @@ Current limitations: no physical desktop access, no genuine pretrained model run
 ## Confirmed expanded scope
 
 See [V4_REQUIREMENTS.md](V4_REQUIREMENTS.md) for the user's confirmed personal-use scope, and [AI_PROVIDERS.md](AI_PROVIDERS.md) for the initial free provider and episode outline implementation. This is independent of the fixed V3 source pipeline; no automatic conversion or premature rendering is allowed.
+
+## Execution sequence after confirmed scope
+1. Setup and free text provider foundation — CI verified.
+2. Private project storage and DPAPI credentials — core CI passed; clean packaging pending at last observation.
+3. Bounded source ingestion — implemented, CI pending.
+4. Chunked full dialogue generation and resume, then multi-source research and citation verification.
+5. Character/voice profiles, actual multilingual media compatibility, generalized signed source, layout rendering, orchestration.
+6. Physical Windows acceptance and V4 release. Track evidence in [V4_TRACKER.md](V4_TRACKER.md).

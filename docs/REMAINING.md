@@ -42,3 +42,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Validate V4 free-provider APIs against real owner-managed free keys and trusted installed Ollama model; synthetic fixtures do not prove external availability. Implement remaining generalized V4 project/script/media requirements in V4_REQUIREMENTS.md.
 
 - [ ] Verify V4 project/DPAPI CI and real Windows credentials; implement document/URL/custom-script ingestion and chunked script generation. Current project manager stores topic outlines only.
+
+- [ ] Validate bounded source ingestion CI and real public HTTPS/PDF/DOCX sources; implement large/multiple-source ingestion, verified live research, full chunked dialogue generation and timed custom script import. See V4_TRACKER.md for consolidated status.

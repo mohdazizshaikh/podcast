@@ -22,3 +22,6 @@ The fixed V3 pipeline and stable-v3.7 branch remain supported. AI text engines a
 
 ## Increment 2 — private projects and keys
 Implemented isolated immutable topic request/outline storage, project inventory, CLI planning, dashboard listing, Windows current-user DPAPI default and per-project encrypted keys, with environment fallback. Persistent cloud consent is forbidden. Generalized script/media and non-topic input ingestion are still pending. See V4_PROJECTS.md.
+
+## Increment 3 — bounded source ingestion
+Implemented one immutable source attachment per V4 project, PDF text (optional parser), DOCX/TXT/Markdown, custom script reference text and explicit public HTTPS page retrieval. Source hashes bind the outline. Live research, large/multiple sources, OCR and timed script import remain pending. See V4_INGESTION.md and V4_TRACKER.md.

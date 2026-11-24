@@ -276,3 +276,5 @@ Stable V3 remains on [stable-v3.7](https://github.com/mohdazizshaikh/podcast/tre
 The first generalized planning increment supports topic-based outlines for 1–10 presenters and 1–60 target minutes. See [confirmed requirements](docs/V4_REQUIREMENTS.md) and [free AI provider setup](docs/AI_PROVIDERS.md). Cloud text is opt-in, Gemini requires a confirmed unbilled Free Tier project, and Ollama is limited to known installed under-3B models. No general V4 media rendering or research claim yet.
 
 V4 private project storage and Windows encrypted default/project API keys: see [V4 project guide](docs/V4_PROJECTS.md). CLI creates and plans projects; dashboard lists them. Existing V3 media pipeline remains separate.
+
+V4 bounded URL/PDF/DOCX/text/custom-script source ingestion: [guide](docs/V4_INGESTION.md). See [current project tracking](docs/V4_TRACKER.md) for code, CI and real-world acceptance status.

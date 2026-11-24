@@ -10,7 +10,8 @@ requires-python = ">=3.10"
 dependencies = ["Pillow>=10,<13"]
 
 [project.optional-dependencies]
-test = ["pytest>=8,<10"]
+test = ["pytest>=8,<10", "pypdf>=5,<8"]
+documents = ["pypdf>=5,<8"]
 tts = ["edge-tts>=7,<9"]
 kokoro = ["kokoro-onnx>=0.4,<1", "misaki>=0.9,<1"]
 

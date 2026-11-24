@@ -29,6 +29,12 @@ def parse(argv=None):
     subs.add_parser("project-list",help="List private V4 planning projects")
     show=subs.add_parser("project-show")
     show.add_argument("--project-id",required=True)
+    ingest=subs.add_parser("project-import-source",help="Import one bounded private document or explicit public HTTPS source")
+    ingest.add_argument("--project-id",required=True)
+    item=ingest.add_mutually_exclusive_group(required=True)
+    item.add_argument("--file",type=Path)
+    item.add_argument("--url")
+    ingest.add_argument("--allow-web-fetch",action="store_true")
     outline=subs.add_parser("project-plan")
     outline.add_argument("--project-id",required=True)
     outline.add_argument("--allow-cloud-text",action="store_true")
@@ -185,13 +191,14 @@ def execute(a)->dict:
     root=a.workspace.expanduser().resolve()
     action=a.operation
     if action=="doctor":return doctor(root)
-    if action in ("project-create","project-list","project-show","project-plan","key-store","key-remove","key-status"):
+    if action in ("project-create","project-list","project-show","project-plan","project-import-source","key-store","key-remove","key-status"):
         from . import projects,episode_plan,credentials
         # Use unresolved user path so project manager can reject reparse points.
         private=a.workspace.expanduser().absolute()
         if action=="project-create":return projects.create(private,episode_plan.load_request(a.request))
         if action=="project-list":return projects.list_projects(private)
         if action=="project-show":return projects.inspect(private,a.project_id)
+        if action=="project-import-source":return projects.import_source(private,a.project_id,path=a.file,url=a.url,allow_web_fetch=a.allow_web_fetch)
         if action=="key-status":return credentials.status(private,pid=a.project_id)
         if action=="key-store":return credentials.store(private,a.provider,credentials.prompt_key(a.provider),pid=a.project_id)
         if action=="key-remove":return credentials.remove(private,a.provider,pid=a.project_id)

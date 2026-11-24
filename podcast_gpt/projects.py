@@ -14,6 +14,7 @@ ID_RE=re.compile(r"[0-9a-f]{32}")
 FOLDER="v4-projects"
 REQUEST="request.json"
 PLAN="outline.json"
+EVIDENCE="input-evidence.json"
 LOCK=".project-exclusive.lock"
 
 
@@ -88,15 +89,54 @@ def load(root:Path,pid:str):
     return episode_plan.validate_request(source.read_json(folder/REQUEST,64_000))
 
 
+def read_evidence(folder,req):
+    from . import ingestion
+    p=folder/EVIDENCE
+    if not p.exists() and not p.is_symlink():return None
+    _plain(p,directory=False)
+    if req["input_kind"]=="topic":raise ValueError("Unexpected source evidence for topic")
+    wrapper=source.read_json(p,100_000)
+    if wrapper.get("request_sha256")!=source.json_digest(req):
+        raise ValueError("Source evidence request binding differs")
+    value=ingestion.validate(wrapper.get("evidence"),req["input_kind"])
+    if wrapper.get("evidence_sha256")!=source.json_digest(value):
+        raise ValueError("Source evidence hash differs")
+    return value
+
+
+def import_source(root,pid,**options):
+    from . import ingestion
+    folder=project(root,pid)
+    with exclusive(folder):
+        req=load(root,pid)
+        for name in (PLAN,EVIDENCE):
+            p=folder/name
+            if p.exists() or p.is_symlink():raise ValueError("Existing source/outline cannot be overwritten")
+        evidence=ingestion.extract(req["input_kind"],**options)
+        if load(root,pid)!=req:raise ValueError("Project request changed during source import")
+        source.atomic_json(folder/EVIDENCE,{"request_sha256":source.json_digest(req),
+            "evidence_sha256":source.json_digest(evidence),"evidence":evidence},new=True)
+        return {"project_id":pid,"stage":"source_imported","input_kind":evidence["kind"],
+                "text_characters":len(evidence["text"]),"raw_sha256":evidence["raw_sha256"],
+                "text_sha256":evidence["text_sha256"],"live_research_performed":False}
+
+
 def inspect(root:Path,pid:str):
     folder=project(root,pid)
     req=load(root,pid)
     result={"project_id":pid,"request":req,"stage":"request_saved","publication_approved":False}
+    evidence=read_evidence(folder,req)
+    binding=source.json_digest(evidence) if evidence is not None else None
+    if evidence is not None:
+        result.update(stage="source_imported",source={"kind":evidence["kind"],"locator":evidence["locator"],"text_sha256":evidence["text_sha256"],"text_characters":len(evidence["text"])})
     p=folder/PLAN
     if p.exists() or p.is_symlink():
         _plain(p,directory=False)
         saved=source.read_json(p,200_000)
-        if saved.get("schema")!=1 or saved.get("request_sha256")!=source.json_digest(req):
+        legacy=saved.get("schema")==1 and req["input_kind"]=="topic" and binding is None
+        if (not legacy and (saved.get("schema")!=2 or saved.get("evidence_sha256")!=binding)
+                or saved.get("request_sha256")!=source.json_digest(req)
+                or (req["input_kind"]!="topic" and evidence is None)):
             raise ValueError("Saved outline does not match the project request")
         value=episode_plan.validate_plan(saved.get("outline"),req)
         if saved.get("outline_sha256")!=source.json_digest(value):
@@ -130,12 +170,20 @@ def generate_outline(root:Path,pid:str,**options):
         req=load(root,pid)
         dest=folder/PLAN
         if dest.exists() or dest.is_symlink():raise ValueError("Saved outline exists; create a new project for another version")
-        result=episode_plan.plan(req,**options)
-        if load(root,pid)!=req:raise ValueError("Project request changed while planning")
+        evidence=read_evidence(folder,req)
+        if req["input_kind"]!="topic" and evidence is None:
+            raise ValueError("Import source evidence before planning")
+        if evidence is not None:
+            result=episode_plan.plan(req,evidence=evidence,**options)
+        else:
+            result=episode_plan.plan(req,**options)
+        if load(root,pid)!=req or read_evidence(folder,req)!=evidence:
+            raise ValueError("Project request or source evidence changed while planning")
         value=episode_plan.validate_plan(result["result"],req)
         provider=result["provider"]
         if provider not in ("openrouter","gemini","ollama"):raise ValueError("Unknown provider")
-        source.atomic_json(dest,{"schema":1,"request_sha256":source.json_digest(req),
+        source.atomic_json(dest,{"schema":2,"request_sha256":source.json_digest(req),
+            "evidence_sha256":source.json_digest(evidence) if evidence is not None else None,
             "outline_sha256":source.json_digest(value),"outline":value,"provider":provider},new=True)
         return {"project_id":pid,"stage":"outline_saved","outline":value,"provider":provider,
                 "publication_approved":False,"rendering_compatibility_verified":False}
