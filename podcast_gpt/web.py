@@ -21,6 +21,7 @@ from .source import (SPEAKERS, SOURCE_FILE, init, build_source, prepare_chunks,
 from .media import render_static,audit_static
 from .neural import progress
 from .readiness import inspect as inspect_readiness
+from .setup_wizard import inspect as inspect_setup
 
 STYLE="""body{font:16px system-ui;background:#121b2b;color:#f4f7ff;margin:auto;max-width:1100px;padding:28px}
 header{padding:18px;border-bottom:1px solid #53627c}.panel{padding:18px;margin:18px 0;border:1px solid #4c5a70;border-radius:12px}
@@ -38,6 +39,9 @@ def html_page(token:str)->str:
 <header><h1>Podcast GPT — Private Hindi Studio</h1>
 <p>Three human-authorized presenters, original 45 Hindi turns, true WAV sample provenance and CPU-only rendering.</p>
 <small>Localhost-only. Your portraits, voices and rendered media stay on your computer and are never served over HTTP. Online TTS and real SadTalker require separate explicit CLI consent.</small></header>
+<section class="panel"><h2>0. V4 Smart setup — hardware and model readiness</h2>
+<button data-action="setup-wizard">Inspect hardware, storage and installed app packages</button>
+<p><small>For selecting existing local AI model files and explicitly probing a trusted model interpreter, run SMART_SETUP_WINDOWS.bat. No model downloads or external executable paths are accepted over HTTP.</small></p></section>
 <section class="panel"><h2>1. Original 45-turn episode</h2>
 <button data-action="init">Create NEW original 45-turn project</button>
 <button data-action="doctor">Check tools</button>
@@ -101,6 +105,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
     lock=threading.Lock()
     state_lock=threading.Lock()
     actions={"init":lambda:init(root),"doctor":lambda:doctor(root),
+             "setup-wizard":lambda:inspect_setup(root),
              "build-source":lambda:build_source(root),
              "prepare-chunks":lambda:prepare_chunks(root),
              "render-static":lambda:render_static(root),

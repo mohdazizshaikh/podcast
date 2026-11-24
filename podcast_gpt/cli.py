@@ -24,6 +24,13 @@ def parse(argv=None):
             cmd.add_argument("--port",type=int,default=7860)
             cmd.add_argument("--open-browser",action="store_true",
                              help="Open default browser only after successful local server bind")
+    setup=subs.add_parser("setup-wizard",help="Unified V4 hardware and local model setup inventory")
+    setup.add_argument("--interactive",action="store_true")
+    setup.add_argument("--kokoro-model",type=Path)
+    setup.add_argument("--kokoro-voices",type=Path)
+    setup.add_argument("--sadtalker-root",type=Path)
+    setup.add_argument("--sadtalker-python",type=Path)
+    setup.add_argument("--probe-interpreter",action="store_true",help="Explicitly allow selected trusted Python version probe")
     full_review=subs.add_parser("record-full-review",help="Record all 45 manually reviewed turn observations")
     full_review.add_argument("--acknowledgment",required=True)
     recover=subs.add_parser("archive-failed-attempt",help="Preserve one stopped model attempt in a private archive")
@@ -155,6 +162,17 @@ def execute(a)->dict:
     root=a.workspace.expanduser().resolve()
     action=a.operation
     if action=="doctor":return doctor(root)
+    if action=="setup-wizard":
+        from . import setup_wizard
+        if a.interactive:
+            if any((a.kokoro_model,a.kokoro_voices,a.sadtalker_root,a.sadtalker_python,a.probe_interpreter)):
+                raise ValueError("Use interactive wizard OR explicit model path options")
+            try:return setup_wizard.interactive(root)
+            except (EOFError,KeyboardInterrupt):
+                raise ValueError("Setup wizard cancelled; no model inference or downloads")
+        return setup_wizard.inspect(root,kokoro_model=a.kokoro_model,kokoro_voices=a.kokoro_voices,
+                  sadtalker_root=a.sadtalker_root,sadtalker_python=a.sadtalker_python,
+                  probe_interpreter=a.probe_interpreter)
     from . import source,media,neural,review
     if action=="init":return {"original_project":source.init(root)}
     if action=="build-source":return source.build_source(root)

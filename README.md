@@ -266,3 +266,7 @@ For the separate SadTalker legacy CPU environment, see [guided Windows CPU insta
 ### Windows source-only ZIP candidate
 
 After all required CI jobs pass, the Windows packaging job builds and verifies a source-only ZIP, smoke-tests clean app setup and uploads the candidate and SHA256 to the successful Actions run. See [release candidate instructions](docs/RELEASE_CANDIDATE.md). Real model weights, private media and migration archives are excluded; this is not real model acceptance.
+
+### V4 Smart setup (development milestone 1)
+
+Stable V3 remains on [stable-v3.7](https://github.com/mohdazizshaikh/podcast/tree/stable-v3.7). Run SMART_SETUP_WINDOWS.bat after installing the application with START_PODCAST_WINDOWS.bat --setup-only, or use python -m podcast_gpt setup-wizard. The dashboard offers a read-only hardware/package inventory. Local model selection and explicit trusted interpreter probing are CLI only. No model installs or downloads occur. See [V4 roadmap](docs/V4_ROADMAP.md).

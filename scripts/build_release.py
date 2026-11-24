@@ -18,6 +18,7 @@ ROOT_FILES = frozenset((
     "START_PODCAST_WINDOWS.bat", "CONTINUE_FULL_HINDI_NEURAL.bat",
     "CHECK_SADTALKER_CPU.bat", "RUN_NEURAL_CPU.bat",
     "GENERATE_KOKORO_HINDI_CPU.bat", "REVIEW_THREE_PRESENTER_PILOT.bat",
+    "SMART_SETUP_WINDOWS.bat",
 ))
 MANIFEST = "RELEASE_MANIFEST.json"
 REQUIRED = ROOT_FILES | {"podcast_gpt/__init__.py","podcast_gpt/__main__.py",

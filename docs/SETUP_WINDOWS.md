@@ -66,3 +66,7 @@ For installation diagnostics, run START_PODCAST_WINDOWS.bat --setup-only from CM
 ### CPU session verification efficiency
 
 Within one exclusive CPU session, unchanged preview bytes with the same SHA256, source binding and signed duration reuse an in-memory decode result. Every verification pass still hashes each MP4, validates sidecars, checks exact source PCM and validates checkpoint consistency. Newly produced or changed bytes are independently decoded. The baseline and final audit remain fresh, and public PROGRESS/AUDIT commands never consume the session cache. No persisted cache or hardware speed guarantee. The session refuses unexpected source/preview changes instead of advancing its checkpoint.
+
+### V4 Smart setup inventory
+
+Run SMART_SETUP_WINDOWS.bat after START_PODCAST_WINDOWS.bat --setup-only. Enter existing local model paths, or skip optional engines. Only enter PROBE for a trusted SadTalker Python executable. Alternatively run python -m podcast_gpt setup-wizard --help. This initial wizard does not install optional packages, download weights or persist model paths. Use the existing model installation guides for missing prerequisites. The dashboard action checks hardware/storage/packages only, without accepting external executable paths.

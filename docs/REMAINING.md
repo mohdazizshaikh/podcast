@@ -36,3 +36,5 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 - [ ] Verify the native setup-only launcher and legacy Windows JSON output in clean ZIP CI, then run normal browser startup on the physical Windows desktop.
 
 - [ ] Measure real CPU-session performance on the user's hardware after the in-memory hash-bound verification optimization; tests establish decoder call reduction, not model speedup or real lip-sync quality.
+
+- [ ] V4 roadmap: verify setup inventory CI, implement explicit guided dependency installation and configuration, then perform physical Windows model and pilot testing. See V4_ROADMAP.md.
