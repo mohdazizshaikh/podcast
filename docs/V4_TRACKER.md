@@ -30,13 +30,14 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Local profile-based portrait preparation brief | Implemented | 6/6 CI 45482554584; no image synthesis |
 | Authorized portrait attachment as immutable profile revision | Implemented | 6/6 CI 45483234208; no image inference |
 | Explicit selected reviewed prior-episode continuity snapshot for local drafting | Implemented | 6/6 CI 45492395979; no automatic memory capture or real quality verification |
-| AI portrait creation and automatic longitudinal memory | Not implemented in V4 | Pending |
+| Explicit local CPU Stable Diffusion portrait candidate generation | Implemented | New CI pending; fake renderer only, real model setup/quality pending |
+| Automatic longitudinal memory | Not implemented in V4 | Pending |
 | V4 local Hindi Kokoro adapter with preset/model provenance | Done | 6/6 CI run 45456602766 (fake model fixture) |
 | V4 local CPU SadTalker pilot, source-bound clips and reviewed batch | Done | 6/6 CI 45458379123 (synthetic model runner) |
 | Local eSpeak multilingual fallback and installed language inventory | Done | 6/6 CI 45462475819 (fake executable) |
 | Kokoro Spanish/French/Italian/Brazilian Portuguese expansion | Implemented | 6/6 CI 45481266847 (mock inference) |
 | English US/UK Kokoro frontend and dependency group | Implemented | 6/6 CI 45482554584; actual voices unverified |
-| Mandarin Kokoro v1.0 frontend and optional dependency group | Implemented | CI 45494573255 five core jobs passed; packaging running at check; mocked frontend only |
+| Mandarin Kokoro v1.0 frontend and optional dependency group | Implemented | 6/6 CI 45494573255; mocked frontend only |
 | Japanese neural frontend and Edge adapter | Not implemented in V4 | Pending |
 | Selected-format neural candidate composition, measured SRT and structural audit | Done | 6/6 CI 45458841874 (short synthetic fixture exports) |
 | Full candidate-specific human video QA | Done | 6/6 CI run 45461563645 |
@@ -62,17 +63,17 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Structured verbatim timed custom script import | Implemented | Corrective CI 45488657835 6/6; knowledge mode and existing size/timing limits |
 | Mixed neural studio export, shifted SRT, separate QA and recovery | Done | 6/6 CI 45484813520; synthetic only |
 | Historical neural-stage ETA with matched completed timings | Implemented | 6/6 CI 45484187245; no live subprocess progress |
-| Browser authorized turn WAV, studio settings, continuity snapshot and one-action free-policy cloud drafting | Implemented | New CI pending; real browser/cloud acceptance pending |
-| Expanded 159-case compatibility/regression coverage | Authored | CI 45494573255 five core jobs passed at check |
-| Optional deterministic speech compression and exact mix audit | Implemented | New CI pending; 135 test cases authored; no dynamic true-peak limiter/denoising |
-| Static project voice preflight, device acceptance checklist and browser per-turn diagnostics | Implemented | New CI pending; no physical certification |
-| Graphical bounded audio mix composition | Implemented | New CI pending; 19 additional test cases; actual browser interaction pending |
+| Browser authorized turn WAV, studio settings, continuity snapshot and one-action free-policy cloud drafting | Implemented | 6/6 CI 45494573255; real browser/cloud acceptance pending |
+| Expanded 159-case compatibility/regression coverage | Authored | 6/6 CI 45494573255 |
+| Optional deterministic speech compression and exact mix audit | Implemented | 6/6 combined CI 45495891248; 135 test cases authored; no dynamic true-peak limiter/denoising |
+| Static project voice preflight, device acceptance checklist and browser per-turn diagnostics | Implemented | 6/6 combined CI 45495891248; no physical certification |
+| Graphical bounded audio mix composition | Implemented | 6/6 combined CI 45495891248; 19 additional test cases; actual browser interaction pending |
 | Full dashboard, automatic/manual orchestration, ETA | Partial | Overview/playback, authoring, explicit bounded local inference, research and live task status; review import and cooperative stop; explicit free-policy cloud drafting (keys CLI-only); live model ETA pending |
 | Real Windows model run and acceptance | Not verified | Local user hardware required |
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify batch 29 packaging and batch 30 CI. Next actual model setup/pilot, Japanese offline resource setup, local portrait inference, dynamic limiting/denoising, broader research, actual browser and physical Windows acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify batch 31 CI. Next actual model setup/pilot, Japanese offline resource setup, real portrait inference, dynamic limiting/denoising, broader research, actual browser and physical Windows acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

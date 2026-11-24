@@ -227,6 +227,14 @@ def parse(argv=None):
         if name=="project-fact-review-record":fact.add_argument("--acknowledgment",required=True)
     portrait=subs.add_parser("character-portrait-brief")
     portrait.add_argument("--character-id",required=True)
+    for name in ("character-portrait-preflight","character-portrait-generate"):
+        pg=subs.add_parser(name)
+        pg.add_argument("--character-id",required=True)
+        pg.add_argument("--model",type=Path,required=True)
+        if name=="character-portrait-generate":
+            pg.add_argument("--seed",type=int,default=42)
+            pg.add_argument("--steps",type=int,default=20)
+            pg.add_argument("--acknowledgment",required=True)
     studio=subs.add_parser("project-studio-configure")
     studio.add_argument("--project-id",required=True)
     studio.add_argument("--layout",choices=("focus","grid"),required=True)
@@ -567,6 +575,11 @@ def execute(a)->dict:
         if action=="project-fact-review-template":return fact_review.create(private,a.project_id)
         if action=="project-fact-review-record":return fact_review.record(private,a.project_id,acknowledgment=a.acknowledgment)
         return fact_review.inspect(private,a.project_id)
+    if action in ("character-portrait-preflight","character-portrait-generate"):
+        from . import portrait_local
+        private=a.workspace.expanduser().absolute()
+        if action=="character-portrait-preflight":return portrait_local.inspect(private,a.character_id,a.model)
+        return portrait_local.generate(private,a.character_id,model=a.model,seed=a.seed,steps=a.steps,acknowledgment=a.acknowledgment)
     if action=="character-portrait-brief":
         from . import portrait_brief
         return portrait_brief.create(a.workspace.expanduser().absolute(),a.character_id)

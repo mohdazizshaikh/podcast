@@ -39,3 +39,5 @@ Authorized portrait attachment can create a new character version directly from 
 The localhost dashboard supports character profile creation/revision, authorized portrait attachment and immutable cast selection; see V4_DASHBOARD_AUTHORING.md.
 
 Explicit selected prior human-reviewed dialogue can now be frozen for local-only continuity drafting with matching immutable character versions (V4_NORMALIZATION_CONTINUITY.md). No automatic longitudinal capture.
+
+Batch 29 and 30 CI completed successfully (45494573255, 45495891248 latest combined: 6/6 each). Batch 31 adds explicitly consented local CPU portrait candidate generation with safetensors inventory and immutable candidate receipt; new CI pending. Real model setup, physical acceptance and portrait quality remain unverified. See docs/V4_BATCH31.md (repository-relative).
