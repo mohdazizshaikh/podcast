@@ -71,7 +71,7 @@ def parse(argv=None):
     visual.add_argument("--mode",choices=("edit","review"),required=True)
     for name in ("dependency-plan","dependency-install"):
         dep=subs.add_parser(name)
-        dep.add_argument("--group",choices=("documents","kokoro","kokoro-english","kokoro-mandarin"),required=True)
+        dep.add_argument("--group",choices=("documents","kokoro","kokoro-english","kokoro-mandarin","kokoro-japanese"),required=True)
         if name=="dependency-install":dep.add_argument("--acknowledgment",required=True)
     auto=subs.add_parser("project-auto-step")
     auto.add_argument("--project-id",required=True)
@@ -226,6 +226,7 @@ def parse(argv=None):
     coverage.add_argument("--project-id",required=True)
     discover.add_argument("--allow-web-search",action="store_true")
     subs.add_parser("kokoro-language-catalog")
+    subs.add_parser("japanese-resource-status")
     for name in ("project-fact-review-template","project-fact-review-record","project-fact-review-status"):
         fact=subs.add_parser(name)
         fact.add_argument("--project-id",required=True)
@@ -588,6 +589,9 @@ def execute(a)->dict:
         private=a.workspace.expanduser().absolute()
         if action=="character-portrait-preflight":return portrait_local.inspect(private,a.character_id,a.model)
         return portrait_local.generate(private,a.character_id,model=a.model,seed=a.seed,steps=a.steps,acknowledgment=a.acknowledgment)
+    if action=="japanese-resource-status":
+        from . import japanese_resources
+        return japanese_resources.inspect()
     if action=="character-portrait-brief":
         from . import portrait_brief
         return portrait_brief.create(a.workspace.expanduser().absolute(),a.character_id)

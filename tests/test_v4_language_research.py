@@ -14,7 +14,7 @@ def test_language_catalog_and_mismatch():
     assert langs.preset({"engine":"kokoro","language":"Spanish","preset":"ef_dora"},"es")=="ef_dora"
     assert langs.language("English")=="en-us"
     assert langs.language("British English")=="en-gb"
-    with pytest.raises(ValueError):langs.language("Japanese")
+    assert langs.language("Japanese")=="ja"
     with pytest.raises(ValueError):langs.preset({"engine":"kokoro","language":"French","preset":"ef_dora"},"fr-fr")
 
 

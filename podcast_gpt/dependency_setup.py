@@ -7,7 +7,8 @@ import sys
 ACK="I_AUTHORIZE_INSTALLING_FREE_OPTIONAL_PYTHON_PACKAGES"
 GROUPS={"documents":("pypdf>=5,<8",),"kokoro":("kokoro-onnx>=0.4,<1","misaki>=0.9,<1"),
         "kokoro-english":("kokoro-onnx>=0.4,<1","misaki[en]>=0.9,<1"),
-        "kokoro-mandarin":("kokoro-onnx>=0.4,<1","misaki[zh]>=0.9,<1")}
+        "kokoro-mandarin":("kokoro-onnx>=0.4,<1","misaki[zh]>=0.9,<1"),
+        "kokoro-japanese":("kokoro-onnx>=0.4,<1","misaki[ja]>=0.9,<1")}
 
 
 def plan(group):

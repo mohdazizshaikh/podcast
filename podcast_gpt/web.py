@@ -65,6 +65,15 @@ def html_page(token:str)->str:
 <h3>Character library and cast</h3>
 <button id="v4CharList">List characters</button>
 <label>Character ID / optional parent <input id="v4CharId" maxlength="32"></label><button id="v4CharShow">Load profile</button><button id="v4PortraitBrief">Show local portrait prompt</button>
+<label>Trusted local Stable Diffusion directory <input id="v4PortraitModel" maxlength="2048"></label>
+<label>Seed <input id="v4PortraitSeed" type="number" min="0" max="4294967295" value="42"></label>
+<label>Steps <input id="v4PortraitSteps" type="number" min="10" max="30" value="20"></label>
+<button id="v4PortraitPreflight">Check local portrait model</button>
+<label><input id="v4PortraitConsent" type="checkbox"> I trust this local model and authorize CPU generation and have usage rights</label>
+<button id="v4PortraitGenerate">Generate one portrait candidate</button>
+<label>Candidate ID <input id="v4PortraitCandidate" maxlength="32"></label><button id="v4PortraitAudit">Audit candidate and show local file path</button>
+<label><input id="v4CandidateRights" type="checkbox"> I inspected this exact local PNG and have usage rights</label><button id="v4CandidateAttach">Attach candidate as new character version</button>
+<button id="v4JapaneseResources">Check Japanese local dictionary resources</button>
 <label>Name <input id="v4CharName" maxlength="80"></label>
 <label>Personality <input id="v4CharPersonality" maxlength="600"></label>
 <label>Speaking style <input id="v4CharStyle" maxlength="600"></label>
@@ -202,7 +211,8 @@ function clearMedia(){manifest=null;let p=document.getElementById('v4Player');p.
 function showResult(status){
  if(status.phase!=='complete'||!status.result)return;
  let data=status.result;
- if(status.command==='author-character-create'||status.command==='author-portrait'){if(data.character_id)document.getElementById('v4CharId').value=data.character_id}
+ if(status.command==='author-portrait-generate'&&data.candidate_id)document.getElementById('v4PortraitCandidate').value=data.candidate_id;
+ if(status.command==='author-character-create'||status.command==='author-portrait'||status.command==='author-portrait-candidate-attach'){if(data.character_id)document.getElementById('v4CharId').value=data.character_id}
  if(status.command==='author-character-show'&&data.profile){let p=data.profile,v=p.voice_preferences;for(const [id,value] of Object.entries({v4CharName:p.name,v4CharPersonality:p.personality,v4CharStyle:p.speaking_style,v4CharAppearance:p.appearance,v4CharEngine:v.engine,v4CharLanguage:v.language,v4CharPreset:v.preset,v4CharNotes:v.style_notes}))document.getElementById(id).value=value}
  if(status.command==='author-cast-choices'&&data.project_id===document.getElementById('v4ProjectId').value.trim()){
   castPid=data.project_id;const area=document.getElementById('v4CastRows');area.replaceChildren();
@@ -262,6 +272,11 @@ function onAuthor(id,fn){field(id).addEventListener('click',async()=>{try{await 
 onAuthor('v4CharList',()=>author('character-list',{}));
 onAuthor('v4CharShow',()=>author('character-show',{character_id:val('v4CharId').trim()}));
 onAuthor('v4PortraitBrief',()=>author('portrait-brief',{character_id:val('v4CharId').trim()}));
+onAuthor('v4PortraitPreflight',()=>author('portrait-preflight',{character_id:val('v4CharId').trim(),model:val('v4PortraitModel')}));
+onAuthor('v4PortraitGenerate',()=>{if(!field('v4PortraitConsent').checked)throw new Error('Confirm model trust and usage rights');field('v4PortraitConsent').checked=false;return author('portrait-generate',{character_id:val('v4CharId').trim(),model:val('v4PortraitModel'),seed:Number(val('v4PortraitSeed')),steps:Number(val('v4PortraitSteps')),model_consent:true},true)});
+onAuthor('v4PortraitAudit',()=>author('portrait-candidate',{candidate_id:val('v4PortraitCandidate').trim()}));
+onAuthor('v4CandidateAttach',()=>{if(!field('v4CandidateRights').checked)throw new Error('Inspect exact candidate and confirm rights');field('v4CandidateRights').checked=false;return author('portrait-candidate-attach',{candidate_id:val('v4PortraitCandidate').trim(),rights:true},true)});
+onAuthor('v4JapaneseResources',()=>author('japanese-resources',{}));
 onAuthor('v4CharCreate',()=>author('character-create',{parent_id:val('v4CharId').trim()||null,profile:{name:val('v4CharName'),personality:val('v4CharPersonality'),speaking_style:val('v4CharStyle'),appearance:val('v4CharAppearance'),voice_preferences:{engine:val('v4CharEngine'),language:val('v4CharLanguage'),preset:val('v4CharPreset'),style_notes:val('v4CharNotes')}}},true));
 onAuthor('v4CastLoad',()=>author('cast-choices',{project_id:currentPid()}));
 onAuthor('v4CastAssign',()=>{if(castPid!==currentPid())throw new Error('Load cast choices for selected project');const mapping=Object.fromEntries(Array.from(field('v4CastRows').querySelectorAll('select'),s=>[s.dataset.speaker,s.value]));return author('cast-assign',{project_id:currentPid(),mapping},true)});

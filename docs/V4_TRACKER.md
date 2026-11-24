@@ -24,14 +24,15 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Safe incomplete-output archive (ten types) | Implemented | 6/6 CI 45484813520; synthetic tests, not all failure modes |
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
 | Explicit Wikipedia candidate discovery and source-bound optional human factual review | Implemented | 6/6 CI 45481266847 (offline fixtures) |
-| 17 allowlisted Wikipedia editions and exact citation-coverage report | Implemented | New CI pending; fixture network and review data |
+| 17 allowlisted Wikipedia editions and exact citation-coverage report | Implemented | 6/6 CI 45498392552; fixture network and review data |
 | Broad web search, automated semantic claim verification and corroboration | Not implemented | Pending |
 | Reusable character profiles, authorized PNG library and cast binding | Done | 6/6 CI run 45453165135 (synthetic PNGs) |
 | Opt-in cast-bound personality-aware dialogue prompts | Done | 6/6 CI 45462475819 (mock provider) |
 | Local profile-based portrait preparation brief | Implemented | 6/6 CI 45482554584; no image synthesis |
 | Authorized portrait attachment as immutable profile revision | Implemented | 6/6 CI 45483234208; no image inference |
 | Explicit selected reviewed prior-episode continuity snapshot for local drafting | Implemented | 6/6 CI 45492395979; no automatic memory capture or real quality verification |
-| Explicit local CPU Stable Diffusion portrait candidate generation | Implemented | New CI pending; fake renderer only, real model setup/quality pending |
+| Explicit local CPU Stable Diffusion portrait candidate generation | Implemented | 6/6 CI 45498392552; fake renderer only, real model setup/quality pending |
+| Browser portrait worker, preflight, candidate audit and explicit attachment | Implemented | New CI pending; real browser/CPU model pending |
 | Automatic longitudinal memory | Not implemented in V4 | Pending |
 | V4 local Hindi Kokoro adapter with preset/model provenance | Done | 6/6 CI run 45456602766 (fake model fixture) |
 | V4 local CPU SadTalker pilot, source-bound clips and reviewed batch | Done | 6/6 CI 45458379123 (synthetic model runner) |
@@ -39,7 +40,8 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Kokoro Spanish/French/Italian/Brazilian Portuguese expansion | Implemented | 6/6 CI 45481266847 (mock inference) |
 | English US/UK Kokoro frontend and dependency group | Implemented | 6/6 CI 45482554584; actual voices unverified |
 | Mandarin Kokoro v1.0 frontend and optional dependency group | Implemented | 6/6 CI 45494573255; mocked frontend only |
-| Japanese neural frontend and Edge adapter | Not implemented in V4 | Pending |
+| Japanese neural frontend with local resource gate | Implemented | New CI pending; actual dictionary/model execution unverified |
+| Edge adapter | Not implemented in V4 | Pending |
 | Selected-format neural candidate composition, measured SRT and structural audit | Done | 6/6 CI 45458841874 (short synthetic fixture exports) |
 | Full candidate-specific human video QA | Done | 6/6 CI run 45461563645 |
 | Safe stopped neural scratch archive | Done | 6/6 CI run 45461563645; other failure modes manual |
@@ -69,13 +71,13 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Optional deterministic speech compression and exact mix audit | Implemented | 6/6 combined CI 45495891248; 135 test cases authored; no dynamic true-peak limiter/denoising |
 | Static project voice preflight, device acceptance checklist and browser per-turn diagnostics | Implemented | 6/6 combined CI 45495891248; no physical certification |
 | Graphical bounded audio mix composition | Implemented | 6/6 combined CI 45495891248; 19 additional test cases; actual browser interaction pending |
-| Optional deterministic DC correction and soft low-level gate | Implemented | New CI pending; not intelligent denoising; actual listening pending |
+| Optional deterministic DC correction and soft low-level gate | Implemented | 6/6 CI 45498392552; not intelligent denoising; actual listening pending |
 | Full dashboard, automatic/manual orchestration, ETA | Partial | Overview/playback, authoring, explicit bounded local inference, research and live task status; review import and cooperative stop; explicit free-policy cloud drafting (keys CLI-only); live model ETA pending |
 | Real Windows model run and acceptance | Not verified | Local user hardware required |
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify batch 31 CI. Next actual model setup/pilot, Japanese offline resource setup, real portrait inference, dynamic limiting/denoising, broader research, actual browser and physical Windows acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify batch 32 CI. Next actual model setup/pilot, Japanese dictionary/model execution, real portrait inference, dynamic limiting/denoising, broader research, actual browser and physical Windows acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.

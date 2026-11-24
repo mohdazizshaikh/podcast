@@ -3,12 +3,12 @@ import json
 import re
 import tempfile
 from pathlib import Path
-from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script, continuity, studio_preview, v4_audio, dashboard_cloud, voice_preflight, device_acceptance, audio_diagnostics, research_coverage
+from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script, continuity, studio_preview, v4_audio, dashboard_cloud, voice_preflight, device_acceptance, audio_diagnostics, research_coverage, portrait_local, dashboard_portrait, japanese_resources
 
 JSON_LIMIT=32768
-READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief")
+READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","japanese-resources")
 ACTIONS=("character-list","character-show","character-create","cast-assign","cast-status","cast-choices",
-         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief")
+         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","portrait-generate","portrait-candidate-attach","japanese-resources")
 UPLOADS={"portrait":characters.MAX_PORTRAIT,"source":ingestion.MAX_FILE,"audio-turn":v4_audio.MAX_WAV,"studio-background":characters.MAX_PORTRAIT}
 ACK="I_AUTHORIZE_THIS_LOCAL_AUTHORING_ACTION"
 
@@ -49,6 +49,15 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
         result={"project_id":pid,"presenters":projects.load(root,pid)["presenters"],"cast":characters.status(root,pid)}
         if action=="cast-choices":result.update(characters.list_characters(root))
         return result
+    if action=="japanese-resources":
+        _keys(data,())
+        return japanese_resources.inspect()
+    if action=="portrait-preflight":
+        _keys(data,("character_id","model"))
+        return portrait_local.inspect(root,data["character_id"],_local_path(data["model"]))
+    if action=="portrait-candidate":
+        _keys(data,("candidate_id",))
+        return portrait_local.audit_candidate(root,data["candidate_id"])
     if action=="portrait-brief":
         _keys(data,("character_id",))
         return portrait_brief.create(root,data["character_id"])
@@ -68,6 +77,14 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
         if action=="device-acceptance":return device_acceptance.inspect(root,pid)
         return audio_diagnostics.inspect(root,pid,kind="master",per_turn=True)
     if acknowledgment!=ACK:raise ValueError("Explicit local authoring consent required")
+    if action=="portrait-generate":
+        _keys(data,("character_id","model","seed","steps","model_consent"))
+        if data["model_consent"] is not True:raise ValueError("Explicit portrait model consent required")
+        return dashboard_portrait.generate(root,data["character_id"],_local_path(data["model"]),data["seed"],data["steps"],acknowledgment=portrait_local.ACK)
+    if action=="portrait-candidate-attach":
+        _keys(data,("candidate_id","rights"))
+        if data["rights"] is not True:raise ValueError("Explicit reviewed portrait rights required")
+        return portrait_local.attach_candidate(root,data["candidate_id"],acknowledgment=characters.ACK)
     if action=="continuity-enable":
         _keys(data,("project_id","prior_project_id","turn_ids","local_only_consent"))
         if data["local_only_consent"] is not True:raise ValueError("Explicit local-only continuity consent required")

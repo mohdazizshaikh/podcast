@@ -113,3 +113,30 @@ def generate(root,cid,*,model,seed=42,steps=20,acknowledgment=None,renderer=None
                  "human_portrait_approved":False,"cast_changed":False,"publication_approved":False}
         source.atomic_json(attempt/"receipt.json",receipt,new=True)
         return {"candidate_id":attempt.name,"path":str(path),"receipt":receipt,"next_action":"Inspect the portrait yourself; use authorized portrait attach separately if suitable. No cast was modified."}
+
+
+def audit_candidate(root,candidate_id):
+    if not isinstance(candidate_id,str) or not projects.ID_RE.fullmatch(candidate_id):raise ValueError("Invalid portrait candidate ID")
+    parent=projects.base(root)/FOLDER;projects._plain(parent)
+    folder=parent/candidate_id;projects._plain(folder)
+    if {p.name for p in folder.iterdir()}!={"receipt.json","portrait.png"}:raise ValueError("Incomplete or unexpected portrait candidate files")
+    receipt=folder/"receipt.json";projects._plain(receipt,directory=False)
+    value=source.read_json(receipt,32000)
+    keys={"schema","character_id","profile_sha256","brief_sha256","model","portrait_sha256","seed","steps","dimensions","elapsed_seconds","test_fixture_only","human_portrait_approved","cast_changed","publication_approved"}
+    if not isinstance(value,dict) or set(value)!=keys or value["schema"]!=1 or type(value["test_fixture_only"]) is not bool or any(value[k] is not False for k in ("human_portrait_approved","cast_changed","publication_approved")):
+        raise ValueError("Invalid portrait candidate receipt")
+    brief=portrait_brief.create(root,value["character_id"])
+    if brief["profile_sha256"]!=value["profile_sha256"] or source.json_digest(brief)!=value["brief_sha256"]:
+        raise ValueError("Portrait character binding differs")
+    path=folder/"portrait.png"
+    info=characters._portrait_info(characters._read_file(path,characters.MAX_PORTRAIT))
+    if info["sha256"]!=value["portrait_sha256"] or [info["width"],info["height"]]!=value["dimensions"] or value["dimensions"]!=[512,512]:
+        raise ValueError("Portrait candidate integrity differs")
+    return {"candidate_id":candidate_id,"path":str(path),"receipt":value,"candidate_integrity_checked":True}
+
+
+def attach_candidate(root,candidate_id,*,acknowledgment):
+    if acknowledgment!=characters.ACK:raise ValueError("Explicit portrait rights acknowledgment required")
+    saved=audit_candidate(root,candidate_id)
+    if saved["receipt"]["test_fixture_only"]:raise ValueError("Synthetic portrait candidate cannot use production attachment")
+    return portrait_brief.attach(root,saved["receipt"]["character_id"],portrait=Path(saved["path"]),acknowledgment=acknowledgment)
