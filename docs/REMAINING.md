@@ -47,3 +47,6 @@ CI synthetic checks and short FFmpeg smoke are NOT genuine 10-minute SadTalker e
 
 - [x] Project/DPAPI and bounded ingestion CI: 6/6 each (45447184831, 45448095544); real user hardware/URL/API tests remain pending.
 - [ ] Verify V4 dialogue drafting CI; validate actual free-provider outputs, multilingual quality and timing. Implement human script review/revisions, live research/citations and generalized source/media rendering. Planned seconds are not actual audio duration.
+
+- [x] Script drafting CI verified 6/6 (45449334764), synthetic only.
+- [ ] Verify research snapshot/citation CI and real websites; implement automatic source discovery, semantic claim verification, human review and revisions. Exact excerpt match does not certify truth.

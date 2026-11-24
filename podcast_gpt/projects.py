@@ -129,14 +129,21 @@ def _inspect_planning(root:Path,pid:str):
     binding=source.json_digest(evidence) if evidence is not None else None
     if evidence is not None:
         result.update(stage="source_imported",source={"kind":evidence["kind"],"locator":evidence["locator"],"text_sha256":evidence["text_sha256"],"text_characters":len(evidence["text"])})
+    from . import research
+    pack=research.read_pack(folder,req)
+    research_binding=source.json_digest(pack) if pack is not None else None
+    if pack is not None:result.update(stage="research_captured",research=research.summary(pack))
     p=folder/PLAN
     if p.exists() or p.is_symlink():
         _plain(p,directory=False)
         saved=source.read_json(p,200_000)
-        legacy=saved.get("schema")==1 and req["input_kind"]=="topic" and binding is None
-        if (not legacy and (saved.get("schema")!=2 or saved.get("evidence_sha256")!=binding)
+        legacy=saved.get("schema")==1 and req["input_kind"]=="topic" and binding is None and pack is None
+        modern=(saved.get("schema")==2 and pack is None or
+                saved.get("schema")==3 and saved.get("research_sha256")==research_binding)
+        if (not legacy and (not modern or saved.get("evidence_sha256")!=binding)
                 or saved.get("request_sha256")!=source.json_digest(req)
-                or (req["input_kind"]!="topic" and evidence is None)):
+                or (req["input_kind"]!="topic" and evidence is None)
+                or (req["research_mode"]=="web" and pack is None)):
             raise ValueError("Saved outline does not match the project request")
         value=episode_plan.validate_plan(saved.get("outline"),req)
         if saved.get("outline_sha256")!=source.json_digest(value):
@@ -185,16 +192,20 @@ def generate_outline(root:Path,pid:str,**options):
         evidence=read_evidence(folder,req)
         if req["input_kind"]!="topic" and evidence is None:
             raise ValueError("Import source evidence before planning")
-        if evidence is not None:
-            result=episode_plan.plan(req,evidence=evidence,**options)
-        else:
-            result=episode_plan.plan(req,**options)
-        if load(root,pid)!=req or read_evidence(folder,req)!=evidence:
+        from . import research
+        pack=research.read_pack(folder,req)
+        if req["research_mode"]=="web" and pack is None:raise ValueError("Capture public research sources before planning")
+        extra={}
+        if evidence is not None:extra["evidence"]=evidence
+        if pack is not None:extra["research_pack"]=pack
+        result=episode_plan.plan(req,**extra,**options)
+        if load(root,pid)!=req or read_evidence(folder,req)!=evidence or research.read_pack(folder,req)!=pack:
             raise ValueError("Project request or source evidence changed while planning")
         value=episode_plan.validate_plan(result["result"],req)
         provider=result["provider"]
         if provider not in ("openrouter","gemini","ollama"):raise ValueError("Unknown provider")
-        source.atomic_json(dest,{"schema":2,"request_sha256":source.json_digest(req),
+        source.atomic_json(dest,{"schema":3 if pack is not None else 2,"request_sha256":source.json_digest(req),
+            **({"research_sha256":source.json_digest(pack)} if pack is not None else {}),
             "evidence_sha256":source.json_digest(evidence) if evidence is not None else None,
             "outline_sha256":source.json_digest(value),"outline":value,"provider":provider},new=True)
         return {"project_id":pid,"stage":"outline_saved","outline":value,"provider":provider,

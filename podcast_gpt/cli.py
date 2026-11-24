@@ -35,6 +35,12 @@ def parse(argv=None):
     item.add_argument("--file",type=Path)
     item.add_argument("--url")
     ingest.add_argument("--allow-web-fetch",action="store_true")
+    capture=subs.add_parser("project-research-capture",help="Capture 2–4 user-selected public HTTPS sources")
+    capture.add_argument("--project-id",required=True)
+    capture.add_argument("--url",action="append",required=True)
+    capture.add_argument("--allow-web-fetch",action="store_true")
+    research_status=subs.add_parser("project-research-status")
+    research_status.add_argument("--project-id",required=True)
     outline=subs.add_parser("project-plan")
     outline.add_argument("--project-id",required=True)
     outline.add_argument("--allow-cloud-text",action="store_true")
@@ -216,6 +222,11 @@ def execute(a)->dict:
         return projects.generate_outline(private,a.project_id,credentials=keys,
             allow_cloud_text=a.allow_cloud_text,confirm_gemini_free_project=a.confirm_gemini_free_project,
             offline_only=a.offline_only,local_model=a.ollama_model)
+    if action in ("project-research-capture","project-research-status"):
+        from . import research
+        private=a.workspace.expanduser().absolute()
+        if action=="project-research-status":return research.inspect(private,a.project_id)
+        return research.capture(private,a.project_id,a.url,allow_web_fetch=a.allow_web_fetch)
     if action in ("project-script-generate","project-script-status","project-script-finalize","project-script-show"):
         from . import script_generation,credentials
         private=a.workspace.expanduser().absolute()

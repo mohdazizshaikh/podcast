@@ -280,3 +280,5 @@ V4 private project storage and Windows encrypted default/project API keys: see [
 V4 bounded URL/PDF/DOCX/text/custom-script source ingestion: [guide](docs/V4_INGESTION.md). See [current project tracking](docs/V4_TRACKER.md) for code, CI and real-world acceptance status.
 
 V4 full dialogue drafting (1–60 planned minutes, 1–10 speakers), resumable checkpoints and final script JSON: [script generation guide](docs/V4_SCRIPT_GENERATION.md). See [master tracker](docs/V4_TRACKER.md) for latest verified status. No V4 media rendering or actual duration certification yet.
+
+V4 source-grounded research: explicit 2–4 public HTTPS pages and source-bound exact excerpt citations. [Research guide](docs/V4_RESEARCH.md); no automatic discovery or independent fact-checking yet.

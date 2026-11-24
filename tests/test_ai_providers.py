@@ -79,7 +79,7 @@ def test_strict_request_plan_validation_and_key_redaction(monkeypatch):
     bad=valid_plan(req);bad["sections"][0]["minutes"]=2
     with pytest.raises(ValueError):ep.validate_plan(bad,req)
     with pytest.raises(ValueError,match="requires imported source"):ep.plan({**req,"input_kind":"pdf"})
-    with pytest.raises(ValueError,match="not implemented"):ep.validate_request({**req,"research_mode":"web"})
+    with pytest.raises(ValueError,match="requires a captured research pack"):ep.plan({**req,"research_mode":"web"})
     with pytest.raises(ValueError):ep.validate_request({**req,"presenters":["Solo","solo"]})
     with pytest.raises(ValueError,match="under-3B"):ep.plan(req,local_model="qwen3:4b")
     monkeypatch.setenv("OPENROUTER_API_KEY","test-secret-key")

@@ -22,3 +22,5 @@ See [V4_REQUIREMENTS.md](V4_REQUIREMENTS.md) for the user's confirmed personal-u
 4. Chunked full dialogue drafting and resume — implemented, CI pending; see V4_SCRIPT_GENERATION.md. Next: multi-source research, citation verification and manual script review/revision.
 5. Character/voice profiles, actual multilingual media compatibility, generalized signed source, layout rendering, orchestration.
 6. Physical Windows acceptance and V4 release. Track evidence in [V4_TRACKER.md](V4_TRACKER.md).
+
+Dialogue drafting CI passed 6/6 (45449334764). Explicit multi-source research and excerpt citation matching implemented (new CI pending); next priorities human script review/revision, automated search discovery and character profiles. See V4_RESEARCH.md.

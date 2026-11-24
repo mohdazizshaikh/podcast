@@ -23,3 +23,5 @@ Install optional local PDF parser in the app virtual environment:
 - Source text is treated as untrusted reference data in the AI prompt. Prompt injection defenses are limited; outputs still need human review. Cloud planning requires --allow-cloud-text and transmits the imported text to the selected provider. No cloud key or text upload during local import; URL retrieval contacts the public site only. Do not import sensitive documents into cloud requests.
 
 Full script generation, live multi-source research, citations and general video rendering are not yet implemented.
+
+Separate multi-source research capture is now available for web-mode projects. See V4_RESEARCH.md for limits, explicit network consent and citation checks.

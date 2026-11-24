@@ -28,3 +28,6 @@ Implemented one immutable source attachment per V4 project, PDF text (optional p
 
 ## Increment 4 — resumable AI dialogue drafting
 Implemented 1–60 one-minute planning units from a verified outline, strict speaker and text validation, bounded 1–5 unit invocations, immutable source-bound checkpoints, resume and final script assembly. Planned seconds are not actual measured voice timing. Human approval, manual revisions, exact custom-script import and generalized media remain pending. See V4_SCRIPT_GENERATION.md and V4_TRACKER.md.
+
+## Increment 5 — bounded research evidence and citations
+Implemented explicit 2–4 public HTTPS source snapshots, immutable research pack, source-bound outline and script, and exact excerpt/source-ID validation. Automatic search discovery, semantic truth checking and independent human review remain pending. See V4_RESEARCH.md.
