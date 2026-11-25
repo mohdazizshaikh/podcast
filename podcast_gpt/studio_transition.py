@@ -46,6 +46,6 @@ def endpoint_graph(previous_frames,total,start,frames):
     tail=previous_frames-1
     # Rendered segments already have exact 25 fps frame counts. No resampling
     # before selection; loop a single frame and explicitly reset timestamps.
-    hold='loop=loop=-1:size=1:start=0,setpts=N/(25*TB),setsar=1,format=yuv420p'
+    hold='loop=loop=-1:size=1:start=0,setpts=N/(25*TB),fps=25,setsar=1,format=yuv420p'
     return (f'[0:v]trim=start_frame={tail}:end_frame={previous_frames},setpts=PTS-STARTPTS,{hold}[a];'
             f'[1:v]trim=start_frame=0:end_frame=1,setpts=PTS-STARTPTS,{hold}[b];'+_blend(total,start,frames))
