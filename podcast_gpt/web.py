@@ -160,6 +160,8 @@ def html_page(token:str)->str:
 <button id="v4TurnImport">Import one dialogue recording</button>
 <label>Studio layout <select id="v4StudioLayout"><option>focus</option><option>grid</option><option>spotlight</option></select></label>
 <label>Neural speaker camera <select id="v4StudioCamera"><option value="fixed">Fixed</option><option value="push-in">Subtle push-in</option><option value="pull-out">Pull-out</option><option value="smooth-push">Smooth push-in</option><option value="pan-left">Pan left</option><option value="pan-right">Pan right</option><option value="continuous-drift">Continuous horizontal drift</option><option value="continuous-breathe">Continuous gentle zoom</option></select></label>
+<label>Simulated listener framing (grid/spotlight) <select id="v4StudioListeners"><option value="static">Static portraits</option><option value="drift">Gentle drift</option><option value="breathe">Gentle zoom</option></select></label>
+<p>Listener motion is a crop effect, not a generated facial reaction. Static previews and pauses remain still.</p>
 <label>Optional local studio background PNG <input id="v4StudioBg" type="file" accept=".png"></label>
 <label><input id="v4StudioRights" type="checkbox"> I have rights to use the selected background</label>
 <button id="v4StudioSave">Save immutable studio settings</button><button id="v4StudioStatus">Inspect studio settings</button>
@@ -344,7 +346,7 @@ onAuthor('v4MixCompose',async()=>{
  out.textContent=JSON.stringify(await send('/api/mix-compose?consent=YES',data),null,2);await refresh();
 });
 onAuthor('v4TurnImport',()=>{if(!field('v4TurnRights').checked)throw new Error('Confirm matching dialogue and rights');field('v4TurnRights').checked=false;return authorFile('audio-turn',currentPid(),field('v4TurnWav').files[0],true,'&unit='+encodeURIComponent(val('v4TurnId').trim()))});
-onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout'),camera=val('v4StudioCamera');if(!file)return author('studio-configure',{project_id:currentPid(),layout,camera},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout)+'&camera='+encodeURIComponent(camera))});
+onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout'),camera=val('v4StudioCamera'),listener_motion=val('v4StudioListeners');if(!file)return author('studio-configure',{project_id:currentPid(),layout,camera,listener_motion},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout)+'&camera='+encodeURIComponent(camera)+'&listener_motion='+encodeURIComponent(listener_motion))});
 onAuthor('v4StudioStatus',()=>author('studio-status',{project_id:currentPid()}));
 onAuthor('v4ContinuitySave',()=>{if(!field('v4ContinuityConsent').checked)throw new Error('Explicit local continuity consent required');field('v4ContinuityConsent').checked=false;return author('continuity-enable',{project_id:currentPid(),prior_project_id:val('v4PriorId').trim(),turn_ids:val('v4PriorTurns').split(',').map(s=>s.trim()),local_only_consent:true},true)});
 onAuthor('v4ContinuityStatus',()=>author('continuity-status',{project_id:currentPid()}));
@@ -509,8 +511,8 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                             if not ID_RE.fullmatch(identifier):raise ValueError("Invalid target ID")
                             rights=self.headers.get("X-Portrait-Rights-Confirmed")=="YES"
                             command="author-"+kind
-                            unit=query.get("unit",[None])[0];layout=query.get("layout",[None])[0];camera=query.get("camera",["fixed"])[0]
-                            selected=lambda:dashboard_authoring.upload(root,kind,identifier,name,raw,acknowledgment=consent,rights=rights,unit=unit,layout=layout,camera=camera)
+                            unit=query.get("unit",[None])[0];layout=query.get("layout",[None])[0];camera=query.get("camera",["fixed"])[0];listener_motion=query.get("listener_motion",["static"])[0]
+                            selected=lambda:dashboard_authoring.upload(root,kind,identifier,name,raw,acknowledgment=consent,rights=rights,unit=unit,layout=layout,camera=camera,listener_motion=listener_motion)
                         else:
                             data=dashboard_authoring.parse(raw)
                             command="author-"+action

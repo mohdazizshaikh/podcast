@@ -10,7 +10,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-from . import projects, characters, source, media, studio_camera, studio_layout, v4_preview as preview, v4_master as master
+from . import projects, characters, source, media, studio_camera, studio_layout, studio_listeners, v4_preview as preview, v4_master as master
 
 CONFIG="studio-settings"
 FOLDER="studio-preview"
@@ -25,9 +25,11 @@ def _read(folder):
     projects._plain(path/"settings.json",directory=False)
     data=source.read_json(path/"settings.json",32000)
     fields={"schema","layout","background","request_sha256"}
-    if not isinstance(data,dict) or set(data) not in (fields,fields|{"camera"}) or data["schema"]!=1 or data["layout"] not in LAYOUTS:
+    if not isinstance(data,dict) or not fields<=set(data) or not set(data)<=fields|{"camera","listener_motion"} or data["schema"]!=1 or data["layout"] not in LAYOUTS:
         raise ValueError("Invalid studio settings")
     if "camera" in data and studio_camera.validate(data["camera"])=="fixed":raise ValueError("Fixed camera uses legacy studio settings")
+    if "listener_motion" in data:
+        if studio_listeners.validate(data["listener_motion"])=="static" or data["layout"]=="focus":raise ValueError("Invalid visible listener motion settings")
     expected={"settings.json"}
     raw=None
     if data["background"] is not None:
@@ -38,8 +40,10 @@ def _read(folder):
     return data,raw
 
 
-def configure(root,pid,*,layout,background=None,camera="fixed",acknowledgment=None):
+def configure(root,pid,*,layout,background=None,camera="fixed",listener_motion="static",acknowledgment=None):
     studio_camera.validate(camera)
+    studio_listeners.validate(listener_motion)
+    if listener_motion!="static" and layout=="focus":raise ValueError("Listener motion requires grid or spotlight layout")
     if layout not in LAYOUTS:raise ValueError("Choose focus, grid or spotlight studio layout")
     if background is not None and acknowledgment!=ACK:raise ValueError("Explicit background usage rights acknowledgment required")
     raw=characters._read_file(background,characters.MAX_PORTRAIT) if background is not None else None
@@ -53,6 +57,7 @@ def configure(root,pid,*,layout,background=None,camera="fixed",acknowledgment=No
             with (path/"background.png").open("xb") as h:h.write(raw)
         settings={"schema":1,"layout":layout,"background":info,"request_sha256":source.json_digest(req)}
         if camera!="fixed":settings["camera"]=camera
+        if listener_motion!="static":settings["listener_motion"]=listener_motion
         source.atomic_json(path/"settings.json",settings,new=True)
         return inspect_settings(root,pid)
 
@@ -92,7 +97,7 @@ def active_rect(indices,active,size,layout):
     return ((x+9)//2*2,(y+7)//2*2,(w-16)//2*2,(h-36)//2*2)
 
 
-def card(portraits,active,size,layout,background=None,*,neural=False,pause=False):
+def card(portraits,active,size,layout,background=None,*,neural=False,pause=False,listener_motion=False):
     w,h=size
     if background is not None:
         with Image.open(io.BytesIO(background)) as im:
@@ -111,7 +116,7 @@ def card(portraits,active,size,layout,background=None,*,neural=False,pause=False
                 canvas.paste(pic,(x+(cellw-pic.width)//2,y+6+(cellh-36-pic.height)//2))
         draw.text((x+cellw//2,y+cellh-8),f"Presenter {index:02}"+((" - pause" if pause else " - speaking") if selected else ""),
             anchor="mb",font=ImageFont.load_default(size=14 if cellw<300 else 20),fill="white")
-    draw.text((w//2,h-12),("NEURAL STUDIO - STATIC LISTENERS" if neural else "STATIC STUDIO PREVIEW - NOT LIP SYNC"),anchor="mb",
+    draw.text((w//2,h-12),(("NEURAL STUDIO - SIMULATED LISTENER MOTION" if listener_motion else "NEURAL STUDIO - STATIC LISTENERS") if neural else "STATIC STUDIO PREVIEW - NOT LIP SYNC"),anchor="mb",
               font=ImageFont.load_default(size=18),fill=(255,196,130))
     return canvas
 

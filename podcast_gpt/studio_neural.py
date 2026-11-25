@@ -1,12 +1,12 @@
 """Independent source-bound neural studio candidate.
 
-Only the current speaker uses an animated model clip. Other presenters
-remain still; no segmentation, simulated listener motion or quality claim.
+Only the current speaker uses an animated model clip. Optional listener
+portrait framing simulates movement, not facial reactions or lip sync.
 """
 import shutil
 import tempfile
 from pathlib import Path
-from . import projects, source, characters, media, studio_camera, studio_preview as studio
+from . import projects, source, characters, media, studio_camera, studio_listeners, studio_preview as studio
 from . import v4_export as export, v4_neural as neural, v4_preview as preview, v4_master as master
 from . import v4_final_review as review
 
@@ -24,6 +24,8 @@ def _context(root,pid,*,allow_fixture=False):
     if settings["request_sha256"]!=seal["binding"]["request_sha256"]:raise ValueError("Studio request changed")
     binding={"neural_export_inputs":bound,"studio_settings_sha256":source.json_digest(settings),
              "video_format":seal["video_format"],"test_fixture_only":bound["test_fixture_only"]}
+    if settings.get("listener_motion","static")!="static" and len(cast["cast"])>1:
+        binding["listener_motion"]=settings["listener_motion"]
     return folder,dest,timeline,turns,cast,rows,done,binding,settings,background
 
 
@@ -47,7 +49,7 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
         key=(active,pause)
         if key not in cards:
             card=temp/f"card-{active:02}-{int(pause)}.png"
-            studio.card(portraits,active,size,settings["layout"],background,neural=True,pause=pause).save(card,"PNG")
+            studio.card(portraits,active,size,settings["layout"],background,neural=True,pause=pause,listener_motion=settings.get("listener_motion","static")!="static" and len(portraits)>1).save(card,"PNG")
             cards[key]=card
         inputs=["-loop","1","-framerate","25","-i",str(cards[key])]
         if pause:
@@ -59,9 +61,13 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
             inputs+=["-i",str(clip)]
             x,y,w,h=studio.active_rect(portraits,active,size,settings["layout"])
             camera=studio_camera.filter_suffix(settings.get("camera","fixed"),w,h,seg["frames"],start_frame=starts[i])
+            listener_mode=settings.get("listener_motion","static")
+            rects=studio_listeners.regions(studio.geometry(portraits,active,size,settings["layout"]),active,size) if listener_mode!="static" else {}
+            layers,base=studio_listeners.graph(rects,listener_mode,seg["frames"],starts[i])
             vf=(f"[1:v]fps=25,scale={w}:{h}:force_original_aspect_ratio=decrease:force_divisible_by=2,"
                 f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1{camera},tpad=stop_mode=clone:stop_duration=1[face];"
-                f"[0:v][face]overlay={x}:{y}:shortest=1:repeatlast=0,format=yuv420p[out]")
+                f"{base}[face]overlay={x}:{y}:shortest=1:repeatlast=0,format=yuv420p[out]")
+            if layers:vf=";".join(layers+[vf])
             filters=["-filter_complex_threads","1","-filter_complex",vf,"-map","[out]"]
         path=temp/f"segment{i:05}.mp4"
         media.cmd(["ffmpeg","-nostdin","-hide_banner","-v","error",*inputs,*filters,"-an",
@@ -85,7 +91,7 @@ def _receipt(path,timeline,binding,plan,streams):
     return {"schema":1,"binding":binding,"frame_plan_sha256":source.json_digest(plan),
             "video_sha256":source.digest(path/VIDEO),"srt_sha256":source.digest(path/SRT),
             "streams":streams,"turn_count":len(timeline["rows"]),"test_fixture_only":binding["test_fixture_only"],
-            "inactive_presenters_static":True,"human_lipsync_approved":False,"publication_approved":False}
+            "inactive_presenters_static":"listener_motion" not in binding,"human_lipsync_approved":False,"publication_approved":False}
 
 
 def _audit(dest,timeline,turns,binding,plan):
