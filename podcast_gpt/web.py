@@ -145,7 +145,7 @@ def html_page(token:str)->str:
 <label>Soft gate threshold PCM (0 disables) <input id="v4MixGate" type="number" min="0" max="1000" value="0"></label>
 <label>Sample peak limiter ceiling PCM (0 disables; otherwise 8000–28000; takes priority over LUFS target) <input id="v4MixLimiter" type="number" min="0" max="28000" value="0"></label>
 <label><input id="v4MixTruePeak" type="checkbox"> Conservative whole-mix peak guard (requires measured peak at or below -1.5 dBTP; may reject candidate)</label>
-<label><input id="v4MixPeakCorrect" type="checkbox"> Automatically retry excessive measured peaks with bounded attenuation (requires peak guard; leave LUFS target blank)</label>
+<label><input id="v4MixPeakCorrect" type="checkbox"> Automatically retry excessive measured peaks with bounded attenuation (requires peak guard; optional LUFS target, peak safety takes priority)</label>
 <label><input id="v4MixRights" type="checkbox"> I authorize this mix and have rights to all added audio</label>
 <button id="v4MixCompose">Compose separate audio mix</button>
 <small>Local files only, mono PCM16 16 kHz. Existing mix cannot be replaced. Listen to the whole candidate before approval.</small>

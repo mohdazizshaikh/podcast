@@ -59,6 +59,9 @@ def record(goal,baseline,peak,baseline_sha,after,ceiling=None):
 
 def validate(value):
     if not isinstance(value,dict):raise ValueError("Invalid normalization recipe")
+    if value.get("algorithm")=="bounded_static_gain_retry_v2":
+        from . import combined_gain
+        return combined_gain.validate(value)
     try:expected=record(value["target_lufs"],value["baseline_measurement"],value["baseline_pcm_peak"],
                         value["baseline_pcm_sha256"],value["candidate_measurement"],value.get("sample_peak_ceiling_pcm"))
     except (KeyError,TypeError,OverflowError):raise ValueError("Invalid normalization recipe") from None

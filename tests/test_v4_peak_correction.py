@@ -72,7 +72,7 @@ def test_dashboard_and_audit(tmp_path,monkeypatch,initial):
 def test_mode_constraints():
     from podcast_gpt import v4_post_audio as mix
     with pytest.raises(ValueError,match="requires"):mix.compose(None,None,auto_peak_correction=True,acknowledgment=mix.ACK)
-    with pytest.raises(ValueError,match="separate"):mix.compose(None,None,true_peak_guard=True,auto_peak_correction=True,target_lufs=-16,acknowledgment=mix.ACK)
+    with pytest.raises(ValueError,match="requires"):mix.compose(None,None,auto_peak_correction=True,target_lufs=-16,acknowledgment=mix.ACK)
 
 def test_reject_before_save(tmp_path,monkeypatch):
     from podcast_gpt import v4_post_audio as mix,audio_diagnostics as diag

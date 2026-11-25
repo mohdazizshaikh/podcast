@@ -208,7 +208,7 @@ def parse(argv=None):
     mix.add_argument("--highpass-hz",type=int,choices=(0,60,80,100,120),default=0)
     mix.add_argument("--hum-hz",type=int,choices=(0,50,60),default=0)
     mix.add_argument("--lowpass-hz",type=int,choices=(0,4500,6000),default=0)
-    mix.add_argument("--auto-peak-correction",action="store_true",help="Bounded measured attenuation retries; requires --true-peak-guard and no LUFS target")
+    mix.add_argument("--auto-peak-correction",action="store_true",help="Bounded measured attenuation retries; requires --true-peak-guard; optional LUFS target")
     mix.add_argument("--true-peak-guard",action="store_true",help="Conservative whole-mix peak guard with mandatory -1.5 dBTP measurement")
     mix.add_argument("--limiter-ceiling",type=int,default=0,help="Sample peak ceiling in PCM units; 0 disables")
     diagnostic=subs.add_parser("project-audio-diagnostics")
