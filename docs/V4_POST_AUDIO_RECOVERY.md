@@ -25,3 +25,5 @@ Stop every external producer first; lock absence is not evidence that all proces
 Separate mix listening review, mixed video export and shifted subtitles are now implemented in V4_MIXED_VIDEO.md; older audio-only limitation applies to earlier increment. Recovery now includes mixed-export. CI 45478604299 failed a CLI parser shadowing regression; fix/retest pending in subsequent increment.
 
 Optional versioned speech-driven background ducking and read-only loudness measurements are documented in V4_AUDIO_QUALITY_SETUP.md. Existing mixes remain immutable; no target normalization yet.
+
+Batch 35 implements optional deterministic whole-mix dynamic sample-peak limiting, including intro/bed/outro, immutable exact PCM audit, CLI/browser setting and legacy defaults. 63 new regression cases authored; 58 standalone limiter cases passed in an isolated local Python harness, five repository integration cases and full CI unverified. Sample peaks are not intersample true peaks; dynamic true-peak limiting, combined LUFS normalization, real listening and physical Windows/model acceptance remain pending. See V4_BATCH35.md.

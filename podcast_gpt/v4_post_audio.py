@@ -64,7 +64,7 @@ def _scale(value,num,den):
     return (abs(value)*num//den)*(1 if value>=0 else -1)
 
 
-def _mix_blocks(dest,timeline,assets,settings):
+def _unlimited_mix_blocks(dest,timeline,assets,settings):
     cleanup=settings.get("cleanup")
     peak=_master_peak(dest,timeline,cleanup)
     speech_target=settings["speech_peak"]
@@ -117,7 +117,13 @@ def _mix_blocks(dest,timeline,assets,settings):
         yield _bytes(_scale(s,PEAK,p) for s in samples)
 
 
-def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0):
+def _mix_blocks(dest,timeline,assets,settings):
+    from . import peak_limiter
+    yield from peak_limiter.blocks(_unlimited_mix_blocks(dest,timeline,assets,settings),
+                                  settings.get("limiter"),_samples,_bytes)
+
+
+def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0):
     if type(speech_peak) is not int or not 8000<=speech_peak<=24000 or type(bed_peak) is not int or not 0<=bed_peak<=6000:
         raise ValueError("Speech peak must be 8000–24000 and bed peak 0–6000 PCM units")
     if type(duck_percent) is not int or not 0<=duck_percent<=90:raise ValueError("Duck percent must be 0–90")
@@ -129,6 +135,9 @@ def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_thre
     from .speech_cleanup import settings as cleanup_settings
     cleanup=cleanup_settings(remove_dc,gate_threshold)
     if cleanup is not None:result["cleanup"]=cleanup
+    from .peak_limiter import settings as limiter_settings
+    limiter=limiter_settings(limiter_ceiling)
+    if limiter is not None:result["limiter"]=limiter
     return result
 
 
@@ -160,9 +169,13 @@ def _audit(dest,binding,timeline,receipt):
     if not isinstance(comp,dict):raise ValueError("Invalid compressor settings")
     cleanup=settings.get("cleanup",{})
     if not isinstance(cleanup,dict):raise ValueError("Invalid cleanup settings")
-    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000),cleanup.get("remove_dc",False),cleanup.get("gate_threshold_pcm",0))
+    limiter=settings.get("limiter",{})
+    if not isinstance(limiter,dict):raise ValueError("Invalid limiter settings")
+    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000),cleanup.get("remove_dc",False),cleanup.get("gate_threshold_pcm",0),limiter.get("ceiling_pcm",0))
     normalization=settings.get("normalization")
-    if normalization is not None:base_settings["normalization"]=gain.validate(normalization)
+    if normalization is not None:
+        if limiter:raise ValueError("Limiter and static loudness target cannot be combined")
+        base_settings["normalization"]=gain.validate(normalization)
     if base_settings!=settings:raise ValueError("Invalid mix settings")
     roles=saved["assets"]
     if not isinstance(roles,dict) or not set(roles)<=set(ROLES):raise ValueError("Invalid mix asset inventory")
@@ -225,9 +238,10 @@ def _stage_normalized(dest,timeline,assets,settings,target_lufs,temp):
     return candidate,pcm_sha
 
 
-def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,acknowledgment=None):
+def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,acknowledgment=None):
     if acknowledgment!=ACK:raise ValueError("Explicit audio usage rights and mix acknowledgment required")
-    settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold,remove_dc,gate_threshold)
+    settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold,remove_dc,gate_threshold,limiter_ceiling)
+    if limiter_ceiling and target_lufs is not None:raise ValueError("Limiter and static loudness target cannot be combined")
     if target_lufs is not None:
         from .loudness_gain import target
         target(target_lufs)
