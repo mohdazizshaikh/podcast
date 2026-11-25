@@ -1,0 +1,9 @@
+# Batch 40 — targeted dialogue noise filters
+
+Optional 16 kHz second-order fixed-point biquads: Butterworth high-pass (60, 80, 100, 120 Hz), narrow notch (50 or 60 Hz, Q=25), Butterworth low-pass (4500 or 6000 Hz). Coefficients quantized to Q28 and state to Q16; integer rounding, no dependencies or network. The filters run high-pass, notch, low-pass in that order, after optional DC correction, before the speech peak normalization pass, soft gate, compressor, ducking and whole-mix limiter. Reset at each master turn/pause block, preserve exact sample count and zero pauses; a filter that completely erases a nonzero block is rejected. Only dialogue is filtered, not intro/bed/outro. Original master and existing candidates remain immutable.
+
+CLI: `project-mix-compose --project-id ID --highpass-hz 80 --hum-hz 50 --lowpass-hz 6000 --acknowledgment I_HAVE_RIGHTS_TO_ALL_ADDED_AUDIO_AND_AUTHORIZE_LOCAL_MIX`. Each frequency defaults to 0 (disabled). Dashboard exposes independent selects. A new optional speech_filter receipt binds the exact algorithm and frequencies; older receipts and request formats remain unchanged when disabled.
+
+Targeted filtering is not adaptive or AI noise removal. Peak normalization may amplify residual noise; synthetic tone attenuation is not evidence of real speech intelligibility or noise removal in the final normalized mix. Low-pass can reduce clarity. Listen to the full separate candidate before reviewing. True-peak limiting and broadband/adaptive denoising remain pending.
+
+71 new test cases authored: 45 filter combinations, 10 invalid frequency inputs, 4 rumble, 2 notch, 2 low-pass, 3 midband tests, 4 dashboard recipe/audit integrations and 1 CLI/markup case. 66 standalone cases executed successfully in an isolated local Python harness with the same module and test bodies. Five integration cases not run; direct GitHub clone fails DNS and CI results unavailable. No actual device or listening acceptance claimed.
