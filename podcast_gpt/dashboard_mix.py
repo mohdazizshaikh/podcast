@@ -31,10 +31,12 @@ def run(root,data,*,acknowledgment):
     keys|={"true_peak_guard"}
     if isinstance(data,dict) and set(data)==keys:data={**data,"auto_peak_correction":False}
     keys|={"auto_peak_correction"}
+    if isinstance(data,dict) and set(data)==keys:data={**data,"adaptive_noise":"off"}
+    keys|={"adaptive_noise"}
     if not isinstance(data,dict) or set(data)!=keys or data["rights"] is not True:
         raise ValueError("Exact mix settings and audio rights required")
     pid=data["project_id"];projects.project(root,pid)
-    mix._settings(data["speech_peak"],data["bed_peak"],data["duck_percent"],data["compress_ratio"],data["compress_threshold"],data["remove_dc"],data["gate_threshold"],data["limiter_ceiling"],data["highpass_hz"],data["hum_hz"],data["lowpass_hz"],data["true_peak_guard"],data["auto_peak_correction"])
+    mix._settings(data["speech_peak"],data["bed_peak"],data["duck_percent"],data["compress_ratio"],data["compress_threshold"],data["remove_dc"],data["gate_threshold"],data["limiter_ceiling"],data["highpass_hz"],data["hum_hz"],data["lowpass_hz"],data["true_peak_guard"],data["auto_peak_correction"],data["adaptive_noise"])
     if data["target_lufs"] is not None:loudness_gain.target(data["target_lufs"])
     assets=data["assets"]
     if not isinstance(assets,dict) or not set(assets)<=set(mix.ROLES):raise ValueError("Unknown mix asset role")
@@ -53,4 +55,4 @@ def run(root,data,*,acknowledgment):
             paths[role]=path
         return mix.compose(root,pid,**paths,speech_peak=data["speech_peak"],bed_peak=data["bed_peak"],
             duck_percent=data["duck_percent"],target_lufs=data["target_lufs"],compress_ratio=data["compress_ratio"],
-            compress_threshold=data["compress_threshold"],remove_dc=data["remove_dc"],gate_threshold=data["gate_threshold"],limiter_ceiling=data["limiter_ceiling"],highpass_hz=data["highpass_hz"],hum_hz=data["hum_hz"],lowpass_hz=data["lowpass_hz"],true_peak_guard=data["true_peak_guard"],auto_peak_correction=data["auto_peak_correction"],acknowledgment=mix.ACK)
+            compress_threshold=data["compress_threshold"],remove_dc=data["remove_dc"],gate_threshold=data["gate_threshold"],limiter_ceiling=data["limiter_ceiling"],highpass_hz=data["highpass_hz"],hum_hz=data["hum_hz"],lowpass_hz=data["lowpass_hz"],true_peak_guard=data["true_peak_guard"],auto_peak_correction=data["auto_peak_correction"],adaptive_noise=data["adaptive_noise"],acknowledgment=mix.ACK)

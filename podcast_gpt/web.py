@@ -138,6 +138,8 @@ def html_page(token:str)->str:
 <label>Speech compression ratio (1 disables) <input id="v4MixRatio" type="number" min="1" max="6" value="1"></label>
 <label>Compression threshold PCM <input id="v4MixThreshold" type="number" min="2000" max="20000" value="12000"></label>
 <label><input id="v4MixDc" type="checkbox"> Optional dialogue DC-offset correction</label>
+<label>Adaptive quiet-region noise reduction <select id="v4MixAdaptiveNoise"><option>off</option><option>light</option><option>medium</option><option>strong</option></select></label>
+<p>Estimates a quiet level per dialogue turn; may attenuate quiet speech. Not AI speech isolation. Listen to the separate mix.</p>
 <label>Dialogue high-pass (rumble) <select id="v4MixHighpass"><option>0</option><option>60</option><option>80</option><option>100</option><option>120</option></select> Hz</label>
 <label>Dialogue hum notch <select id="v4MixHum"><option>0</option><option>50</option><option>60</option></select> Hz</label>
 <label>Dialogue low-pass (high-frequency noise) <select id="v4MixLowpass"><option>0</option><option>4500</option><option>6000</option></select> Hz</label>
@@ -333,7 +335,7 @@ async function encodeWav(file,limit){
 onAuthor('v4MixCompose',async()=>{
  if(!field('v4MixRights').checked)throw new Error('Confirm audio rights and mix processing');
  const pid=currentPid(),files={intro:field('v4MixIntro').files[0],bed:field('v4MixBed').files[0],outro:field('v4MixOutro').files[0]};
- const data={project_id:pid,assets:{},speech_peak:Number(val('v4MixSpeech')),bed_peak:Number(val('v4MixMusic')),duck_percent:Number(val('v4MixDuck')),target_lufs:val('v4MixTarget')===''?null:Number(val('v4MixTarget')),compress_ratio:Number(val('v4MixRatio')),compress_threshold:Number(val('v4MixThreshold')),remove_dc:field('v4MixDc').checked,gate_threshold:Number(val('v4MixGate')),limiter_ceiling:Number(val('v4MixLimiter')),highpass_hz:Number(val('v4MixHighpass')),hum_hz:Number(val('v4MixHum')),lowpass_hz:Number(val('v4MixLowpass')),true_peak_guard:field('v4MixTruePeak').checked,auto_peak_correction:field('v4MixPeakCorrect').checked,rights:true};
+ const data={project_id:pid,assets:{},speech_peak:Number(val('v4MixSpeech')),bed_peak:Number(val('v4MixMusic')),duck_percent:Number(val('v4MixDuck')),target_lufs:val('v4MixTarget')===''?null:Number(val('v4MixTarget')),compress_ratio:Number(val('v4MixRatio')),compress_threshold:Number(val('v4MixThreshold')),remove_dc:field('v4MixDc').checked,gate_threshold:Number(val('v4MixGate')),limiter_ceiling:Number(val('v4MixLimiter')),highpass_hz:Number(val('v4MixHighpass')),hum_hz:Number(val('v4MixHum')),lowpass_hz:Number(val('v4MixLowpass')),true_peak_guard:field('v4MixTruePeak').checked,auto_peak_correction:field('v4MixPeakCorrect').checked,adaptive_noise:val('v4MixAdaptiveNoise'),rights:true};
  authorConsent();field('v4MixRights').checked=false;
  for(const role of Object.keys(files))if(files[role])data.assets[role]=await encodeWav(files[role],(role==='bed'?120:30)*32000+65536);
  if(pid!==currentPid())throw new Error('Project selection changed; reconfirm mix');
