@@ -19,4 +19,4 @@ def filter_graph(start,frames):
     if type(start) is not int or type(frames) is not int or start<0 or not 1<=frames<=MAX_FRAMES or start+frames>100_000_000:
         raise ValueError('Invalid mixed cache chunk range')
     return ('fps=25,setsar=1,tpad=stop_mode=clone:stop_duration=1,format=yuv420p,'
-            f'trim=start_frame={start}:end_frame={start+frames},setpts=PTS-STARTPTS')
+            f'trim=start_frame={start}:end_frame={start+frames},setpts=PTS-STARTPTS,fps=25')
