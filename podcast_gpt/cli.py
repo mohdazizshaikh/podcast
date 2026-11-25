@@ -182,6 +182,11 @@ def parse(argv=None):
             e.add_argument("--project-id",required=True)
             e.add_argument("--run-local",action="store_true")
             e.add_argument("--max-new",type=int,default=1)
+    edge4=subs.add_parser("project-tts-edge",help="Explicit online Edge speech for reviewed V4 dialogue")
+    edge4.add_argument("--project-id",required=True)
+    edge4.add_argument("--allow-network-tts",action="store_true")
+    edge4.add_argument("--acknowledgment",required=True)
+    edge4.add_argument("--max-new",type=int,default=1)
     mix=subs.add_parser("project-mix-compose")
     mix.add_argument("--project-id",required=True)
     for role in ("intro","bed","outro"):mix.add_argument("--"+role,type=Path)
@@ -483,6 +488,10 @@ def execute(a)->dict:
         if action=="project-audio-status":return v4_audio.inspect(private,a.project_id)
         if action=="project-audio-finalize":return v4_audio.finalize(private,a.project_id)
         return v4_audio.show(private,a.project_id)
+    if action=="project-tts-edge":
+        from . import v4_edge
+        return v4_edge.generate(a.workspace.expanduser().absolute(),a.project_id,
+            allow_network_tts=a.allow_network_tts,acknowledgment=a.acknowledgment,max_new=a.max_new)
     if action=="project-tts-kokoro":
         from . import v4_tts,model_config
         private=a.workspace.expanduser().absolute()

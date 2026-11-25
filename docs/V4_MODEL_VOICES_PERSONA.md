@@ -38,3 +38,5 @@ Optional app-venv dependency installation for documents/Kokoro is available with
 Local model path configuration can also be saved through the dashboard (V4_DASHBOARD_AUTHORING.md); inference remains separately consented CLI-only.
 
 Optional prior-episode continuity snapshot is separate from persona context and bound to current script units (V4_NORMALIZATION_CONTINUITY.md); offline-only drafting.
+
+Batch 37 implements explicit online Edge V4 speech adapter with static locale/preset validation, 1–5 bounded approved turns, private temporary MP3/PCM conversion, immutable source-bound receipts, resume, duplicate rejection and CLI/readiness/preflight integration. 81 new regression cases authored (71 pure locale/receipt cases and 10 adapter/CLI cases); tests not yet independently run. No automatic network fallback, service/voice inventory guarantee, browser Edge action or real voice/device acceptance. See V4_BATCH37.md.

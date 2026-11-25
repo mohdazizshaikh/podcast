@@ -14,7 +14,11 @@ def inspect(root,pid):
             try:candidate=espeak.compatible(voice,req["language"],{voice["preset"].split("+")[0]})
             except (ValueError,KeyError,TypeError,AttributeError):issues.append("espeak_language_or_preset_mismatch")
         elif engine=="undecided":issues.append("select_voice_or_import")
-        elif engine=="edge":issues.append("v4_edge_adapter_pending_use_authorized_import")
+        elif engine=="edge":
+            from . import edge_voice
+            try:candidate=edge_voice.compatible(voice,req["language"])
+            except (ValueError,KeyError,TypeError,AttributeError):issues.append("edge_language_or_preset_mismatch")
+            issues.append("explicit_online_consent_and_service_availability_required")
         if engine in ("kokoro","espeak") and configs.get(engine)!="paths_checked":issues.append("saved_paths_not_checked")
         row={"speaker":item["speaker"],"engine":engine,"candidate_preset":candidate,"issues":issues,
              "runtime_voice_inventory_verified":False,"human_voice_quality_verified":False}

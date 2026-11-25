@@ -109,6 +109,11 @@ def _read_parts(dest,binding,turns):
                 raise ValueError("Invalid eSpeak speech provenance")
             expected.pop("rights_and_text_match_self_attested")
             expected.update(origin="local_espeak",generation=extra,model_usage_rights_self_attested=True)
+        if saved.get("origin")=="online_edge":
+            from .edge_voice import validate_receipt
+            extra=validate_receipt(saved.get("generation"))
+            expected.pop("rights_and_text_match_self_attested")
+            expected.update(origin="online_edge",generation=extra,model_usage_rights_self_attested=True)
         if saved!=expected:raise ValueError("Audio receipt, PCM hash or turn binding differs")
         items[child.name]=saved
     if len({v["pcm_sha256"] for v in items.values()})!=len(items):
@@ -149,7 +154,7 @@ def _summary(pid,dest,binding,turns,items,req):
     missing=[t["id"] for t in turns if t["id"] not in items]
     return {"project_id":pid,"binding":binding,"total_turns":len(turns),"imported_turns":len(items),
             "missing_turn_ids":missing,"measured_imported_speech_seconds":sum(v["frames"] for v in items.values() if v["origin"]=="authorized_import")/RATE,
-            "completed_audio_turns":len(items),"generated_turns":sum(v["origin"] in ("local_kokoro_hindi","local_kokoro_multilingual","local_espeak") for v in items.values()),
+            "completed_audio_turns":len(items),"generated_turns":sum(v["origin"] in ("local_kokoro_hindi","local_kokoro_multilingual","local_espeak","online_edge") for v in items.values()),
             "measured_total_speech_seconds":sum(v["frames"] for v in items.values())/RATE,
             "timeline_finalized":saved is not None,"measured_audio_seconds":saved["measured_audio_seconds"] if saved else None,
             "within_target_10_percent":saved["within_target_10_percent"] if saved else None,
@@ -174,6 +179,7 @@ def voice_status(root,pid):
                               "local_hindi_kokoro_candidate" if engine=="kokoro" and code=="hi" and voice["preset"] in PRESETS[code] else
                               "local_multilingual_kokoro_candidate" if engine=="kokoro" and code in PRESETS and voice["preset"] in PRESETS[code] else
                               "local_espeak_inventory_required" if engine=="espeak" else
+                              "explicit_online_edge_candidate" if engine=="edge" else
                               "generalized_tts_adapter_pending",
                      "actual_language_voice_compatibility_verified":False})
     return {"project_id":pid,"cast_assigned":cast["cast_assigned"],"voices":rows,
