@@ -10,7 +10,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-from . import projects, characters, source, media, v4_preview as preview, v4_master as master
+from . import projects, characters, source, media, studio_camera, v4_preview as preview, v4_master as master
 
 CONFIG="studio-settings"
 FOLDER="studio-preview"
@@ -24,8 +24,10 @@ def _read(folder):
     path=folder/CONFIG;projects._plain(path)
     projects._plain(path/"settings.json",directory=False)
     data=source.read_json(path/"settings.json",32000)
-    if set(data)!={"schema","layout","background","request_sha256"} or data["schema"]!=1 or data["layout"] not in LAYOUTS:
+    fields={"schema","layout","background","request_sha256"}
+    if not isinstance(data,dict) or set(data) not in (fields,fields|{"camera"}) or data["schema"]!=1 or data["layout"] not in LAYOUTS:
         raise ValueError("Invalid studio settings")
+    if "camera" in data and studio_camera.validate(data["camera"])=="fixed":raise ValueError("Fixed camera uses legacy studio settings")
     expected={"settings.json"}
     raw=None
     if data["background"] is not None:
@@ -36,7 +38,8 @@ def _read(folder):
     return data,raw
 
 
-def configure(root,pid,*,layout,background=None,acknowledgment=None):
+def configure(root,pid,*,layout,background=None,camera="fixed",acknowledgment=None):
+    studio_camera.validate(camera)
     if layout not in LAYOUTS:raise ValueError("Choose focus or grid studio layout")
     if background is not None and acknowledgment!=ACK:raise ValueError("Explicit background usage rights acknowledgment required")
     raw=characters._read_file(background,characters.MAX_PORTRAIT) if background is not None else None
@@ -48,7 +51,9 @@ def configure(root,pid,*,layout,background=None,acknowledgment=None):
         path.mkdir()
         if raw is not None:
             with (path/"background.png").open("xb") as h:h.write(raw)
-        source.atomic_json(path/"settings.json",{"schema":1,"layout":layout,"background":info,"request_sha256":source.json_digest(req)},new=True)
+        settings={"schema":1,"layout":layout,"background":info,"request_sha256":source.json_digest(req)}
+        if camera!="fixed":settings["camera"]=camera
+        source.atomic_json(path/"settings.json",settings,new=True)
         return inspect_settings(root,pid)
 
 

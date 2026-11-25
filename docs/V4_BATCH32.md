@@ -8,3 +8,5 @@ New test module has 39 cases (5 aliases, 12 dictionary file checks, 5 invalid pa
 
 ## Candidate library
 CLI character-portrait-candidates, character-portrait-candidate-audit --candidate-id ID, character-portrait-candidate-attach --candidate-id ID --acknowledgment I_HAVE_RIGHTS_TO_USE_THIS_PORTRAIT. Dashboard lists attempts (default 50, bounded scan of 1000 entries), distinguishes fixture/valid/incomplete or invalid, does not delete or automatically attach. Audit checks receipt shape, provenance ranges, digest syntax and image/profile binding; creation-time model fingerprint is not independently revalidated against current model assets. 19 additional tests authored; batch total 68 new cases including Japanese matrix expansion. CI pending; no 50–100 separate feature completion claim.
+
+Batch 32 combined CI 45500231172 passed 6/6. Batch 33 implements optional active-speaker digital push-in, local hash-verified portrait preview and stale asynchronous selection guards. 53 new regression cases authored, CI pending. Actual model/browser acceptance, advanced transitions and listener animation remain pending. See V4_BATCH33.md.

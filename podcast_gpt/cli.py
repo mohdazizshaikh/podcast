@@ -250,6 +250,7 @@ def parse(argv=None):
     studio=subs.add_parser("project-studio-configure")
     studio.add_argument("--project-id",required=True)
     studio.add_argument("--layout",choices=("focus","grid"),required=True)
+    studio.add_argument("--camera",choices=("fixed","push-in"),default="fixed")
     studio.add_argument("--background",type=Path)
     studio.add_argument("--acknowledgment")
     for name in ("project-studio-status","project-studio-render","project-studio-audit"):
@@ -610,7 +611,7 @@ def execute(a)->dict:
     if action in ("project-studio-configure","project-studio-status","project-studio-render","project-studio-audit"):
         from . import studio_preview
         private=a.workspace.expanduser().absolute()
-        if action=="project-studio-configure":return studio_preview.configure(private,a.project_id,layout=a.layout,background=a.background,acknowledgment=a.acknowledgment)
+        if action=="project-studio-configure":return studio_preview.configure(private,a.project_id,layout=a.layout,background=a.background,camera=a.camera,acknowledgment=a.acknowledgment)
         if action=="project-studio-status":return studio_preview.inspect_settings(private,a.project_id)
         if action=="project-studio-render":return studio_preview.render(private,a.project_id)
         return studio_preview.inspect(private,a.project_id)

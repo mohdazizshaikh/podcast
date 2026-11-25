@@ -6,7 +6,7 @@ remain still; no segmentation, simulated listener motion or quality claim.
 import shutil
 import tempfile
 from pathlib import Path
-from . import projects, source, characters, media, studio_preview as studio
+from . import projects, source, characters, media, studio_camera, studio_preview as studio
 from . import v4_export as export, v4_neural as neural, v4_preview as preview, v4_master as master
 from . import v4_final_review as review
 
@@ -57,8 +57,9 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
             if source.digest(clip)!=done[cid]["mp4_sha256"]:raise ValueError("Studio clip changed")
             inputs+=["-i",str(clip)]
             x,y,w,h=studio.active_rect(portraits,active,size,settings["layout"])
+            camera=studio_camera.filter_suffix(settings.get("camera","fixed"),w,h,seg["frames"])
             vf=(f"[1:v]fps=25,scale={w}:{h}:force_original_aspect_ratio=decrease:force_divisible_by=2,"
-                f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1,tpad=stop_mode=clone:stop_duration=1[face];"
+                f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1{camera},tpad=stop_mode=clone:stop_duration=1[face];"
                 f"[0:v][face]overlay={x}:{y}:shortest=1:repeatlast=0,format=yuv420p[out]")
             filters=["-filter_complex_threads","1","-filter_complex",vf,"-map","[out]"]
         path=temp/f"segment{i:05}.mp4"

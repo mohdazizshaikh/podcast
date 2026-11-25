@@ -37,7 +37,7 @@ def html_page(token:str)->str:
     # Static trusted markup, token is exclusively server-generated hex.
     return '''<!doctype html><html lang="hi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none';style-src 'unsafe-inline';script-src 'unsafe-inline';connect-src 'self';media-src blob:;form-action 'none';base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none';style-src 'unsafe-inline';script-src 'unsafe-inline';connect-src 'self';media-src blob:;img-src blob:;form-action 'none';base-uri 'none'">
 <title>Podcast GPT — Private Hindi Studio</title><style>'''+STYLE+'''</style></head><body>
 <header><h1>Podcast GPT — Private Hindi Studio</h1>
 <p>Three human-authorized presenters, original 45 Hindi turns, true WAV sample provenance and CPU-only rendering.</p>
@@ -73,6 +73,8 @@ def html_page(token:str)->str:
 <button id="v4PortraitGenerate">Generate one portrait candidate</button>
 <button id="v4PortraitCandidates">List local portrait attempts</button>
 <label>Candidate ID <input id="v4PortraitCandidate" maxlength="32"></label><button id="v4PortraitAudit">Audit candidate and show local file path</button>
+<label>Choose audited PNG locally <input id="v4PortraitViewFile" type="file" accept=".png" disabled></label>
+<p id="v4PortraitViewInfo">Audit a candidate first.</p><img id="v4PortraitView" alt="Hash-verified local portrait candidate" style="display:none;max-width:256px;width:100%">
 <label><input id="v4CandidateRights" type="checkbox"> I inspected this exact local PNG and have usage rights</label><button id="v4CandidateAttach">Attach candidate as new character version</button>
 <button id="v4JapaneseResources">Check Japanese local dictionary resources</button>
 <label>Name <input id="v4CharName" maxlength="80"></label>
@@ -146,6 +148,7 @@ def html_page(token:str)->str:
 <label><input id="v4TurnRights" type="checkbox"> I have rights and this recording matches the exact approved dialogue</label>
 <button id="v4TurnImport">Import one dialogue recording</button>
 <label>Studio layout <select id="v4StudioLayout"><option>focus</option><option>grid</option></select></label>
+<label>Neural speaker camera <select id="v4StudioCamera"><option value="fixed">Fixed</option><option value="push-in">Subtle push-in</option></select></label>
 <label>Optional local studio background PNG <input id="v4StudioBg" type="file" accept=".png"></label>
 <label><input id="v4StudioRights" type="checkbox"> I have rights to use the selected background</label>
 <button id="v4StudioSave">Save immutable studio settings</button><button id="v4StudioStatus">Inspect studio settings</button>
@@ -207,12 +210,17 @@ if(portraitRights)opt.headers['X-Portrait-Rights-Confirmed']='YES';
 if(data instanceof File){opt.body=data;opt.headers['Content-Type']='application/octet-stream'}
 else if(data!==undefined&&data!==null){opt.body=JSON.stringify(data);opt.headers['Content-Type']='application/json'}
 let r=await fetch(endpoint,opt);let j=await r.json();if(!r.ok)throw new Error(j.error||('HTTP '+r.status));return j}
-let manifest=null,blobUrl=null,castPid=null;
-function clearMedia(){manifest=null;let p=document.getElementById('v4Player');p.pause();p.removeAttribute('src');p.load();p.style.display='none';if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}let i=document.getElementById('v4LocalMedia');i.value='';i.disabled=true}
+let manifest=null,blobUrl=null,castPid=null,mediaSequence=0;
+let portraitManifest=null,portraitUrl=null,portraitSequence=0;
+function clearPortrait(){portraitSequence++;portraitManifest=null;const img=document.getElementById("v4PortraitView");img.removeAttribute("src");img.style.display="none";if(portraitUrl){URL.revokeObjectURL(portraitUrl);portraitUrl=null}const file=document.getElementById("v4PortraitViewFile");file.value="";file.disabled=true;document.getElementById("v4CandidateRights").checked=false;document.getElementById("v4PortraitViewInfo").textContent="Audit a candidate first."}
+function clearMedia(){mediaSequence++;manifest=null;let p=document.getElementById('v4Player');p.pause();p.removeAttribute('src');p.load();p.style.display='none';if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}let i=document.getElementById('v4LocalMedia');i.value='';i.disabled=true}
 function showResult(status){
  if(status.phase!=='complete'||!status.result)return;
  let data=status.result;
- if(status.command==='author-portrait-generate'&&data.candidate_id)document.getElementById('v4PortraitCandidate').value=data.candidate_id;
+ if(status.command==='author-portrait-generate'&&data.candidate_id&&document.getElementById('v4PortraitCandidate').value!==data.candidate_id){clearPortrait();document.getElementById('v4PortraitCandidate').value=data.candidate_id;}
+ if((status.command==='author-portrait-candidate'||status.command==='author-portrait-generate')&&data.candidate_integrity_checked&&data.candidate_id===document.getElementById('v4PortraitCandidate').value.trim()){
+  if(!portraitManifest||portraitManifest.candidate_id!==data.candidate_id||portraitManifest.sha256!==data.receipt.portrait_sha256){clearPortrait();portraitManifest={candidate_id:data.candidate_id,sha256:data.receipt.portrait_sha256};document.getElementById('v4PortraitViewFile').disabled=false;document.getElementById('v4PortraitViewInfo').textContent='Select exact local PNG: '+data.path;}
+ }
  if(status.command==='author-character-create'||status.command==='author-portrait'||status.command==='author-portrait-candidate-attach'){if(data.character_id)document.getElementById('v4CharId').value=data.character_id}
  if(status.command==='author-character-show'&&data.profile){let p=data.profile,v=p.voice_preferences;for(const [id,value] of Object.entries({v4CharName:p.name,v4CharPersonality:p.personality,v4CharStyle:p.speaking_style,v4CharAppearance:p.appearance,v4CharEngine:v.engine,v4CharLanguage:v.language,v4CharPreset:v.preset,v4CharNotes:v.style_notes}))document.getElementById(id).value=value}
  if(status.command==='author-cast-choices'&&data.project_id===document.getElementById('v4ProjectId').value.trim()){
@@ -276,7 +284,17 @@ onAuthor('v4PortraitBrief',()=>author('portrait-brief',{character_id:val('v4Char
 onAuthor('v4PortraitPreflight',()=>author('portrait-preflight',{character_id:val('v4CharId').trim(),model:val('v4PortraitModel')}));
 onAuthor('v4PortraitGenerate',()=>{if(!field('v4PortraitConsent').checked)throw new Error('Confirm model trust and usage rights');field('v4PortraitConsent').checked=false;return author('portrait-generate',{character_id:val('v4CharId').trim(),model:val('v4PortraitModel'),seed:Number(val('v4PortraitSeed')),steps:Number(val('v4PortraitSteps')),model_consent:true},true)});
 onAuthor('v4PortraitCandidates',()=>author('portrait-candidates',{}));
-onAuthor('v4PortraitAudit',()=>author('portrait-candidate',{candidate_id:val('v4PortraitCandidate').trim()}));
+onAuthor('v4PortraitAudit',()=>{clearPortrait();return author('portrait-candidate',{candidate_id:val('v4PortraitCandidate').trim()})});
+field('v4PortraitCandidate').addEventListener('input',clearPortrait);
+field('v4PortraitViewFile').addEventListener('change',async()=>{
+ const selected=portraitManifest,seq=++portraitSequence,img=field('v4PortraitView'),info=field('v4PortraitViewInfo'),file=field('v4PortraitViewFile').files[0];
+ img.removeAttribute('src');img.style.display='none';if(portraitUrl){URL.revokeObjectURL(portraitUrl);portraitUrl=null}field('v4CandidateRights').checked=false;
+ try{if(!selected||!file||file.size>12*1024*1024||!globalThis.crypto?.subtle)throw new Error('Select matching bounded local PNG with browser SHA-256 support');
+ const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer())),b=>b.toString(16).padStart(2,'0')).join('');
+ if(portraitSequence!==seq||portraitManifest!==selected)return;if(hash!==selected.sha256)throw new Error('PNG differs from audited candidate');
+ portraitUrl=URL.createObjectURL(new Blob([file],{type:'image/png'}));img.src=portraitUrl;img.style.display='block';info.textContent='Local PNG hash matches candidate. Inspect the image before attachment.';
+ }catch(e){if(portraitSequence===seq&&portraitManifest===selected)info.textContent='BLOCKED: '+e.message}
+});
 onAuthor('v4CandidateAttach',()=>{if(!field('v4CandidateRights').checked)throw new Error('Inspect exact candidate and confirm rights');field('v4CandidateRights').checked=false;return author('portrait-candidate-attach',{candidate_id:val('v4PortraitCandidate').trim(),rights:true},true)});
 onAuthor('v4JapaneseResources',()=>author('japanese-resources',{}));
 onAuthor('v4CharCreate',()=>author('character-create',{parent_id:val('v4CharId').trim()||null,profile:{name:val('v4CharName'),personality:val('v4CharPersonality'),speaking_style:val('v4CharStyle'),appearance:val('v4CharAppearance'),voice_preferences:{engine:val('v4CharEngine'),language:val('v4CharLanguage'),preset:val('v4CharPreset'),style_notes:val('v4CharNotes')}}},true));
@@ -304,7 +322,7 @@ onAuthor('v4MixCompose',async()=>{
  out.textContent=JSON.stringify(await send('/api/mix-compose?consent=YES',data),null,2);await refresh();
 });
 onAuthor('v4TurnImport',()=>{if(!field('v4TurnRights').checked)throw new Error('Confirm matching dialogue and rights');field('v4TurnRights').checked=false;return authorFile('audio-turn',currentPid(),field('v4TurnWav').files[0],true,'&unit='+encodeURIComponent(val('v4TurnId').trim()))});
-onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout');if(!file)return author('studio-configure',{project_id:currentPid(),layout},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout))});
+onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout'),camera=val('v4StudioCamera');if(!file)return author('studio-configure',{project_id:currentPid(),layout,camera},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout)+'&camera='+encodeURIComponent(camera))});
 onAuthor('v4StudioStatus',()=>author('studio-status',{project_id:currentPid()}));
 onAuthor('v4ContinuitySave',()=>{if(!field('v4ContinuityConsent').checked)throw new Error('Explicit local continuity consent required');field('v4ContinuityConsent').checked=false;return author('continuity-enable',{project_id:currentPid(),prior_project_id:val('v4PriorId').trim(),turn_ids:val('v4PriorTurns').split(',').map(s=>s.trim()),local_only_consent:true},true)});
 onAuthor('v4ContinuityStatus',()=>author('continuity-status',{project_id:currentPid()}));
@@ -338,17 +356,17 @@ document.getElementById('v4AudioDiagnostics').addEventListener('click',()=>{try{
 document.getElementById('v4MediaCheck').addEventListener('click',()=>{try{clearMedia();document.getElementById('v4MediaInfo').textContent='Auditing current candidate...';action('project-media-check',currentPid(),document.getElementById('v4MediaKind').value)}catch(e){out.textContent=e.message}});
 for(const id of ['v4ProjectId','v4MediaKind'])document.getElementById(id).addEventListener('input',()=>{clearMedia();document.getElementById('v4MediaInfo').textContent='Audit the current selection first.';document.getElementById('v4Summary').replaceChildren()});
 document.getElementById('v4LocalMedia').addEventListener('change',async()=>{
- const selected=manifest,info=document.getElementById('v4MediaInfo'),player=document.getElementById('v4Player');
+ const seq=++mediaSequence,selected=manifest,info=document.getElementById('v4MediaInfo'),player=document.getElementById('v4Player');
  const file=document.getElementById('v4LocalMedia').files[0];
  player.pause();player.removeAttribute('src');player.load();player.style.display='none';if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null}
  try{
   if(!selected||!file||!selected.browser_check_supported||file.size!==selected.bytes||file.size>134217728)throw new Error('Select the matching verified file within the browser size limit');
   if(!globalThis.crypto?.subtle)throw new Error('Browser SHA-256 unavailable; use a local player');
   const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer())),b=>b.toString(16).padStart(2,'0')).join('');
-  if(manifest!==selected)return;
+  if(manifest!==selected||seq!==mediaSequence)return;
   if(hash!==selected.sha256)throw new Error('Selected file differs from audited SHA-256');
   blobUrl=URL.createObjectURL(file);player.src=blobUrl;player.style.display='block';info.textContent='Local file hash matches audited candidate. Use playback controls; no review saved.';
- }catch(e){if(manifest===selected)info.textContent='BLOCKED: '+e.message}
+ }catch(e){if(manifest===selected&&seq===mediaSequence)info.textContent='BLOCKED: '+e.message}
 });
 async function upload(files,kind){
 if(kind==='portrait'&&!document.getElementById('portraitRights').checked)
@@ -466,8 +484,8 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                             if not ID_RE.fullmatch(identifier):raise ValueError("Invalid target ID")
                             rights=self.headers.get("X-Portrait-Rights-Confirmed")=="YES"
                             command="author-"+kind
-                            unit=query.get("unit",[None])[0];layout=query.get("layout",[None])[0]
-                            selected=lambda:dashboard_authoring.upload(root,kind,identifier,name,raw,acknowledgment=consent,rights=rights,unit=unit,layout=layout)
+                            unit=query.get("unit",[None])[0];layout=query.get("layout",[None])[0];camera=query.get("camera",["fixed"])[0]
+                            selected=lambda:dashboard_authoring.upload(root,kind,identifier,name,raw,acknowledgment=consent,rights=rights,unit=unit,layout=layout,camera=camera)
                         else:
                             data=dashboard_authoring.parse(raw)
                             command="author-"+action

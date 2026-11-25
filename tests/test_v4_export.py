@@ -52,7 +52,7 @@ def test_export_fixture_gate_and_audit(tmp_path,monkeypatch,fmt):
     assert export.compose(root,pid,allow_fixture=True)==result
     if fmt=="square":
         from podcast_gpt import studio_preview,studio_neural
-        studio_preview.configure(root,pid,layout="grid")
+        studio_preview.configure(root,pid,layout="grid",camera="push-in")
         with pytest.raises(ValueError,match="fixture"):studio_neural.compose(root,pid)
         studio=studio_neural.compose(root,pid,allow_fixture=True)
         assert studio["studio"]["streams"]["decoded_video_frames"]==56
