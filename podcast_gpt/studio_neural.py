@@ -5,11 +5,15 @@ portrait framing simulates movement, not facial reactions or lip sync.
 """
 import shutil
 import tempfile
+import platform
+import sys
+import PIL
 from pathlib import Path
 from . import projects, source, characters, media, studio_camera, studio_listeners, studio_transition, studio_preview as studio
 from . import v4_export as export, v4_neural as neural, v4_preview as preview, v4_master as master
 from . import v4_final_review as review
 from .render_progress import RenderProgress,RenderStopped
+from . import studio_cache
 
 FOLDER="neural-studio"
 VIDEO="studio-neural.mp4"
@@ -42,7 +46,16 @@ def _portraits(root,cast):
     return portraits,speakers
 
 
-def _segments(root,dest,cast,done,binding,settings,background,plan,temp,*,tracker=None):
+def _renderer_identity():
+    modules=(sys.modules[__name__],studio,studio_camera,studio_listeners,studio_transition,studio.studio_layout,studio_cache,media)
+    return {"sources":{m.__name__:source.digest(Path(m.__file__)) for m in modules},
+            "ffmpeg":media.cmd(["ffmpeg","-version"],timeout=20).stdout,
+            "ffprobe":media.cmd(["ffprobe","-version"],timeout=20).stdout,
+            "pillow":PIL.__version__,"python":platform.python_version(),
+            "platform":platform.platform(),"machine":platform.machine()}
+
+
+def _segments(root,dest,cast,done,binding,settings,background,plan,temp,*,tracker=None,cache=None):
     size=preview.SIZES[binding["video_format"]]
     portraits,speakers=_portraits(root,cast);cards={}
     names=[f"segment{i:05}.mp4" for i in range(len(plan))]
@@ -63,6 +76,13 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp,*,tracke
         if tracker is not None:tracker.checkpoint()
         seg=plan[i]
         active=speakers[seg["speaker"]];pause=seg["kind"]=="pause"
+        path=temp/names[i]
+        dependencies=[]
+        if cache is not None:
+            if i in deferred:dependencies=[source.digest(temp/names[j]) for j in (i-1,i+1)]
+            if cache.restore(i,dependencies,path,export._video_frames):
+                if tracker is not None:tracker.segment(i)
+                continue
         if i in deferred:
             spec=transitions[i]
             inputs=["-i",str(temp/names[i-1]),"-i",str(temp/names[i+1])]
@@ -93,11 +113,11 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp,*,tracke
                 f"{base}[face]overlay={x}:{y}:shortest=1:repeatlast=0,format=yuv420p[out]")
             if layers:vf=";".join(layers+[vf])
             filters=["-filter_complex_threads","1","-filter_complex",vf,"-map","[out]"]
-        path=temp/names[i]
         media.cmd(["ffmpeg","-nostdin","-hide_banner","-v","error",*inputs,*filters,"-an",
                    "-frames:v",str(seg["frames"]),"-c:v","libx264","-threads","2","-preset","veryfast","-crf","23",str(path)],
                   timeout=max(120,seg["frames"]*2))
         if export._video_frames(path)!=seg["frames"]:raise ValueError("Studio segment frame count differs")
+        if cache is not None:cache.save(i,dependencies,path)
         if tracker is not None:tracker.segment(i)
     listing=temp/"segments.ffconcat"
     listing.write_text("ffconcat version 1.0\n"+"".join("file "+n+"\n" for n in names),encoding="ascii")
@@ -133,7 +153,8 @@ def _audit(dest,timeline,turns,binding,plan):
     return expected
 
 
-def compose(root,pid,*,allow_fixture=False,progress=None,should_stop=None):
+def compose(root,pid,*,allow_fixture=False,progress=None,should_stop=None,resume=False):
+    if type(resume) is not bool:raise ValueError("Invalid studio resume setting")
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         ctx=_context(root,pid,allow_fixture=allow_fixture)
@@ -145,13 +166,17 @@ def compose(root,pid,*,allow_fixture=False,progress=None,should_stop=None):
             result={"project_id":pid,"studio":_audit(dest,timeline,turns,binding,plan)}
             if progress is not None:progress({"action":"studio-audit-complete","completed_actions":1,"action_limit":1,"stop_allowed":False})
             return result
-        tracker=RenderProgress(plan,progress,should_stop) if progress is not None or should_stop is not None else None
+        tracker=RenderProgress(plan,progress,should_stop,estimate_segments=not resume) if progress is not None or should_stop is not None else None
         seconds=timeline["measured_audio_seconds"]
-        if shutil.disk_usage(folder).free<max(100*1024**2,int(seconds*2_000_000)):raise ValueError("Insufficient studio disk space")
+        if shutil.disk_usage(folder).free<max(100*1024**2,int(seconds*(4_000_000 if resume else 2_000_000))):raise ValueError("Insufficient studio disk space")
+        if tracker is not None:tracker.checkpoint()
+        cache=studio_cache.SegmentCache(folder,binding,plan,_renderer_identity()) if resume else None
         if tracker is not None:tracker.begin()
         with tempfile.TemporaryDirectory(prefix="v4-neural-studio-",dir=folder) as tmp:
             temp=Path(tmp)
-            listing=_segments(root,dest,cast,done,binding,settings,background,plan,temp,**({"tracker":tracker} if tracker is not None else {}))
+            options={"tracker":tracker} if tracker is not None else {}
+            if cache is not None:options["cache"]=cache
+            listing=_segments(root,dest,cast,done,binding,settings,background,plan,temp,**options)
             if tracker is not None:tracker.checkpoint()
             staged=temp/VIDEO
             media.cmd(["ffmpeg","-nostdin","-hide_banner","-v","error","-f","concat","-safe","1","-i",str(listing),

@@ -7,7 +7,7 @@ CREATE_LIMIT=32768
 ACK="I_AUTHORIZE_LOCAL_DASHBOARD_PROCESSING"
 ACTIONS=("project-safe-step","project-script-visual-edit","project-script-visual-review",
          "project-audio-visual-review","project-pilot-visual-review","project-final-visual-review",
-         "project-static-render","project-studio-render","project-neural-studio-compose","project-mixed-studio-compose")
+         "project-static-render","project-studio-render","project-neural-studio-compose","project-neural-studio-resume","project-mixed-studio-compose")
 
 
 def parse_request(raw):
@@ -31,6 +31,8 @@ def run(root,pid,action,*,acknowledgment,progress=None,should_stop=None):
         return visual_media_review.create(root,pid,kind=action.split("-")[1])
     if action=="project-static-render":return v4_preview.render(root,pid)
     if action=="project-studio-render":return studio_preview.render(root,pid)
+    if action=="project-neural-studio-resume":
+        return studio_neural.compose(root,pid,progress=progress,should_stop=should_stop,resume=True)
     if action=="project-neural-studio-compose":
         if progress is None and should_stop is None:return studio_neural.compose(root,pid)
         return studio_neural.compose(root,pid,progress=progress,should_stop=should_stop)

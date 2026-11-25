@@ -285,7 +285,7 @@ def parse(argv=None):
     attach.add_argument("--character-id",required=True)
     attach.add_argument("--portrait",type=Path,required=True)
     attach.add_argument("--acknowledgment",required=True)
-    for name in ("project-neural-studio-compose","project-neural-studio-audit","project-neural-studio-review-template",
+    for name in ("project-neural-studio-compose","project-neural-studio-resume","project-neural-studio-audit","project-neural-studio-review-template",
                  "project-neural-studio-review-record","project-neural-studio-review-status"):
         ns=subs.add_parser(name)
         ns.add_argument("--project-id",required=True)
@@ -653,11 +653,12 @@ def execute(a)->dict:
     if action=="character-portrait-attach":
         from . import portrait_brief
         return portrait_brief.attach(a.workspace.expanduser().absolute(),a.character_id,portrait=a.portrait,acknowledgment=a.acknowledgment)
-    if action in ("project-neural-studio-compose","project-neural-studio-audit","project-neural-studio-review-template",
+    if action in ("project-neural-studio-compose","project-neural-studio-resume","project-neural-studio-audit","project-neural-studio-review-template",
                   "project-neural-studio-review-record","project-neural-studio-review-status"):
         from . import studio_neural
         private=a.workspace.expanduser().absolute()
         if action=="project-neural-studio-compose":return studio_neural.compose(private,a.project_id)
+        if action=="project-neural-studio-resume":return studio_neural.compose(private,a.project_id,resume=True)
         if action=="project-neural-studio-audit":return studio_neural.inspect(private,a.project_id)
         return studio_neural.qa(private,a.project_id,action.rsplit("-",1)[1],acknowledgment=getattr(a,"acknowledgment",None))
     if action in ("project-mixed-studio-compose","project-mixed-studio-audit","project-mixed-studio-review-template","project-mixed-studio-review-record","project-mixed-studio-review-status"):
