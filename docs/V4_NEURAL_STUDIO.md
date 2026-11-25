@@ -30,3 +30,5 @@ Creates a new immutable character version using the original profile and authori
 Verified neural studio candidate playback manifest is available through V4_PRODUCTION_OVERVIEW.md. Browser interaction and genuine model acceptance remain pending.
 
 Independent mixed neural studio candidate, separate QA and recovery now available (V4_DASHBOARD_MIXED_STUDIO.md).
+
+Batch 39 adds a spotlight studio layout for 1–10 presenters in landscape, vertical and square, plus four opt-in active-speaker camera modes (pull-out, smooth push-in, pan left/right) alongside existing fixed and push-in. Settings, CLI and dashboard support; static preview uses layout only, neural composition inherits bounded camera filters. 71 authored tests, 65 isolated local tests passed including six real FFmpeg filter/frame-count renders; six full-project integration tests and repository CI pending. Listeners remain static, camera resets at clip boundaries, and real browser/model/Windows acceptance remains open. See V4_BATCH39.md.

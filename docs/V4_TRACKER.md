@@ -54,7 +54,8 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Optional active-speaker digital push-in and local hash-verified portrait preview | Implemented | New CI pending; real browser/visual acceptance pending |
 | Read-only decoded video audio/source comparison | Implemented | New CI pending; heuristic PCM comparison, no automatic approval |
 | Decoded audio dropout/DC/uncompared-frame diagnostics | Implemented | Batch 34 CI pending; heuristic only |
-| Full-length real neural video, advanced camera layouts and animated listeners | Not implemented in V4 | Pending |
+| Spotlight layout and four additional active-speaker camera modes | Implemented | 65 isolated local cases passed; full integration and visual acceptance pending |
+| Full-length real neural video, cross-clip camera continuity and animated listeners | Not implemented in V4 | Pending |
 | Offline visual script editing and review JSON import | Done | 6/6 CI 45463360856; actual browser interaction pending |
 | Bounded foreground orchestration and per-action elapsed timing | Done | 6/6 CI 45463360856 |
 | Configured TTS/neural foreground orchestration | Done | 6/6 CI 45464174884 (mock inference) |
@@ -84,7 +85,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify batches 33–38 CI. Next actual model setup/pilot, Japanese dictionary/model execution, real portrait inference, dynamic limiting/denoising, broader research, actual browser and physical Windows acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify batches 33–39 CI. Next actual model setup/pilot, Japanese dictionary/model execution, real portrait inference, dynamic limiting/denoising, broader research, actual browser and physical Windows acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.
@@ -98,3 +99,5 @@ Batch 36 permits an optional dynamic sample limiter followed by bounded static l
 Batch 37 implements explicit online Edge V4 speech adapter with static locale/preset validation, 1–5 bounded approved turns, private temporary MP3/PCM conversion, immutable source-bound receipts, resume, duplicate rejection and CLI/readiness/preflight integration. 81 new regression cases authored (71 pure locale/receipt cases and 10 adapter/CLI cases); tests not yet independently run. No automatic network fallback, service/voice inventory guarantee, browser Edge action or real voice/device acceptance. See V4_BATCH37.md.
 
 Batch 38 adds read-only Edge pending-turn planning, separate bounded consented online voice inventory with filtering and deduplication, optional dependency setup, browser generation/inventory/preview, turn-bound progress and cooperative stop, and local-only continuity protection. 63 new test cases authored; full repository CI and real browser/service/device acceptance unverified. See V4_BATCH38.md.
+
+Batch 39 adds a spotlight studio layout for 1–10 presenters in landscape, vertical and square, plus four opt-in active-speaker camera modes (pull-out, smooth push-in, pan left/right) alongside existing fixed and push-in. Settings, CLI and dashboard support; static preview uses layout only, neural composition inherits bounded camera filters. 71 authored tests, 65 isolated local tests passed including six real FFmpeg filter/frame-count renders; six full-project integration tests and repository CI pending. Listeners remain static, camera resets at clip boundaries, and real browser/model/Windows acceptance remains open. See V4_BATCH39.md.

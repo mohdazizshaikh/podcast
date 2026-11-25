@@ -10,12 +10,12 @@ import shutil
 import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-from . import projects, characters, source, media, studio_camera, v4_preview as preview, v4_master as master
+from . import projects, characters, source, media, studio_camera, studio_layout, v4_preview as preview, v4_master as master
 
 CONFIG="studio-settings"
 FOLDER="studio-preview"
 ACK="I_HAVE_RIGHTS_TO_USE_THIS_STUDIO_BACKGROUND"
-LAYOUTS=("focus","grid")
+LAYOUTS=("focus","grid","spotlight")
 VIDEO="studio.mp4"
 SRT="studio.srt"
 
@@ -40,7 +40,7 @@ def _read(folder):
 
 def configure(root,pid,*,layout,background=None,camera="fixed",acknowledgment=None):
     studio_camera.validate(camera)
-    if layout not in LAYOUTS:raise ValueError("Choose focus or grid studio layout")
+    if layout not in LAYOUTS:raise ValueError("Choose focus, grid or spotlight studio layout")
     if background is not None and acknowledgment!=ACK:raise ValueError("Explicit background usage rights acknowledgment required")
     raw=characters._read_file(background,characters.MAX_PORTRAIT) if background is not None else None
     info=characters._portrait_info(raw) if raw is not None else None
@@ -72,6 +72,8 @@ def _context(root,pid):
 
 
 def geometry(indices,active,size,layout):
+    if layout=="spotlight":return studio_layout.spotlight(indices,active,size)
+    if layout not in LAYOUTS:raise ValueError("Invalid studio layout")
     w,h=size
     chosen=list(indices) if layout=="grid" else [active]
     n=len(chosen)

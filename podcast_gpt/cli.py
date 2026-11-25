@@ -265,8 +265,8 @@ def parse(argv=None):
             pg.add_argument("--acknowledgment",required=True)
     studio=subs.add_parser("project-studio-configure")
     studio.add_argument("--project-id",required=True)
-    studio.add_argument("--layout",choices=("focus","grid"),required=True)
-    studio.add_argument("--camera",choices=("fixed","push-in"),default="fixed")
+    studio.add_argument("--layout",choices=("focus","grid","spotlight"),required=True)
+    studio.add_argument("--camera",choices=("fixed","push-in","pull-out","smooth-push","pan-left","pan-right"),default="fixed")
     studio.add_argument("--background",type=Path)
     studio.add_argument("--acknowledgment")
     for name in ("project-studio-status","project-studio-render","project-studio-audit"):

@@ -1,0 +1,9 @@
+# Batch 39 — spotlight layout and camera motion
+
+New immutable studio layout: `spotlight`. A large active presenter card occupies the left side in landscape and upper area in vertical/square; up to nine static listener cards occupy a deterministic rail. One presenter uses the whole available area. Existing focus and grid remain unchanged. Margins, title and footer are preserved; all supported cast counts and active presenter positions fit without overlap.
+
+Camera modes: fixed (default), push-in (legacy linear 3% zoom), pull-out (reverse 3% zoom), smooth-push (smoothstep 3% zoom), pan-left and pan-right (4% zoom with horizontal crop position traversal). Motion applies to the active speaker's neural clip only, not the static preview or pauses. Single-frame segments bypass motion. Existing measured frame plan, exact subtitles, original master, immutable receipts and separate human review remain in place. No face generation, listener animation, cross-clip continuity or actual lip-sync acceptance claim.
+
+CLI: `project-studio-configure --project-id ID --layout spotlight --camera smooth-push` before creating a studio candidate. Existing authorized background option remains available. Dashboard studio settings expose the new selections. No overwrite of previously saved studio settings.
+
+71 new tests authored: 30 spotlight format/count combinations exercising every active position, 24 camera suffix combinations, 6 real FFmpeg filter tests, 5 invalid layouts, and 6 project/CLI/browser integration cases. The first 65 passed in an isolated local Python harness using the same module source and equivalent test bodies (including FFmpeg exact decoded raw frame byte counts). Full repository checkout blocked by GitHub DNS; six project integration cases and CI not run locally. Real visual quality, browser interaction, Windows/model and full episode acceptance remain pending.
