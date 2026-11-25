@@ -348,3 +348,5 @@ Batch 31 combined CI 45498392552 passed 6/6. Batch 32 adds guarded Japanese neur
 Batch 32 also adds bounded portrait attempt listing, candidate provenance validation and CLI candidate audit/attachment. 68 new regression cases authored across the two commits, not 68 independent features. New CI pending; real model and browser acceptance remain open. See V4_BATCH32.md.
 
 Batch 32 combined CI 45500231172 passed 6/6. Batch 33 implements optional active-speaker digital push-in, local hash-verified portrait preview and stale asynchronous selection guards. 53 new regression cases authored, CI pending. Actual model/browser acceptance, advanced transitions and listener animation remain pending. See V4_BATCH33.md.
+
+Batch 33 adds read-only decoded AAC/source audio comparison, timing and similarity diagnostics; CI pending. 63 new regression cases authored across two commits. Real browser/model acceptance and semantic audio review remain pending. See V4_BATCH33.md.

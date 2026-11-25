@@ -198,6 +198,9 @@ def parse(argv=None):
     diagnostic.add_argument("--kind",choices=("master","mix"),default="master")
     diagnostic.add_argument("--per-turn",action="store_true")
     subs.add_parser("model-setup-plan")
+    compare=subs.add_parser("project-video-audio-check")
+    compare.add_argument("--project-id",required=True)
+    compare.add_argument("--kind",choices=("preview","neural","mixed","studio-preview","neural-studio","mixed-neural-studio"),required=True)
     for name in ("project-voice-preflight","project-device-acceptance"):
         pre=subs.add_parser(name)
         pre.add_argument("--project-id",required=True)
@@ -656,6 +659,9 @@ def execute(a)->dict:
         from . import voice_preflight,device_acceptance
         module=voice_preflight if action=="project-voice-preflight" else device_acceptance
         return module.inspect(a.workspace.expanduser().absolute(),a.project_id)
+    if action=="project-video-audio-check":
+        from . import video_audio_check
+        return video_audio_check.inspect(a.workspace.expanduser().absolute(),a.project_id,a.kind)
     if action=="model-setup-plan":
         from . import model_setup_plan
         return model_setup_plan.inspect(a.workspace.expanduser().absolute())

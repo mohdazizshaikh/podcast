@@ -176,6 +176,7 @@ def html_page(token:str)->str:
 <label>Media type <select id="v4MediaKind"><option value="master">Master WAV</option><option value="preview">Static preview</option><option value="neural">Neural video</option><option value="mix">Audio mix</option><option value="mixed">Mixed video</option><option value="studio-preview">Static studio</option><option value="neural-studio">Neural studio</option><option value="mixed-neural-studio">Mixed neural studio</option></select></label>
 <button id="v4MediaCheck">Audit selected media</button>
 <button id="v4AudioDiagnostics">Measure selected master/mix loudness (read-only)</button>
+<button id="v4VideoAudioCheck">Compare selected video audio to verified source (read-only)</button>
 <p id="v4MediaInfo">Audit first, then select the matching local file (128 MiB maximum for browser hash check).</p>
 <input type="file" id="v4LocalMedia" accept=".wav,.mp4" disabled><video id="v4Player" controls preload="none" style="max-width:100%;display:none"></video>
 <p><small>File bytes stay in this browser tab; no upload or HTTP media endpoint. Large files: use the displayed local path in your own player.</small></p>
@@ -306,6 +307,7 @@ onAuthor('v4SourceImport',()=>authorFile('source',currentPid(),field('v4SourceFi
 onAuthor('v4VoicePreflight',()=>author('voice-preflight',{project_id:currentPid()}));
 onAuthor('v4DeviceAcceptance',()=>author('device-acceptance',{project_id:currentPid()}));
 onAuthor('v4TurnDiagnostics',()=>author('turn-diagnostics',{project_id:currentPid()}));
+onAuthor('v4VideoAudioCheck',()=>author('video-audio-check',{project_id:currentPid(),kind:val('v4MediaKind')}));
 async function encodeWav(file,limit){
  if(!file||file.size<44||file.size>limit||!file.name.toLowerCase().endsWith('.wav'))throw new Error('Select a bounded WAV file');
  const bytes=new Uint8Array(await file.arrayBuffer());let parts=[];

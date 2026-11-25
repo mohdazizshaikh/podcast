@@ -51,6 +51,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Authorized studio background and static focus/grid preview | Implemented | 6/6 CI 45482554584 |
 | Separate neural focus/grid studio, per-turn switching and fresh QA | Implemented | 6/6 CI 45483234208; static listeners; synthetic only |
 | Optional active-speaker digital push-in and local hash-verified portrait preview | Implemented | New CI pending; real browser/visual acceptance pending |
+| Read-only decoded video audio/source comparison | Implemented | New CI pending; heuristic PCM comparison, no automatic approval |
 | Full-length real neural video, advanced camera layouts and animated listeners | Not implemented in V4 | Pending |
 | Offline visual script editing and review JSON import | Done | 6/6 CI 45463360856; actual browser interaction pending |
 | Bounded foreground orchestration and per-action elapsed timing | Done | 6/6 CI 45463360856 |
