@@ -85,6 +85,6 @@ def test_reject_before_save(tmp_path,monkeypatch):
 
 def test_cli_markup():
     from podcast_gpt import cli,web
-    args=cli.parse(["project-mix-compose","--project-id","a"*32,"--true-peak-guard","--auto-peak-correction"])
+    args=cli.parse(["project-mix-compose","--project-id","a"*32,"--acknowledgment","test","--true-peak-guard","--auto-peak-correction"])
     assert args.auto_peak_correction and args.true_peak_guard
     assert "v4MixPeakCorrect" in web.html_page("test")

@@ -75,6 +75,6 @@ def test_receipt_tamper(tmp_path,monkeypatch):
 
 def test_cli_and_markup():
     from podcast_gpt import cli,web
-    args=cli.parse(["project-mix-compose","--project-id","a"*32,"--adaptive-noise","strong"])
+    args=cli.parse(["project-mix-compose","--project-id","a"*32,"--acknowledgment","test","--adaptive-noise","strong"])
     assert args.adaptive_noise=="strong"
     assert "v4MixAdaptiveNoise" in web.html_page("test")

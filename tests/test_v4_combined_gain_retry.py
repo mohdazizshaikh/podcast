@@ -81,6 +81,28 @@ def test_dashboard_and_audit(tmp_path,monkeypatch,limiter,initial):
 
 def test_cli_and_browser():
     from podcast_gpt import cli,web
-    args=cli.parse(["project-mix-compose","--project-id","a"*32,"--target-lufs","-16","--true-peak-guard","--auto-peak-correction"])
+    args=cli.parse(["project-mix-compose","--project-id","a"*32,"--acknowledgment","test","--target-lufs","-16","--true-peak-guard","--auto-peak-correction"])
     assert args.target_lufs==-16 and args.true_peak_guard and args.auto_peak_correction
     assert "optional LUFS target, peak safety takes priority" in web.html_page("test")
+
+
+@pytest.mark.parametrize("field,value",[
+    ("integrated_lufs",-19.0),("loudness_range_lu",3.0),
+    ("gating_threshold_lufs",-39.0),("true_peak_dbtp",-5.0)])
+def test_final_measurement_mismatch_before_save(tmp_path,monkeypatch,field,value):
+    from podcast_gpt import v4_post_audio as mix,audio_diagnostics as diag
+    from test_v4_preview import fixture
+    root,pid=fixture(tmp_path,monkeypatch)
+    dest=mix._ctx(root,pid)[1]
+    calls=[]
+    def measure(path,frames):
+        calls.append(path.name)
+        result=measurement(peak=-4.0)
+        if len(calls)>=3:
+            result={**result,field:value}
+        return result
+    monkeypatch.setattr(diag,"measure",measure)
+    with pytest.raises(ValueError,match="Combined gain final measurement differs before save"):
+        mix.compose(root,pid,target_lufs=-16,true_peak_guard=True,auto_peak_correction=True,acknowledgment=mix.ACK)
+    assert not (dest/mix.FOLDER).exists()
+    assert len(calls)==3

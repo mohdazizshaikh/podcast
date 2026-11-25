@@ -344,7 +344,14 @@ def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak
                 from . import peak_correction,audio_diagnostics
                 staged,pcm_sha,settings["peak_correction"]=peak_correction.run(staged,Path(tmp),total,pcm_sha,audio_diagnostics.measure)
             if "peak_guard" in settings:
-                settings["peak_guard_check"]=_guard_check(staged,total)
+                if auto_peak_correction and target_lufs is not None:
+                    from . import audio_diagnostics,peak_guard,loudness_gain
+                    measured=loudness_gain._measurement(audio_diagnostics.measure(staged,total))
+                    if measured!=settings["normalization"]["candidate_measurement"]:
+                        raise ValueError("Combined gain final measurement differs before save; revalidate locally")
+                    settings["peak_guard_check"]=peak_guard.check(measured["true_peak_dbtp"])
+                else:
+                    settings["peak_guard_check"]=_guard_check(staged,total)
                 if auto_peak_correction:
                     final_peak=(settings["normalization"]["candidate_measurement"]["true_peak_dbtp"] if target_lufs is not None else settings["peak_correction"]["attempts"][-1]["measured_true_peak_dbtp"])
                     if final_peak!=settings["peak_guard_check"]["measured_true_peak_dbtp"]:raise ValueError("Peak correction final measurement differs")

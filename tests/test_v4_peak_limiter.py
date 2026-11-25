@@ -75,6 +75,6 @@ def test_combined_static_gain(tmp_path,monkeypatch):
 
 
 def test_cli_and_browser_controls():
-    args=cli.parse(["project-mix-compose","--project-id","a"*32,"--limiter-ceiling","16000"])
+    args=cli.parse(["project-mix-compose","--project-id","a"*32,"--acknowledgment","test","--limiter-ceiling","16000"])
     assert args.limiter_ceiling==16000
     assert "v4MixLimiter" in web.html_page("test")
