@@ -43,7 +43,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | English US/UK Kokoro frontend and dependency group | Implemented | 6/6 CI 45482554584; actual voices unverified |
 | Mandarin Kokoro v1.0 frontend and optional dependency group | Implemented | 6/6 CI 45494573255; mocked frontend only |
 | Japanese neural frontend with local resource gate | Implemented | 6/6 CI 45500231172; actual dictionary/model execution unverified |
-| Explicit online Edge V4 adapter (CLI only) | Implemented | Batch 37 CI pending; actual service, voice quality and browser action pending |
+| Explicit online Edge V4 adapter, browser generation, offline plan, online voice inventory and checkpoint stop | Implemented | Batches 37–38 CI pending; actual service/voice quality/browser acceptance pending |
 | Selected-format neural candidate composition, measured SRT and structural audit | Done | 6/6 CI 45458841874 (short synthetic fixture exports) |
 | Full candidate-specific human video QA | Done | 6/6 CI run 45461563645 |
 | Safe stopped neural scratch archive | Done | 6/6 CI run 45461563645; other failure modes manual |
@@ -84,7 +84,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | V4 production release | Not released | Pending actual acceptance |
 
 ## Next priority
-Verify batches 33–37 CI. Next actual model setup/pilot, Japanese dictionary/model execution, real portrait inference, dynamic limiting/denoising, broader research, actual browser and physical Windows acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
+Verify batches 33–38 CI. Next actual model setup/pilot, Japanese dictionary/model execution, real portrait inference, dynamic limiting/denoising, broader research, actual browser and physical Windows acceptance. Broad research corroboration remains pending. Live ETA and integrated dashboard remain pending. Physical Windows pilot and full episode acceptance remain mandatory; no production claim. Do not prematurely replace the V3 verified pipeline.
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.
@@ -96,3 +96,5 @@ Batch 35 implements optional deterministic whole-mix dynamic sample-peak limitin
 Batch 36 permits an optional dynamic sample limiter followed by bounded static loudness gain. The gain is capped by the selected sample ceiling, the candidate must pass the measured true-peak ceiling, and the immutable receipt binds the limiter and normalization settings. Legacy no-limiter receipts retain their format. 62 new unit regression cases authored, plus a revised project/dashboard integration case; full Python test execution and real device/listening acceptance remain unverified. This is not dynamic intersample true-peak limiting or guaranteed LUFS attainment. See V4_BATCH36.md.
 
 Batch 37 implements explicit online Edge V4 speech adapter with static locale/preset validation, 1–5 bounded approved turns, private temporary MP3/PCM conversion, immutable source-bound receipts, resume, duplicate rejection and CLI/readiness/preflight integration. 81 new regression cases authored (71 pure locale/receipt cases and 10 adapter/CLI cases); tests not yet independently run. No automatic network fallback, service/voice inventory guarantee, browser Edge action or real voice/device acceptance. See V4_BATCH37.md.
+
+Batch 38 adds read-only Edge pending-turn planning, separate bounded consented online voice inventory with filtering and deduplication, optional dependency setup, browser generation/inventory/preview, turn-bound progress and cooperative stop, and local-only continuity protection. 63 new test cases authored; full repository CI and real browser/service/device acceptance unverified. See V4_BATCH38.md.

@@ -163,6 +163,15 @@ def html_page(token:str)->str:
 <label><input id="v4CloudConsent" type="checkbox"> I authorize this text transfer and eligible local fallback now</label>
 <label><input id="v4GeminiConsent" type="checkbox"> I confirm my Gemini project is unbilled Free Tier and authorize Gemini fallback</label>
 <button id="v4CloudDraft">Run one consented drafting action</button>
+<h3>Optional online Edge speech</h3>
+<p>Preview approved pending turns without network access. Online generation sends selected dialogue and voice presets to Edge. No automatic fallback or guaranteed availability.</p>
+<label>Maximum new turns <input id="v4EdgeCount" type="number" min="1" max="5" value="1"></label>
+<button id="v4EdgePlan">Preview pending Edge turns (offline)</button>
+<label>Optional voice language filter <input id="v4EdgeLanguage" maxlength="80"></label>
+<label><input id="v4EdgeInventoryConsent" type="checkbox"> I authorize an online voice inventory request (no dialogue)</label>
+<button id="v4EdgeInventory">Discover online voices</button>
+<label><input id="v4EdgeConsent" type="checkbox"> I have usage rights and authorize sending selected approved dialogue and voice presets to Edge now</label>
+<button id="v4EdgeGenerate">Generate bounded online speech</button>
 <h3>Explicit local AI production</h3>
 <label>Engine <select id="v4InferenceEngine"><option value="ollama">Ollama — local script</option><option value="kokoro">Kokoro — voice</option><option value="espeak">eSpeak — voice</option><option value="sadtalker">SadTalker — neural clips</option></select></label>
 <label>Maximum actions <input id="v4InferenceSteps" type="number" min="1" max="5" value="1"></label>
@@ -245,7 +254,7 @@ async function refresh(){
  if(pollTimer!==null){clearTimeout(pollTimer);pollTimer=null}
  let r=await fetch('/api/status',{cache:'no-store'});let status=await r.json();
  out.textContent=JSON.stringify(status,null,2);showResult(status);
- currentTask=status.task_id;document.getElementById("v4StopTask").disabled=!(status.phase==="running"&&status.command==="author-local-inference"&&!status.stop_requested);
+ currentTask=status.task_id;document.getElementById("v4StopTask").disabled=!(status.phase==="running"&&["author-local-inference","author-edge-generate"].includes(status.command)&&!status.stop_requested);
  const progress=status.progress;document.getElementById('v4TaskProgress').textContent=status.phase+' | '+(status.command||'No task')+' | elapsed '+(status.elapsed_seconds??0)+' s'+(status.stop_requested?' | stop requested at next checkpoint':'')+(progress?' | '+progress.action+' | verified actions '+progress.completed_actions+'/'+progress.action_limit:'');
  if(status.phase==='running')pollTimer=setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
 }
@@ -329,6 +338,9 @@ onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val(
 onAuthor('v4StudioStatus',()=>author('studio-status',{project_id:currentPid()}));
 onAuthor('v4ContinuitySave',()=>{if(!field('v4ContinuityConsent').checked)throw new Error('Explicit local continuity consent required');field('v4ContinuityConsent').checked=false;return author('continuity-enable',{project_id:currentPid(),prior_project_id:val('v4PriorId').trim(),turn_ids:val('v4PriorTurns').split(',').map(s=>s.trim()),local_only_consent:true},true)});
 onAuthor('v4ContinuityStatus',()=>author('continuity-status',{project_id:currentPid()}));
+onAuthor('v4EdgePlan',()=>author('edge-plan',{project_id:currentPid(),max_new:Number(val('v4EdgeCount'))}));
+onAuthor('v4EdgeInventory',()=>{if(!field('v4EdgeInventoryConsent').checked)throw new Error('Explicit inventory network consent required');field('v4EdgeInventoryConsent').checked=false;return author('edge-inventory',{language:val('v4EdgeLanguage').trim()||null,network_consent:true},true)});
+onAuthor('v4EdgeGenerate',()=>{if(!field('v4EdgeConsent').checked)throw new Error('Explicit dialogue transfer consent and rights required');field('v4EdgeConsent').checked=false;return author('edge-generate',{project_id:currentPid(),max_new:Number(val('v4EdgeCount')),network_consent:true},true)});
 onAuthor('v4CloudDraft',()=>{if(!field('v4CloudConsent').checked)throw new Error('Explicit cloud text consent required');const gemini=field('v4GeminiConsent').checked;field('v4CloudConsent').checked=false;field('v4GeminiConsent').checked=false;return author('cloud-draft',{project_id:currentPid(),cloud_consent:true,confirm_gemini_free_project:gemini},true)});
 onAuthor('v4SourceWeb',()=>{if(!field('v4WebConsent').checked)throw new Error('Explicit internet retrieval consent required');field('v4WebConsent').checked=false;return author('source-url',{project_id:currentPid(),url:val('v4SourceUrl').trim(),allow_web_fetch:true},true)});
 function researchConsent(){if(!field('v4ResearchConsent').checked)throw new Error('Explicit public internet consent required');field('v4ResearchConsent').checked=false}
@@ -438,7 +450,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
             if url.path=="/api/stop":
                 if size!=0:return self._json(400,{"error":"Stop body must be empty"})
                 with state_lock:
-                    if status["phase"]!="running" or status["command"]!="author-local-inference" or query.get("task_id",[""])[0]!=status.get("task_id") or active_stop is None:
+                    if status["phase"]!="running" or status["command"] not in ("author-local-inference","author-edge-generate") or query.get("task_id",[""])[0]!=status.get("task_id") or active_stop is None:
                         accepted=False
                     else:
                         active_stop.set();status["stop_requested"]=True;accepted=True

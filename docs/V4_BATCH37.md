@@ -11,3 +11,5 @@ Each explicitly authorized invocation sends only selected current approved dialo
 Bounded 120-second async stream, 8 MB MP3 limit, private temporary workspace, bounded FFmpeg PCM conversion (16 kHz mono PCM16), existing 0.25–120 second turn and total-duration limits, no overwrite, exact source binding and duplicate rejection. Existing speech remains intact after a failure. Completed turns resume on next explicit invocation. No automatic network voice inventory or publication.
 
 81 authored test cases: 54 locale matrix, 10 malformed presets, 7 receipt validation, 4 consent, 4 count, 1 fake-provider FFmpeg resume and 1 CLI default. Actual tests and CI not independently confirmed yet. Real service, model/browser/device acceptance and full episode remain pending.
+
+Batch 38 adds read-only Edge pending-turn planning, separate bounded consented online voice inventory with filtering and deduplication, optional dependency setup, browser generation/inventory/preview, turn-bound progress and cooperative stop, and local-only continuity protection. 63 new test cases authored; full repository CI and real browser/service/device acceptance unverified. See V4_BATCH38.md.
