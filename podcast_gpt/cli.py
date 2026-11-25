@@ -294,6 +294,8 @@ def parse(argv=None):
         if name=="project-studio-cache-prune":
             cp.add_argument("--plan-sha256",required=True)
             cp.add_argument("--acknowledgment",required=True)
+    timing=subs.add_parser("project-render-performance")
+    timing.add_argument("--project-id",required=True)
     cache_inventory=subs.add_parser("project-studio-cache-inventory")
     cache_inventory.add_argument("--project-id",required=True)
     cache_delete=subs.add_parser("project-studio-cache-delete")
@@ -670,6 +672,9 @@ def execute(a)->dict:
     if action=="character-portrait-attach":
         from . import portrait_brief
         return portrait_brief.attach(a.workspace.expanduser().absolute(),a.character_id,portrait=a.portrait,acknowledgment=a.acknowledgment)
+    if action=="project-render-performance":
+        from . import render_history
+        return render_history.inspect(a.workspace.expanduser().absolute(),a.project_id)
     if action in ("project-studio-cache-prune-plan","project-studio-cache-prune"):
         from . import cache_retention
         private=a.workspace.expanduser().absolute()

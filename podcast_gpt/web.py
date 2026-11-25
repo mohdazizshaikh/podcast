@@ -171,6 +171,8 @@ def html_page(token:str)->str:
 <h3>Private studio render cache</h3>
 <p>Inspect cached segment pairs, logical bytes and namespace timestamps. Inventory does not verify video contents or decide which cache is obsolete. Delete only an explicitly chosen namespace using its latest snapshot; all render processes must be stopped.</p>
 <button id="v4CacheInventory">Inspect render cache</button>
+<p>Local performance history records the last 30 successfully audited new production renders. Render and verified-cache restore durations are separated; no model fixture or failed attempt is counted.</p>
+<button id="v4RenderPerformance">Inspect render performance history</button>
 <label>Namespace SHA-256 <input id="v4CacheNamespace" maxlength="64"></label>
 <label>Inventory snapshot SHA-256 <input id="v4CacheSnapshot" maxlength="64"></label>
 <label><input id="v4CacheDeleteConsent" type="checkbox"> All render processes are stopped; permanently delete only this cached namespace</label>
@@ -367,6 +369,7 @@ onAuthor('v4TurnImport',()=>{if(!field('v4TurnRights').checked)throw new Error('
 onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout'),camera=val('v4StudioCamera'),listener_motion=val('v4StudioListeners'),transition=val('v4StudioTransition');if(!file)return author('studio-configure',{project_id:currentPid(),layout,camera,listener_motion,transition},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout)+'&camera='+encodeURIComponent(camera)+'&listener_motion='+encodeURIComponent(listener_motion)+'&transition='+encodeURIComponent(transition))});
 onAuthor('v4StudioStatus',()=>author('studio-status',{project_id:currentPid()}));
 onAuthor('v4CacheInventory',()=>author('studio-cache-inventory',{project_id:currentPid()}));
+onAuthor('v4RenderPerformance',()=>author('render-performance',{project_id:currentPid()}));
 function cachePruneRules(){const budget=val('v4CacheBudget').trim(),keep=val('v4CacheKeep').trim();if(!/^[0-9]+$/.test(budget)||!/^[0-9]+$/.test(keep))throw new Error('Enter whole numbers for budget and retention');return {project_id:currentPid(),max_mib:Number(budget),keep_newest:Number(keep),protected:val('v4CacheProtect').split(',').map(s=>s.trim()).filter(Boolean)}}
 onAuthor('v4CachePrunePlan',()=>{field('v4CachePruneHash').value='';field('v4CachePruneConsent').checked=false;return author('studio-cache-prune-plan',cachePruneRules())});
 onAuthor('v4CachePrune',()=>{if(!field('v4CachePruneConsent').checked)throw new Error('Confirm stopped processes and exact cleanup plan');const plan_sha256=val('v4CachePruneHash').trim();if(!/^[a-f0-9]{64}$/.test(plan_sha256))throw new Error('Copy the latest preview plan SHA-256');const rules=cachePruneRules();field('v4CachePruneConsent').checked=false;field('v4CachePruneHash').value='';return author('studio-cache-prune',{...rules,plan_sha256,stopped_processes_and_delete:true},true)});

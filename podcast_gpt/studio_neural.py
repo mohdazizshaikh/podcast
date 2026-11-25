@@ -13,7 +13,7 @@ from . import projects, source, characters, media, studio_camera, studio_listene
 from . import v4_export as export, v4_neural as neural, v4_preview as preview, v4_master as master
 from . import v4_final_review as review
 from .render_progress import RenderProgress,RenderStopped
-from . import studio_cache
+from . import studio_cache, render_history
 
 FOLDER="neural-studio"
 VIDEO="studio-neural.mp4"
@@ -55,7 +55,7 @@ def _renderer_identity():
             "platform":platform.platform(),"machine":platform.machine()}
 
 
-def _segments(root,dest,cast,done,binding,settings,background,plan,temp,*,tracker=None,cache=None):
+def _segments(root,dest,cast,done,binding,settings,background,plan,temp,*,tracker=None,cache=None,timing=None):
     size=preview.SIZES[binding["video_format"]]
     portraits,speakers=_portraits(root,cast);cards={}
     names=[f"segment{i:05}.mp4" for i in range(len(plan))]
@@ -75,12 +75,14 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp,*,tracke
     for i in order:
         if tracker is not None:tracker.checkpoint()
         seg=plan[i]
+        if timing is not None:timing.begin_unit()
         active=speakers[seg["speaker"]];pause=seg["kind"]=="pause"
         path=temp/names[i]
         dependencies=[]
         if cache is not None:
             if i in deferred:dependencies=[source.digest(temp/names[j]) for j in (i-1,i+1)]
             if cache.restore(i,dependencies,path,export._video_frames):
+                if timing is not None:timing.unit(seg["frames"],restored=True)
                 if tracker is not None:tracker.segment(i)
                 continue
         if i in deferred:
@@ -118,6 +120,7 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp,*,tracke
                   timeout=max(120,seg["frames"]*2))
         if export._video_frames(path)!=seg["frames"]:raise ValueError("Studio segment frame count differs")
         if cache is not None:cache.save(i,dependencies,path)
+        if timing is not None:timing.unit(seg["frames"])
         if tracker is not None:tracker.segment(i)
     listing=temp/"segments.ffconcat"
     listing.write_text("ffconcat version 1.0\n"+"".join("file "+n+"\n" for n in names),encoding="ascii")
@@ -167,6 +170,7 @@ def compose(root,pid,*,allow_fixture=False,progress=None,should_stop=None,resume
             if progress is not None:progress({"action":"studio-audit-complete","completed_actions":1,"action_limit":1,"stop_allowed":False})
             return result
         tracker=RenderProgress(plan,progress,should_stop,estimate_segments=not resume) if progress is not None or should_stop is not None else None
+        timing=render_history.Timing("neural-studio",binding["video_format"],resume) if binding.get("test_fixture_only") is False else None
         seconds=timeline["measured_audio_seconds"]
         if shutil.disk_usage(folder).free<max(100*1024**2,int(seconds*(4_000_000 if resume else 2_000_000))):raise ValueError("Insufficient studio disk space")
         if tracker is not None:tracker.checkpoint()
@@ -176,6 +180,7 @@ def compose(root,pid,*,allow_fixture=False,progress=None,should_stop=None,resume
             temp=Path(tmp)
             options={"tracker":tracker} if tracker is not None else {}
             if cache is not None:options["cache"]=cache
+            if timing is not None:options["timing"]=timing
             listing=_segments(root,dest,cast,done,binding,settings,background,plan,temp,**options)
             if tracker is not None:tracker.checkpoint()
             staged=temp/VIDEO
@@ -192,6 +197,7 @@ def compose(root,pid,*,allow_fixture=False,progress=None,should_stop=None,resume
             source.atomic_json(out/"receipt.json",_receipt(out,timeline,binding,plan,streams),new=True)
         result={"project_id":pid,"studio":_audit(dest,timeline,turns,binding,plan)}
         if tracker is not None:tracker.finished()
+        if timing is not None:render_history.save_completed(folder,timing,sum(row["frames"] for row in plan))
         return result
 
 

@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 from . import projects, source, characters, media, v4_post_audio as mix
 from . import v4_export as export, v4_preview as preview
 from .render_progress import RenderProgress,RenderStopped,mixed_scenes
-from . import studio_cache, mixed_chunks
+from . import studio_cache, mixed_chunks, render_history
 
 FOLDER="mixed-export"
 VIDEO="episode-mixed.mp4"
@@ -191,6 +191,7 @@ def compose(root,pid,*,allow_fixture=False,studio=False,progress=None,should_sto
         scenes=mixed_scenes(plan)
         units=mixed_chunks.chunks(plan) if resume else [{"kind":kind,"start":0,"frames":n} for kind,n in scenes]
         tracker=RenderProgress(units,progress,should_stop,label="mixed",estimate_segments=False) if progress is not None or should_stop is not None else None
+        timing=render_history.Timing("mixed-studio" if studio else "mixed-video",seal["video_format"],resume) if seal.get("test_fixture_only") is False else None
         seconds=record["total_frames"]/export.RATE
         if shutil.disk_usage(folder).free<max(100*1024**2,int(seconds*(4_000_000 if resume else 2_000_000))):raise ValueError("Insufficient private disk space")
         if tracker is not None:tracker.begin()
@@ -199,9 +200,11 @@ def compose(root,pid,*,allow_fixture=False,studio=False,progress=None,should_sto
             temp=Path(tmp);segments=[]
             for index,unit in enumerate(units):
                 if tracker is not None:tracker.checkpoint()
+                if timing is not None:timing.begin_unit()
                 kind,count=unit["kind"],unit["frames"]
                 target=temp/(f"segment{index:06}.mp4" if resume else kind+".mp4")
                 if cache is not None and cache.restore(index,[],target,export._video_frames):
+                    if timing is not None:timing.unit(count,restored=True)
                     segments.append(target.name)
                     if tracker is not None:tracker.segment(index)
                     continue
@@ -217,6 +220,7 @@ def compose(root,pid,*,allow_fixture=False,studio=False,progress=None,should_sto
                     timeout=max(120,count*2))
                 if export._video_frames(target)!=count:raise ValueError("Mixed scene frame coverage differs")
                 if cache is not None:cache.save(index,[],target)
+                if timing is not None:timing.unit(count)
                 segments.append(target.name)
                 if tracker is not None:tracker.segment(index)
             if tracker is not None:tracker.checkpoint()
@@ -235,6 +239,7 @@ def compose(root,pid,*,allow_fixture=False,studio=False,progress=None,should_sto
             source.atomic_json(out/RECEIPT,_receipt(out,plan,seal,streams),new=True)
         result={"project_id":pid,"export":_audit(dest,timeline,turns,record,plan,seal)}
         if tracker is not None:tracker.finished()
+        if timing is not None:render_history.save_completed(folder,timing,plan["total_video_frames"])
         return result
 
 
