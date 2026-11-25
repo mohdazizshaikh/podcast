@@ -9,6 +9,7 @@ from pathlib import Path
 from . import projects, source, characters, media, studio_camera, studio_listeners, studio_transition, studio_preview as studio
 from . import v4_export as export, v4_neural as neural, v4_preview as preview, v4_master as master
 from . import v4_final_review as review
+from .render_progress import RenderProgress,RenderStopped
 
 FOLDER="neural-studio"
 VIDEO="studio-neural.mp4"
@@ -41,7 +42,7 @@ def _portraits(root,cast):
     return portraits,speakers
 
 
-def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
+def _segments(root,dest,cast,done,binding,settings,background,plan,temp,*,tracker=None):
     size=preview.SIZES[binding["video_format"]]
     portraits,speakers=_portraits(root,cast);cards={}
     names=[f"segment{i:05}.mp4" for i in range(len(plan))]
@@ -59,6 +60,7 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
             cards[key]=card
         return cards[key]
     for i in order:
+        if tracker is not None:tracker.checkpoint()
         seg=plan[i]
         active=speakers[seg["speaker"]];pause=seg["kind"]=="pause"
         if i in deferred:
@@ -96,6 +98,7 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
                    "-frames:v",str(seg["frames"]),"-c:v","libx264","-threads","2","-preset","veryfast","-crf","23",str(path)],
                   timeout=max(120,seg["frames"]*2))
         if export._video_frames(path)!=seg["frames"]:raise ValueError("Studio segment frame count differs")
+        if tracker is not None:tracker.segment(i)
     listing=temp/"segments.ffconcat"
     listing.write_text("ffconcat version 1.0\n"+"".join("file "+n+"\n" for n in names),encoding="ascii")
     return listing
@@ -130,28 +133,41 @@ def _audit(dest,timeline,turns,binding,plan):
     return expected
 
 
-def compose(root,pid,*,allow_fixture=False):
+def compose(root,pid,*,allow_fixture=False,progress=None,should_stop=None):
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         ctx=_context(root,pid,allow_fixture=allow_fixture)
         _,dest,timeline,turns,cast,rows,done,binding,settings,background=ctx
         plan=export.frame_plan(timeline,rows);out=dest/FOLDER
-        if out.exists() or out.is_symlink():return {"project_id":pid,"studio":_audit(dest,timeline,turns,binding,plan)}
+        if out.exists() or out.is_symlink():
+            if progress is not None:progress({"action":"studio-existing-audit","completed_actions":0,"action_limit":1,"stop_allowed":False})
+            if should_stop is not None and should_stop():raise RenderStopped("Studio audit stopped before existing candidate verification")
+            result={"project_id":pid,"studio":_audit(dest,timeline,turns,binding,plan)}
+            if progress is not None:progress({"action":"studio-audit-complete","completed_actions":1,"action_limit":1,"stop_allowed":False})
+            return result
+        tracker=RenderProgress(plan,progress,should_stop) if progress is not None or should_stop is not None else None
         seconds=timeline["measured_audio_seconds"]
         if shutil.disk_usage(folder).free<max(100*1024**2,int(seconds*2_000_000)):raise ValueError("Insufficient studio disk space")
+        if tracker is not None:tracker.begin()
         with tempfile.TemporaryDirectory(prefix="v4-neural-studio-",dir=folder) as tmp:
-            temp=Path(tmp);listing=_segments(root,dest,cast,done,binding,settings,background,plan,temp)
+            temp=Path(tmp)
+            listing=_segments(root,dest,cast,done,binding,settings,background,plan,temp,**({"tracker":tracker} if tracker is not None else {}))
+            if tracker is not None:tracker.checkpoint()
             staged=temp/VIDEO
             media.cmd(["ffmpeg","-nostdin","-hide_banner","-v","error","-f","concat","-safe","1","-i",str(listing),
                        "-i",str(dest/master.FOLDER/master.WAV),"-map","0:v:0","-map","1:a:0","-c:v","copy",
                        "-c:a","aac","-ar","48000","-b:a","160k","-movflags","+faststart",str(staged)],timeout=max(300,int(seconds*8)))
             streams=_decode(staged,timeline,binding,plan)
+            if tracker is not None:tracker.muxed()
             if _context(root,pid,allow_fixture=allow_fixture)!=ctx:raise ValueError("Neural studio inputs changed")
+            if tracker is not None:tracker.committing()
             out.mkdir()
             with staged.open("rb") as inp,(out/VIDEO).open("xb") as h:shutil.copyfileobj(inp,h)
             with (out/SRT).open("xb") as h:h.write(preview.subtitles(timeline,turns))
             source.atomic_json(out/"receipt.json",_receipt(out,timeline,binding,plan,streams),new=True)
-        return {"project_id":pid,"studio":_audit(dest,timeline,turns,binding,plan)}
+        result={"project_id":pid,"studio":_audit(dest,timeline,turns,binding,plan)}
+        if tracker is not None:tracker.finished()
+        return result
 
 
 def inspect(root,pid,*,allow_fixture=False):

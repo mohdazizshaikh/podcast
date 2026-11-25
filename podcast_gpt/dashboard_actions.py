@@ -17,7 +17,7 @@ def parse_request(raw):
     return episode_plan.validate_request(value)
 
 
-def run(root,pid,action,*,acknowledgment):
+def run(root,pid,action,*,acknowledgment,progress=None,should_stop=None):
     if acknowledgment!=ACK:raise ValueError("Explicit local dashboard processing acknowledgment required")
     if action not in ACTIONS:raise ValueError("Unknown dashboard production action")
     folder=projects.project(root,pid)
@@ -31,5 +31,7 @@ def run(root,pid,action,*,acknowledgment):
         return visual_media_review.create(root,pid,kind=action.split("-")[1])
     if action=="project-static-render":return v4_preview.render(root,pid)
     if action=="project-studio-render":return studio_preview.render(root,pid)
-    if action=="project-neural-studio-compose":return studio_neural.compose(root,pid)
+    if action=="project-neural-studio-compose":
+        if progress is None and should_stop is None:return studio_neural.compose(root,pid)
+        return studio_neural.compose(root,pid,progress=progress,should_stop=should_stop)
     return v4_mixed_video.compose(root,pid,studio=True)
