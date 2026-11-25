@@ -208,6 +208,7 @@ def parse(argv=None):
     mix.add_argument("--highpass-hz",type=int,choices=(0,60,80,100,120),default=0)
     mix.add_argument("--hum-hz",type=int,choices=(0,50,60),default=0)
     mix.add_argument("--lowpass-hz",type=int,choices=(0,4500,6000),default=0)
+    mix.add_argument("--true-peak-guard",action="store_true",help="Conservative whole-mix peak guard with mandatory -1.5 dBTP measurement")
     mix.add_argument("--limiter-ceiling",type=int,default=0,help="Sample peak ceiling in PCM units; 0 disables")
     diagnostic=subs.add_parser("project-audio-diagnostics")
     diagnostic.add_argument("--project-id",required=True)
@@ -590,7 +591,7 @@ def execute(a)->dict:
         private=a.workspace.expanduser().absolute()
         if action=="project-mix-audit":return v4_post_audio.inspect(private,a.project_id)
         return v4_post_audio.compose(private,a.project_id,intro=a.intro,bed=a.bed,outro=a.outro,
-            speech_peak=a.speech_peak,bed_peak=a.bed_peak,duck_percent=a.duck_percent,target_lufs=a.target_lufs,compress_ratio=a.compress_ratio,compress_threshold=a.compress_threshold,remove_dc=a.remove_dc,gate_threshold=a.gate_threshold,limiter_ceiling=a.limiter_ceiling,highpass_hz=a.highpass_hz,hum_hz=a.hum_hz,lowpass_hz=a.lowpass_hz,acknowledgment=a.acknowledgment)
+            speech_peak=a.speech_peak,bed_peak=a.bed_peak,duck_percent=a.duck_percent,target_lufs=a.target_lufs,compress_ratio=a.compress_ratio,compress_threshold=a.compress_threshold,remove_dc=a.remove_dc,gate_threshold=a.gate_threshold,limiter_ceiling=a.limiter_ceiling,highpass_hz=a.highpass_hz,hum_hz=a.hum_hz,lowpass_hz=a.lowpass_hz,true_peak_guard=a.true_peak_guard,acknowledgment=a.acknowledgment)
     if action in ("project-incomplete-status","project-incomplete-archive"):
         from . import v4_partial_recovery
         private=a.workspace.expanduser().absolute()
