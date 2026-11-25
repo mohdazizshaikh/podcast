@@ -23,7 +23,7 @@ def test_spotlight_geometry(size,count):
 @pytest.mark.parametrize('frames',[1,2,125,251])
 def test_camera_suffix(mode,frames):
     suffix=cam.filter_suffix(mode,320,240,frames)
-    if mode=='fixed' or frames==1:assert suffix==''
+    if mode=='fixed' or (frames==1 and mode not in cam.CONTINUOUS):assert suffix==''
     else:assert 'd=1:s=320x240:fps=25' in suffix
 
 @pytest.mark.skipif(not shutil.which("ffmpeg"),reason="FFmpeg required")

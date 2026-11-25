@@ -12,7 +12,8 @@ def test_camera_geometry(size,layout,count,mode):
         _,_,w,h=studio.active_rect(range(1,count+1),active,size,layout)
         text=cam.filter_suffix(mode,w,h,250)
         assert (not text) if mode=="fixed" else f"d=1:s={w}x{h}:fps=25" in text
-        assert cam.filter_suffix(mode,w,h,1)==""
+        one=cam.filter_suffix(mode,w,h,1)
+        assert bool(one)==(mode in cam.CONTINUOUS)
 
 
 @pytest.mark.parametrize("mode",[None,True,1,[],{},"","zoom","pan"])

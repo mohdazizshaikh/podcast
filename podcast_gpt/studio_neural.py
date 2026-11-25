@@ -41,6 +41,7 @@ def _portraits(root,cast):
 def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
     size=preview.SIZES[binding["video_format"]]
     portraits,speakers=_portraits(root,cast);cards={};names=[]
+    starts=list(studio_camera.offsets(plan))
     for i,seg in enumerate(plan):
         active=speakers[seg["speaker"]];pause=seg["kind"]=="pause"
         key=(active,pause)
@@ -57,7 +58,7 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
             if source.digest(clip)!=done[cid]["mp4_sha256"]:raise ValueError("Studio clip changed")
             inputs+=["-i",str(clip)]
             x,y,w,h=studio.active_rect(portraits,active,size,settings["layout"])
-            camera=studio_camera.filter_suffix(settings.get("camera","fixed"),w,h,seg["frames"])
+            camera=studio_camera.filter_suffix(settings.get("camera","fixed"),w,h,seg["frames"],start_frame=starts[i])
             vf=(f"[1:v]fps=25,scale={w}:{h}:force_original_aspect_ratio=decrease:force_divisible_by=2,"
                 f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1{camera},tpad=stop_mode=clone:stop_duration=1[face];"
                 f"[0:v][face]overlay={x}:{y}:shortest=1:repeatlast=0,format=yuv420p[out]")

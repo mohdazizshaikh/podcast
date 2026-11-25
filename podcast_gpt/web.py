@@ -159,7 +159,7 @@ def html_page(token:str)->str:
 <label><input id="v4TurnRights" type="checkbox"> I have rights and this recording matches the exact approved dialogue</label>
 <button id="v4TurnImport">Import one dialogue recording</button>
 <label>Studio layout <select id="v4StudioLayout"><option>focus</option><option>grid</option><option>spotlight</option></select></label>
-<label>Neural speaker camera <select id="v4StudioCamera"><option value="fixed">Fixed</option><option value="push-in">Subtle push-in</option><option value="pull-out">Pull-out</option><option value="smooth-push">Smooth push-in</option><option value="pan-left">Pan left</option><option value="pan-right">Pan right</option></select></label>
+<label>Neural speaker camera <select id="v4StudioCamera"><option value="fixed">Fixed</option><option value="push-in">Subtle push-in</option><option value="pull-out">Pull-out</option><option value="smooth-push">Smooth push-in</option><option value="pan-left">Pan left</option><option value="pan-right">Pan right</option><option value="continuous-drift">Continuous horizontal drift</option><option value="continuous-breathe">Continuous gentle zoom</option></select></label>
 <label>Optional local studio background PNG <input id="v4StudioBg" type="file" accept=".png"></label>
 <label><input id="v4StudioRights" type="checkbox"> I have rights to use the selected background</label>
 <button id="v4StudioSave">Save immutable studio settings</button><button id="v4StudioStatus">Inspect studio settings</button>
