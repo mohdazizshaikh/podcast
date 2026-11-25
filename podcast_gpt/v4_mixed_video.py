@@ -5,11 +5,14 @@ The original speech-only candidate and all prior approvals remain untouched.
 from __future__ import annotations
 import shutil
 import tempfile
+import platform
+import PIL
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from . import projects, source, characters, media, v4_post_audio as mix
 from . import v4_export as export, v4_preview as preview
 from .render_progress import RenderProgress,RenderStopped,mixed_scenes
+from . import studio_cache, mixed_chunks
 
 FOLDER="mixed-export"
 VIDEO="episode-mixed.mp4"
@@ -157,7 +160,18 @@ def _card(path,size,label):
     im.save(path,"PNG")
 
 
-def compose(root,pid,*,allow_fixture=False,studio=False,progress=None,should_stop=None):
+def _renderer_identity():
+    modules=(studio_cache,mixed_chunks,media)
+    return {"sources":{m.__name__:source.digest(Path(m.__file__)) for m in modules},
+            "mixed_source":source.digest(Path(__file__)),
+            "ffmpeg":media.cmd(["ffmpeg","-version"],timeout=20).stdout,
+            "ffprobe":media.cmd(["ffprobe","-version"],timeout=20).stdout,
+            "pillow":PIL.__version__,"python":platform.python_version(),
+            "platform":platform.platform(),"machine":platform.machine()}
+
+
+def compose(root,pid,*,allow_fixture=False,studio=False,progress=None,should_stop=None,resume=False):
+    if type(resume) is not bool:raise ValueError("Invalid mixed resume setting")
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
         if should_stop is not None and should_stop():raise RenderStopped("Mixed render stopped before candidate preparation")
@@ -175,24 +189,34 @@ def compose(root,pid,*,allow_fixture=False,studio=False,progress=None,should_sto
             if progress is not None:progress({"action":"mixed-audit-complete","completed_actions":1,"action_limit":1,"stop_allowed":False})
             return result
         scenes=mixed_scenes(plan)
-        tracker=RenderProgress([{"frames":n} for _,n in scenes],progress,should_stop,label="mixed",estimate_segments=False) if progress is not None or should_stop is not None else None
+        units=mixed_chunks.chunks(plan) if resume else [{"kind":kind,"start":0,"frames":n} for kind,n in scenes]
+        tracker=RenderProgress(units,progress,should_stop,label="mixed",estimate_segments=False) if progress is not None or should_stop is not None else None
         seconds=record["total_frames"]/export.RATE
-        if shutil.disk_usage(folder).free<max(100*1024**2,int(seconds*2_000_000)):raise ValueError("Insufficient private disk space")
+        if shutil.disk_usage(folder).free<max(100*1024**2,int(seconds*(4_000_000 if resume else 2_000_000))):raise ValueError("Insufficient private disk space")
         if tracker is not None:tracker.begin()
+        cache=studio_cache.SegmentCache(folder,{"kind":"mixed-resume-v1","seal":seal},units,_renderer_identity()) if resume else None
         with tempfile.TemporaryDirectory(prefix="v4-mixed-",dir=folder) as tmp:
             temp=Path(tmp);segments=[]
-            for index,(kind,count) in enumerate(scenes):
+            for index,unit in enumerate(units):
                 if tracker is not None:tracker.checkpoint()
-                target=temp/(kind+".mp4")
+                kind,count=unit["kind"],unit["frames"]
+                target=temp/(f"segment{index:06}.mp4" if resume else kind+".mp4")
+                if cache is not None and cache.restore(index,[],target,export._video_frames):
+                    segments.append(target.name)
+                    if tracker is not None:tracker.segment(index)
+                    continue
                 if kind=="speech":inputs=["-i",str(base_path)]
                 else:
-                    card=temp/(kind+".png");_card(card,preview.SIZES[seal["video_format"]],kind.upper())
+                    card=temp/(kind+".png")
+                    if not card.exists():_card(card,preview.SIZES[seal["video_format"]],kind.upper())
                     inputs=["-loop","1","-framerate","25","-i",str(card)]
+                graph=mixed_chunks.filter_graph(unit["start"],count) if resume else "fps=25,setsar=1,tpad=stop_mode=clone:stop_duration=1,format=yuv420p"
                 media.cmd(["ffmpeg","-nostdin","-hide_banner","-v","error",*inputs,"-map","0:v:0","-an",
-                    "-vf","fps=25,setsar=1,tpad=stop_mode=clone:stop_duration=1,format=yuv420p",
+                    "-vf",graph,
                     "-frames:v",str(count),"-c:v","libx264","-threads","2","-preset","veryfast","-crf","23",str(target)],
                     timeout=max(120,count*2))
                 if export._video_frames(target)!=count:raise ValueError("Mixed scene frame coverage differs")
+                if cache is not None:cache.save(index,[],target)
                 segments.append(target.name)
                 if tracker is not None:tracker.segment(index)
             if tracker is not None:tracker.checkpoint()

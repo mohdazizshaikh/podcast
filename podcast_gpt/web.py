@@ -202,7 +202,7 @@ def html_page(token:str)->str:
 <p><small>No cloud AI or automatic model downloads authorized. Local third-party programs are not sandboxed. Human review and missing-input gates stop processing. Do not close the app while a task is running.</small></p>
 <h3>Explicit local production actions</h3>
 <label><input type="checkbox" id="v4ProcessConsent"> I authorize the selected local processing action. No AI inference or approval is authorized here.</label>
-<select id="v4Process"><option value="project-safe-step">One eligible non-inference production step</option><option value="project-script-visual-edit">Create offline script editor</option><option value="project-script-visual-review">Create script review page</option><option value="project-audio-visual-review">Create audio review page</option><option value="project-pilot-visual-review">Create pilot review page</option><option value="project-final-visual-review">Create final review page</option><option value="project-static-render">Render static preview</option><option value="project-studio-render">Render static studio</option><option value="project-neural-studio-compose">Compose neural studio from saved clips</option><option value="project-neural-studio-resume">Compose or resume neural studio (retain private verified cache)</option><option value="project-mixed-studio-compose">Compose mixed neural studio</option></select>
+<select id="v4Process"><option value="project-safe-step">One eligible non-inference production step</option><option value="project-script-visual-edit">Create offline script editor</option><option value="project-script-visual-review">Create script review page</option><option value="project-audio-visual-review">Create audio review page</option><option value="project-pilot-visual-review">Create pilot review page</option><option value="project-final-visual-review">Create final review page</option><option value="project-static-render">Render static preview</option><option value="project-studio-render">Render static studio</option><option value="project-neural-studio-compose">Compose neural studio from saved clips</option><option value="project-neural-studio-resume">Compose or resume neural studio (retain private verified cache)</option><option value="project-mixed-studio-compose">Compose mixed neural studio</option><option value="project-mixed-studio-resume">Compose or resume mixed neural studio (private cache)</option><option value="project-mixed-video-resume">Compose or resume mixed neural video (private cache)</option></select>
 <button id="v4Run">Run selected local action</button>
 <h3>Verified local playback</h3>
 <label>Media type <select id="v4MediaKind"><option value="master">Master WAV</option><option value="preview">Static preview</option><option value="neural">Neural video</option><option value="mix">Audio mix</option><option value="mixed">Mixed video</option><option value="studio-preview">Static studio</option><option value="neural-studio">Neural studio</option><option value="mixed-neural-studio">Mixed neural studio</option></select></label>
@@ -276,7 +276,7 @@ async function refresh(){
  if(pollTimer!==null){clearTimeout(pollTimer);pollTimer=null}
  let r=await fetch('/api/status',{cache:'no-store'});let status=await r.json();
  out.textContent=JSON.stringify(status,null,2);showResult(status);
- currentTask=status.task_id;document.getElementById("v4StopTask").disabled=!(status.phase==="running"&&["author-local-inference","author-edge-generate","project-neural-studio-compose","project-neural-studio-resume","project-mixed-studio-compose"].includes(status.command)&&!status.stop_requested&&status.progress?.stop_allowed!==false);
+ currentTask=status.task_id;document.getElementById("v4StopTask").disabled=!(status.phase==="running"&&["author-local-inference","author-edge-generate","project-neural-studio-compose","project-neural-studio-resume","project-mixed-studio-compose","project-mixed-studio-resume","project-mixed-video-resume"].includes(status.command)&&!status.stop_requested&&status.progress?.stop_allowed!==false);
  const progress=status.progress;document.getElementById('v4TaskProgress').textContent=status.phase+' | '+(status.command||'No task')+' | elapsed '+(status.elapsed_seconds??0)+' s'+(status.stop_requested?' | stop requested at next checkpoint':'')+(progress?' | '+progress.action+' | verified actions '+progress.completed_actions+'/'+progress.action_limit+(Number.isInteger(progress.verified_frames)?' | frames '+progress.verified_frames+'/'+progress.total_frames:'')+(Number.isFinite(progress.segment_eta_seconds)?' | estimated remaining segment time '+progress.segment_eta_seconds+' s':'')+(progress.stop_allowed===false?' | final audit/commit: stop unavailable':''):'');
  if(status.phase==='running')pollTimer=setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
 }
@@ -474,7 +474,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
             if url.path=="/api/stop":
                 if size!=0:return self._json(400,{"error":"Stop body must be empty"})
                 with state_lock:
-                    if status["phase"]!="running" or status["command"] not in ("author-local-inference","author-edge-generate","project-neural-studio-compose","project-neural-studio-resume","project-mixed-studio-compose") or (status["progress"] or {}).get("stop_allowed") is False or query.get("task_id",[""])[0]!=status.get("task_id") or active_stop is None:
+                    if status["phase"]!="running" or status["command"] not in ("author-local-inference","author-edge-generate","project-neural-studio-compose","project-neural-studio-resume","project-mixed-studio-compose","project-mixed-studio-resume","project-mixed-video-resume") or (status["progress"] or {}).get("stop_allowed") is False or query.get("task_id",[""])[0]!=status.get("task_id") or active_stop is None:
                         accepted=False
                     else:
                         active_stop.set();status["stop_requested"]=True;accepted=True
@@ -548,7 +548,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                     pid=query.get("project_id",[""])[0]
                     if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})
                     if query.get("consent",[""])[0]!="YES":return self._json(403,{"error":"Explicit local processing consent required"})
-                    if command in ("project-neural-studio-compose","project-neural-studio-resume","project-mixed-studio-compose"):
+                    if command in ("project-neural-studio-compose","project-neural-studio-resume","project-mixed-studio-compose","project-mixed-studio-resume","project-mixed-video-resume"):
                         def report(value):
                             with state_lock:status["progress"]=dict(value)
                         selected=lambda:dashboard_actions.run(root,pid,command,acknowledgment=dashboard_actions.ACK,progress=report,should_stop=stop_event.is_set)

@@ -234,7 +234,7 @@ def parse(argv=None):
         recover4.add_argument("--unit")
         if name=="project-incomplete-archive":recover4.add_argument("--acknowledgment",required=True)
     for name in ("project-mix-review-template","project-mix-review-record","project-mix-review-status",
-                 "project-mixed-video-compose","project-mixed-video-audit","project-mixed-review-template",
+                 "project-mixed-video-compose","project-mixed-video-resume","project-mixed-video-audit","project-mixed-review-template",
                  "project-mixed-review-record","project-mixed-review-status"):
         mixed=subs.add_parser(name)
         mixed.add_argument("--project-id",required=True)
@@ -297,7 +297,7 @@ def parse(argv=None):
         ns=subs.add_parser(name)
         ns.add_argument("--project-id",required=True)
         if name=="project-neural-studio-review-record":ns.add_argument("--acknowledgment",required=True)
-    for name in ("project-mixed-studio-compose","project-mixed-studio-audit","project-mixed-studio-review-template","project-mixed-studio-review-record","project-mixed-studio-review-status"):
+    for name in ("project-mixed-studio-compose","project-mixed-studio-resume","project-mixed-studio-audit","project-mixed-studio-review-template","project-mixed-studio-review-record","project-mixed-studio-review-status"):
         ms=subs.add_parser(name)
         ms.add_argument("--project-id",required=True)
         if name=="project-mixed-studio-review-record":ms.add_argument("--acknowledgment",required=True)
@@ -610,11 +610,12 @@ def execute(a)->dict:
         if action=="project-incomplete-status":return v4_partial_recovery.inspect(private,a.project_id,a.kind,a.unit)
         return v4_partial_recovery.archive(private,a.project_id,a.kind,a.unit,acknowledgment=a.acknowledgment)
     if action in ("project-mix-review-template","project-mix-review-record","project-mix-review-status",
-                  "project-mixed-video-compose","project-mixed-video-audit","project-mixed-review-template",
+                  "project-mixed-video-compose","project-mixed-video-resume","project-mixed-video-audit","project-mixed-review-template",
                   "project-mixed-review-record","project-mixed-review-status"):
         from . import v4_mixed_video as mixed
         private=a.workspace.expanduser().absolute()
         if action=="project-mixed-video-compose":return mixed.compose(private,a.project_id)
+        if action=="project-mixed-video-resume":return mixed.compose(private,a.project_id,resume=True)
         if action=="project-mixed-video-audit":return mixed.inspect(private,a.project_id)
         return mixed.qa(private,a.project_id,"mix" if action.startswith("project-mix-review-") else "video",
                         action.rsplit("-",1)[1],acknowledgment=getattr(a,"acknowledgment",None))
@@ -673,10 +674,11 @@ def execute(a)->dict:
         if action=="project-neural-studio-resume":return studio_neural.compose(private,a.project_id,resume=True)
         if action=="project-neural-studio-audit":return studio_neural.inspect(private,a.project_id)
         return studio_neural.qa(private,a.project_id,action.rsplit("-",1)[1],acknowledgment=getattr(a,"acknowledgment",None))
-    if action in ("project-mixed-studio-compose","project-mixed-studio-audit","project-mixed-studio-review-template","project-mixed-studio-review-record","project-mixed-studio-review-status"):
+    if action in ("project-mixed-studio-compose","project-mixed-studio-resume","project-mixed-studio-audit","project-mixed-studio-review-template","project-mixed-studio-review-record","project-mixed-studio-review-status"):
         from . import v4_mixed_video as mixed
         private=a.workspace.expanduser().absolute()
         if action=="project-mixed-studio-compose":return mixed.compose(private,a.project_id,studio=True)
+        if action=="project-mixed-studio-resume":return mixed.compose(private,a.project_id,studio=True,resume=True)
         if action=="project-mixed-studio-audit":return mixed.inspect(private,a.project_id,studio=True)
         return mixed.qa(private,a.project_id,"studio",action.rsplit("-",1)[1],acknowledgment=getattr(a,"acknowledgment",None))
     if action=="ai-provider-status":
