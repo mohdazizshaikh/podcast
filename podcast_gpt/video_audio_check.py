@@ -27,12 +27,29 @@ def compare_window(a,b):
     rms=math.sqrt(error/n)
     return {"correlation":round(max(-1,min(1,corr)),6) if corr is not None else None,
             "reference_rms_pcm":round(math.sqrt(aa/n),2),
+            "reference_ac_rms_pcm":round(math.sqrt(va)/n,2),
+            "decoded_ac_rms_pcm":round(math.sqrt(vb)/n,2),
+            "reference_dc_pcm":round(sa/n,2),"decoded_dc_pcm":round(sb/n,2),
             "decoded_rms_pcm":round(math.sqrt(bb/n),2),"residual_rms_pcm":round(rms,2),
             "relative_residual":round(math.sqrt(error/aa),6) if aa else None}
 
 
+def extra_window_flags(m,count):
+    """Heuristic dropouts/DC faults; never a pass/fail quality certificate."""
+    if count<1600:
+        return []
+    flags=[]
+    if m["reference_ac_rms_pcm"]>=100 and m["decoded_ac_rms_pcm"]<10:
+        flags.append("missing_variable_audio")
+    if abs(m["decoded_dc_pcm"]-m["reference_dc_pcm"])>=300:
+        flags.append("dc_offset_difference")
+    if m["correlation"] is None and m["reference_rms_pcm"]>=100 and m["relative_residual"]>.35:
+        flags.append("uncorrelatable_audio_mismatch")
+    return flags
+
+
 def compare_wavs(reference,decoded):
-    rows=[];checked=0;informative=0;low=0;correlations=[];residuals=[];quiet_mismatch=0
+    rows=[];checked=0;informative=0;low=0;correlations=[];residuals=[];quiet_mismatch=0;extra_counts={};flagged=0;windows=0;short_windows=0
     with wave.open(str(reference),"rb") as a,wave.open(str(decoded),"rb") as b:
         for w in (a,b):
             if (w.getnchannels(),w.getsampwidth(),w.getframerate(),w.getcomptype())!=(1,2,RATE,"NONE"):
@@ -45,13 +62,18 @@ def compare_wavs(reference,decoded):
             x=_samples(a.readframes(count));y=_samples(b.readframes(count))
             if len(x)!=count or len(y)!=count:raise ValueError("Truncated decoded PCM")
             m=compare_window(x,y)
-            flags=[]
+            flags=[];windows+=1
+            if count<1600:short_windows+=1
             # Near-constant and quiet windows cannot establish similarity.
             if count>=1600 and m["reference_rms_pcm"]>=100 and m["correlation"] is not None:
                 informative+=1;correlations.append(m["correlation"]);residuals.append(m["relative_residual"])
                 if m["correlation"]<.90 or m["relative_residual"]>.35:low+=1;flags.append("low_similarity")
             elif m["reference_rms_pcm"]<100 and m["decoded_rms_pcm"]>=300:
                 quiet_mismatch+=1;flags.append("unexpected_audio_in_quiet_window")
+            for flag in extra_window_flags(m,count):
+                extra_counts[flag]=extra_counts.get(flag,0)+1
+                flags.append(flag)
+            if flags:flagged+=1
             if flags and len(rows)<20:rows.append({"start_seconds":checked/RATE,"sample_count":count,**m,"flags":flags})
             checked+=count
     return {"reference_frames":af,"decoded_frames":bf,"overlap_frames":checked,
@@ -59,7 +81,10 @@ def compare_wavs(reference,decoded):
             "low_similarity_windows":low,"unexpected_quiet_audio_windows":quiet_mismatch,
             "mean_correlation":round(sum(correlations)/len(correlations),6) if correlations else None,
             "mean_relative_residual":round(sum(residuals)/len(residuals),6) if residuals else None,
-            "flagged_window_examples":rows,"flagged_examples_truncated":low+quiet_mismatch>len(rows),
+            "flagged_window_examples":rows,"flagged_examples_truncated":flagged>len(rows),
+            "flagged_window_count":flagged,"window_count":windows,"short_window_count":short_windows,
+            "additional_flag_counts":extra_counts,
+            "uncompared_reference_frames":af-overlap,"uncompared_decoded_frames":bf-overlap,
             "lag_compensation_performed":False,"thresholds_are_heuristic":True}
 
 

@@ -16,3 +16,5 @@ Cloud text consent still applies separately and transmits primary input text, re
 Research-backed scripts can now be manually revised and reviewed. Exact source quote matching is retained for every edit; human review is separate from independent claim verification. See V4_SCRIPT_REVIEW.md.
 
 Explicit English Wikipedia candidate discovery and optional source-bound human factual review now available through V4_LANGUAGE_RESEARCH.md. Candidate search is not broad web research or independent verification.
+
+Batch 34 extends existing read-only research coverage with exact cross-source excerpt reuse, single-host turn and unused-source review signals; decoded AAC diagnostics now flag missing variable audio, DC offset changes and uncorrelatable mismatch, report unique flagged windows and uncompared frames. 68 new synthetic regression cases authored (not independent features). Batch 33 CI could not be confirmed through the available commit-status endpoints; Batch 34 CI pending. Actual model/browser/device acceptance and semantic corroboration remain open. See V4_BATCH34.md.

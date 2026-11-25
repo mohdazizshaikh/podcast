@@ -25,6 +25,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Explicit multi-source public HTTPS capture and exact-excerpt citations | Done | 6/6 CI run 45451883118 (offline fixtures) |
 | Explicit Wikipedia candidate discovery and source-bound optional human factual review | Implemented | 6/6 CI 45481266847 (offline fixtures) |
 | 17 allowlisted Wikipedia editions and exact citation-coverage report | Implemented | 6/6 CI 45498392552; fixture network and review data |
+| Exact cross-source excerpt reuse and unused-source review signals | Implemented | Batch 34 CI pending; no independence claim |
 | Broad web search, automated semantic claim verification and corroboration | Not implemented | Pending |
 | Reusable character profiles, authorized PNG library and cast binding | Done | 6/6 CI run 45453165135 (synthetic PNGs) |
 | Opt-in cast-bound personality-aware dialogue prompts | Done | 6/6 CI 45462475819 (mock provider) |
@@ -52,6 +53,7 @@ Last update: 2026-11-25. Status means implementation or automated verification o
 | Separate neural focus/grid studio, per-turn switching and fresh QA | Implemented | 6/6 CI 45483234208; static listeners; synthetic only |
 | Optional active-speaker digital push-in and local hash-verified portrait preview | Implemented | New CI pending; real browser/visual acceptance pending |
 | Read-only decoded video audio/source comparison | Implemented | New CI pending; heuristic PCM comparison, no automatic approval |
+| Decoded audio dropout/DC/uncompared-frame diagnostics | Implemented | Batch 34 CI pending; heuristic only |
 | Full-length real neural video, advanced camera layouts and animated listeners | Not implemented in V4 | Pending |
 | Offline visual script editing and review JSON import | Done | 6/6 CI 45463360856; actual browser interaction pending |
 | Bounded foreground orchestration and per-action elapsed timing | Done | 6/6 CI 45463360856 |
@@ -84,3 +86,5 @@ Verify batch 33 CI. Next actual model setup/pilot, Japanese dictionary/model exe
 
 ## Updating the tracker
 For every development increment, update this file, V4_REQUIREMENTS.md, V4_ROADMAP.md, REMAINING.md and relevant setup docs. Cite actual CI run IDs after completion. Record new limitations and actual user-device tests separately. No paid fallback; cloud consent is per invocation; credentials/private media outside Git. No access to suspended repository.
+
+Batch 34 extends existing read-only research coverage with exact cross-source excerpt reuse, single-host turn and unused-source review signals; decoded AAC diagnostics now flag missing variable audio, DC offset changes and uncorrelatable mismatch, report unique flagged windows and uncompared frames. 68 new synthetic regression cases authored (not independent features). Batch 33 CI could not be confirmed through the available commit-status endpoints; Batch 34 CI pending. Actual model/browser/device acceptance and semantic corroboration remain open. See V4_BATCH34.md.
