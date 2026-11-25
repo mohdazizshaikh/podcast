@@ -174,8 +174,9 @@ def _audit(dest,binding,timeline,receipt):
     base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000),cleanup.get("remove_dc",False),cleanup.get("gate_threshold_pcm",0),limiter.get("ceiling_pcm",0))
     normalization=settings.get("normalization")
     if normalization is not None:
-        if limiter:raise ValueError("Limiter and static loudness target cannot be combined")
         base_settings["normalization"]=gain.validate(normalization)
+        if normalization.get("sample_peak_ceiling_pcm")!=limiter.get("ceiling_pcm"):
+            raise ValueError("Normalization sample ceiling differs from limiter recipe")
     if base_settings!=settings:raise ValueError("Invalid mix settings")
     roles=saved["assets"]
     if not isinstance(roles,dict) or not set(roles)<=set(ROLES):raise ValueError("Invalid mix asset inventory")
@@ -193,7 +194,7 @@ def _audit(dest,binding,timeline,receipt):
                 if normalization is not None:
                     baseline_digest.update(block)
                     baseline_peak=max(baseline_peak,max(map(abs,_samples(block)),default=0))
-                    block=gain.apply(block,normalization["gain_ppm"])
+                    block=gain.apply(block,normalization["gain_ppm"],limiter.get("ceiling_pcm"))
                 if w.readframes(len(block)//2)!=block:raise ValueError("Mix PCM differs from verified recipe")
                 digest.update(block)
     except (wave.Error,EOFError):raise ValueError("Invalid mix WAV") from None
@@ -220,28 +221,29 @@ def _stage_normalized(dest,timeline,assets,settings,target_lufs,temp):
     baseline=temp/"baseline.wav";candidate=temp/WAV
     baseline_sha=_write_wav(baseline,_mix_blocks(dest,timeline,assets,settings))
     stats=diag.pcm_stats(baseline);before=diag.measure(baseline,stats["frames"])
-    ppm=gain.gain_ppm(target_lufs,before,stats["sample_peak_pcm"])
+    ceiling=settings.get("limiter",{}).get("ceiling_pcm")
+    ppm=gain.gain_ppm(target_lufs,before,stats["sample_peak_pcm"],ceiling)
     def blocks():
         h=hashlib.sha256()
         with wave.open(str(baseline),"rb") as w:
             while True:
                 block=w.readframes(BLOCK)
                 if not block:break
-                h.update(block);yield gain.apply(block,ppm)
+                h.update(block);yield gain.apply(block,ppm,ceiling)
         if h.hexdigest()!=baseline_sha:raise ValueError("Staged baseline changed")
     pcm_sha=_write_wav(candidate,blocks())
     after=diag.pcm_stats(candidate)
     if after["frames"]!=stats["frames"] or after["full_scale_sample_count"]:
         raise ValueError("Normalized sample coverage or clipping differs")
+    if after["sample_peak_pcm"]>gain.sample_ceiling(ceiling):raise ValueError("Normalized sample peak exceeds ceiling")
     measured=diag.measure(candidate,after["frames"])
-    settings["normalization"]=gain.record(target_lufs,before,stats["sample_peak_pcm"],baseline_sha,measured)
+    settings["normalization"]=gain.record(target_lufs,before,stats["sample_peak_pcm"],baseline_sha,measured,ceiling)
     return candidate,pcm_sha
 
 
 def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,acknowledgment=None):
     if acknowledgment!=ACK:raise ValueError("Explicit audio usage rights and mix acknowledgment required")
     settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold,remove_dc,gate_threshold,limiter_ceiling)
-    if limiter_ceiling and target_lufs is not None:raise ValueError("Limiter and static loudness target cannot be combined")
     if target_lufs is not None:
         from .loudness_gain import target
         target(target_lufs)

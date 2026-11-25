@@ -61,9 +61,17 @@ def test_mix_audit(tmp_path,monkeypatch,ceiling):
     assert not result["mix"]["human_mix_quality_approved"]
 
 
-def test_incompatible_static_gain():
-    with pytest.raises(ValueError,match="cannot be combined"):
-        mix.compose(None,None,limiter_ceiling=16000,target_lufs=-16,acknowledgment=mix.ACK)
+def test_combined_static_gain(tmp_path,monkeypatch):
+    from podcast_gpt import audio_diagnostics as diag
+    root,pid=fixture(tmp_path,monkeypatch)
+    # Mock measurement only; real PCM recipe, writes and audit are exercised.
+    monkeypatch.setattr(diag,"measure",lambda *args:{"integrated_lufs":-20.0,"true_peak_dbtp":-8.0,"loudness_range_lu":2.0,"gating_threshold_lufs":-30.0})
+    result=dm.run(root,{**data(pid),"remove_dc":False,"gate_threshold":0,"limiter_ceiling":16000,"target_lufs":-16},acknowledgment=dm.ACK)
+    assert mix.inspect(root,pid)==result
+    settings=result["mix"]["settings"]
+    assert settings["normalization"]["sample_peak_ceiling_pcm"]==16000
+    assert settings["normalization"]["dynamic_limiter_used"] is True
+    assert diag.pcm_stats(result["path"])["sample_peak_pcm"]<=16000
 
 
 def test_cli_and_browser_controls():

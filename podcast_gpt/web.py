@@ -139,7 +139,7 @@ def html_page(token:str)->str:
 <label>Compression threshold PCM <input id="v4MixThreshold" type="number" min="2000" max="20000" value="12000"></label>
 <label><input id="v4MixDc" type="checkbox"> Optional dialogue DC-offset correction</label>
 <label>Soft gate threshold PCM (0 disables) <input id="v4MixGate" type="number" min="0" max="1000" value="0"></label>
-<label>Sample peak limiter ceiling PCM (0 disables; otherwise 8000–28000; leave LUFS target blank) <input id="v4MixLimiter" type="number" min="0" max="28000" value="0"></label>
+<label>Sample peak limiter ceiling PCM (0 disables; otherwise 8000–28000; takes priority over LUFS target) <input id="v4MixLimiter" type="number" min="0" max="28000" value="0"></label>
 <label><input id="v4MixRights" type="checkbox"> I authorize this mix and have rights to all added audio</label>
 <button id="v4MixCompose">Compose separate audio mix</button>
 <small>Local files only, mono PCM16 16 kHz. Existing mix cannot be replaced. Listen to the whole candidate before approval.</small>

@@ -29,7 +29,6 @@ def run(root,data,*,acknowledgment):
         raise ValueError("Exact mix settings and audio rights required")
     pid=data["project_id"];projects.project(root,pid)
     mix._settings(data["speech_peak"],data["bed_peak"],data["duck_percent"],data["compress_ratio"],data["compress_threshold"],data["remove_dc"],data["gate_threshold"],data["limiter_ceiling"])
-    if data["limiter_ceiling"] and data["target_lufs"] is not None:raise ValueError("Limiter and static loudness target cannot be combined")
     if data["target_lufs"] is not None:loudness_gain.target(data["target_lufs"])
     assets=data["assets"]
     if not isinstance(assets,dict) or not set(assets)<=set(mix.ROLES):raise ValueError("Unknown mix asset role")

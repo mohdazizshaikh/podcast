@@ -4,7 +4,7 @@ Not a dynamic limiter. Store the measured baseline and measured candidate,
 then audit the exact integer PCM recipe independently of FFmpeg version.
 """
 import math
-import hashlib
+from . import peak_limiter
 
 CEILING=-1.5
 MARGIN=0.25
@@ -26,39 +26,48 @@ def _measurement(value):
     return value
 
 
-def gain_ppm(goal,baseline,peak):
+def sample_ceiling(ceiling):
+    if ceiling is None:return MAX_PCM
+    if peak_limiter.settings(ceiling) is None:raise ValueError("Use None for an absent sample ceiling")
+    return ceiling
+
+
+def gain_ppm(goal,baseline,peak,ceiling=None):
     target(goal);_measurement(baseline)
+    cap=sample_ceiling(ceiling)
     if type(peak) is not int or not 1<=peak<=32768:raise ValueError("Invalid baseline PCM peak")
     db=min(goal-baseline["integrated_lufs"],CEILING-MARGIN-baseline["true_peak_dbtp"],12)
-    factor=min(10**(db/20),MAX_PCM/peak)
-    value=math.floor(SCALE*factor)
+    factor=min(10**(db/20),cap/peak)
+    value=min(math.floor(SCALE*factor),cap*SCALE//peak)
     if not 1<=value<=4*SCALE:raise ValueError("Gain outside bounded processing range")
     return value
 
 
-def record(goal,baseline,peak,baseline_sha,after):
-    gain=gain_ppm(goal,baseline,peak);_measurement(after)
+def record(goal,baseline,peak,baseline_sha,after,ceiling=None):
+    gain=gain_ppm(goal,baseline,peak,ceiling);_measurement(after)
     if after["true_peak_dbtp"]>CEILING:raise ValueError("Measured candidate exceeds true-peak ceiling; no normalized mix saved")
     if not isinstance(baseline_sha,str) or len(baseline_sha)!=64 or any(c not in "0123456789abcdef" for c in baseline_sha):
         raise ValueError("Invalid baseline PCM digest")
-    return {"algorithm":"bounded_static_gain_v1","target_lufs":goal,"true_peak_ceiling_dbtp":CEILING,
+    result={"algorithm":"bounded_static_gain_v1","target_lufs":goal,"true_peak_ceiling_dbtp":CEILING,
             "baseline_measurement":baseline,"baseline_pcm_peak":peak,"baseline_pcm_sha256":baseline_sha,
             "gain_ppm":gain,"candidate_measurement":after,
             "measured_target_within_0_5_lu":abs(after["integrated_lufs"]-goal)<=.5,
-            "dynamic_limiter_used":False}
+            "dynamic_limiter_used":ceiling is not None}
+    if ceiling is not None:result["sample_peak_ceiling_pcm"]=ceiling
+    return result
 
 
 def validate(value):
     if not isinstance(value,dict):raise ValueError("Invalid normalization recipe")
     try:expected=record(value["target_lufs"],value["baseline_measurement"],value["baseline_pcm_peak"],
-                        value["baseline_pcm_sha256"],value["candidate_measurement"])
+                        value["baseline_pcm_sha256"],value["candidate_measurement"],value.get("sample_peak_ceiling_pcm"))
     except (KeyError,TypeError,OverflowError):raise ValueError("Invalid normalization recipe") from None
     if expected!=value:raise ValueError("Normalization settings differ")
     return value
 
 
-def apply(block,gain):
+def apply(block,gain,ceiling=None):
     from .v4_post_audio import _samples,_bytes,_scale
     values=[_scale(s,gain,SCALE) for s in _samples(block)]
-    if max(map(abs,values),default=0)>MAX_PCM:raise ValueError("Normalized PCM exceeds sample ceiling")
+    if max(map(abs,values),default=0)>sample_ceiling(ceiling):raise ValueError("Normalized PCM exceeds sample ceiling")
     return _bytes(values)
