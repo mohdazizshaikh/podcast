@@ -145,6 +145,7 @@ def html_page(token:str)->str:
 <label>Soft gate threshold PCM (0 disables) <input id="v4MixGate" type="number" min="0" max="1000" value="0"></label>
 <label>Sample peak limiter ceiling PCM (0 disables; otherwise 8000–28000; takes priority over LUFS target) <input id="v4MixLimiter" type="number" min="0" max="28000" value="0"></label>
 <label><input id="v4MixTruePeak" type="checkbox"> Conservative whole-mix peak guard (requires measured peak at or below -1.5 dBTP; may reject candidate)</label>
+<label><input id="v4MixPeakCorrect" type="checkbox"> Automatically retry excessive measured peaks with bounded attenuation (requires peak guard; leave LUFS target blank)</label>
 <label><input id="v4MixRights" type="checkbox"> I authorize this mix and have rights to all added audio</label>
 <button id="v4MixCompose">Compose separate audio mix</button>
 <small>Local files only, mono PCM16 16 kHz. Existing mix cannot be replaced. Listen to the whole candidate before approval.</small>
@@ -332,7 +333,7 @@ async function encodeWav(file,limit){
 onAuthor('v4MixCompose',async()=>{
  if(!field('v4MixRights').checked)throw new Error('Confirm audio rights and mix processing');
  const pid=currentPid(),files={intro:field('v4MixIntro').files[0],bed:field('v4MixBed').files[0],outro:field('v4MixOutro').files[0]};
- const data={project_id:pid,assets:{},speech_peak:Number(val('v4MixSpeech')),bed_peak:Number(val('v4MixMusic')),duck_percent:Number(val('v4MixDuck')),target_lufs:val('v4MixTarget')===''?null:Number(val('v4MixTarget')),compress_ratio:Number(val('v4MixRatio')),compress_threshold:Number(val('v4MixThreshold')),remove_dc:field('v4MixDc').checked,gate_threshold:Number(val('v4MixGate')),limiter_ceiling:Number(val('v4MixLimiter')),highpass_hz:Number(val('v4MixHighpass')),hum_hz:Number(val('v4MixHum')),lowpass_hz:Number(val('v4MixLowpass')),true_peak_guard:field('v4MixTruePeak').checked,rights:true};
+ const data={project_id:pid,assets:{},speech_peak:Number(val('v4MixSpeech')),bed_peak:Number(val('v4MixMusic')),duck_percent:Number(val('v4MixDuck')),target_lufs:val('v4MixTarget')===''?null:Number(val('v4MixTarget')),compress_ratio:Number(val('v4MixRatio')),compress_threshold:Number(val('v4MixThreshold')),remove_dc:field('v4MixDc').checked,gate_threshold:Number(val('v4MixGate')),limiter_ceiling:Number(val('v4MixLimiter')),highpass_hz:Number(val('v4MixHighpass')),hum_hz:Number(val('v4MixHum')),lowpass_hz:Number(val('v4MixLowpass')),true_peak_guard:field('v4MixTruePeak').checked,auto_peak_correction:field('v4MixPeakCorrect').checked,rights:true};
  authorConsent();field('v4MixRights').checked=false;
  for(const role of Object.keys(files))if(files[role])data.assets[role]=await encodeWav(files[role],(role==='bed'?120:30)*32000+65536);
  if(pid!==currentPid())throw new Error('Project selection changed; reconfirm mix');

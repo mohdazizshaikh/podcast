@@ -139,7 +139,7 @@ def _guard_check(path,frames):
     return peak_guard.check(audio_diagnostics.measure(path,frames)["true_peak_dbtp"])
 
 
-def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,highpass_hz=0,hum_hz=0,lowpass_hz=0,true_peak_guard=False):
+def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,highpass_hz=0,hum_hz=0,lowpass_hz=0,true_peak_guard=False,auto_peak_correction=False):
     if type(speech_peak) is not int or not 8000<=speech_peak<=24000 or type(bed_peak) is not int or not 0<=bed_peak<=6000:
         raise ValueError("Speech peak must be 8000–24000 and bed peak 0–6000 PCM units")
     if type(duck_percent) is not int or not 0<=duck_percent<=90:raise ValueError("Duck percent must be 0–90")
@@ -160,6 +160,8 @@ def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_thre
     from .peak_guard import settings as guard_settings
     guard=guard_settings(true_peak_guard)
     if guard is not None:result["peak_guard"]=guard
+    if type(auto_peak_correction) is not bool or (auto_peak_correction and not true_peak_guard):
+        raise ValueError("Automatic peak correction requires explicit peak guard")
     return result
 
 
@@ -195,14 +197,22 @@ def _audit(dest,binding,timeline,receipt):
     if not isinstance(limiter,dict):raise ValueError("Invalid limiter settings")
     filters=settings.get("speech_filter",{})
     if not isinstance(filters,dict):raise ValueError("Invalid speech filter settings")
-    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000),cleanup.get("remove_dc",False),cleanup.get("gate_threshold_pcm",0),limiter.get("ceiling_pcm",0),filters.get("highpass_hz",0),filters.get("hum_hz",0),filters.get("lowpass_hz",0),"peak_guard" in settings)
+    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000),cleanup.get("remove_dc",False),cleanup.get("gate_threshold_pcm",0),limiter.get("ceiling_pcm",0),filters.get("highpass_hz",0),filters.get("hum_hz",0),filters.get("lowpass_hz",0),"peak_guard" in settings,"peak_correction" in settings)
     if "peak_guard" in settings:
         from . import peak_guard
         check=settings.get("peak_guard_check")
         if not isinstance(check,dict):raise ValueError("Missing measured peak guard check")
         base_settings["peak_guard_check"]=peak_guard.check(check.get("measured_true_peak_dbtp"))
     ceiling=_gain_ceiling(base_settings)
+    correction=settings.get("peak_correction")
+    if "peak_correction" in settings:
+        from . import peak_correction
+        correction=peak_correction.validate(correction)
+        if correction["attempts"][-1]["measured_true_peak_dbtp"]!=base_settings["peak_guard_check"]["measured_true_peak_dbtp"]:
+            raise ValueError("Peak correction final measurement differs")
+        base_settings["peak_correction"]=correction
     normalization=settings.get("normalization")
+    if correction is not None and normalization is not None:raise ValueError("Peak correction and LUFS targeting are separate modes")
     if normalization is not None:
         base_settings["normalization"]=gain.validate(normalization)
         if normalization.get("sample_peak_ceiling_pcm")!=ceiling:
@@ -215,7 +225,7 @@ def _audit(dest,binding,timeline,receipt):
     total=timeline["total_frames"]+sum(assets[r][1]["frames"] for r in ("intro","outro") if r in assets)
     path=out/WAV
     if path.stat().st_size>total*2+65536:raise ValueError("Oversized mix WAV")
-    digest=hashlib.sha256();baseline_digest=hashlib.sha256();baseline_peak=0
+    digest=hashlib.sha256();baseline_digest=hashlib.sha256();baseline_peak=0;count=0
     try:
         with wave.open(str(path),"rb") as w:
             if (w.getnchannels(),w.getsampwidth(),w.getframerate(),w.getcomptype(),w.getnframes())!=(1,2,audio.RATE,"NONE",total):
@@ -225,11 +235,17 @@ def _audit(dest,binding,timeline,receipt):
                     baseline_digest.update(block)
                     baseline_peak=max(baseline_peak,max(map(abs,_samples(block)),default=0))
                     block=gain.apply(block,normalization["gain_ppm"],ceiling)
+                if correction is not None:
+                    baseline_digest.update(block)
+                    block=peak_correction.apply(block,correction["gain_ppm"])
                 if w.readframes(len(block)//2)!=block:raise ValueError("Mix PCM differs from verified recipe")
-                digest.update(block)
+                digest.update(block);count+=len(block)//2
+            if count!=total or w.readframes(1):raise ValueError("Mix recipe sample coverage differs")
     except (wave.Error,EOFError):raise ValueError("Invalid mix WAV") from None
     if normalization is not None and (baseline_digest.hexdigest()!=normalization["baseline_pcm_sha256"] or baseline_peak!=normalization["baseline_pcm_peak"]):
         raise ValueError("Normalization baseline differs from verified mix recipe")
+    if correction is not None and baseline_digest.hexdigest()!=correction["baseline_pcm_sha256"]:
+        raise ValueError("Peak correction baseline differs from verified mix recipe")
     expected=_record(binding,timeline,receipt,settings,assets,digest.hexdigest(),source.digest(path))
     if saved!=expected:raise ValueError("Mix receipt differs")
     if "peak_guard" in settings:
@@ -274,9 +290,10 @@ def _stage_normalized(dest,timeline,assets,settings,target_lufs,temp):
     return candidate,pcm_sha
 
 
-def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,highpass_hz=0,hum_hz=0,lowpass_hz=0,true_peak_guard=False,acknowledgment=None):
+def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,highpass_hz=0,hum_hz=0,lowpass_hz=0,true_peak_guard=False,auto_peak_correction=False,acknowledgment=None):
     if acknowledgment!=ACK:raise ValueError("Explicit audio usage rights and mix acknowledgment required")
-    settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold,remove_dc,gate_threshold,limiter_ceiling,highpass_hz,hum_hz,lowpass_hz,true_peak_guard)
+    settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold,remove_dc,gate_threshold,limiter_ceiling,highpass_hz,hum_hz,lowpass_hz,true_peak_guard,auto_peak_correction)
+    if auto_peak_correction and target_lufs is not None:raise ValueError("Peak correction and LUFS targeting are separate modes")
     if target_lufs is not None:
         from .loudness_gain import target
         target(target_lufs)
@@ -288,14 +305,30 @@ def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak
         assets={k:_asset(v,k) for k,v in (("intro",intro),("bed",bed),("outro",outro)) if v is not None}
         if duck_percent and "bed" not in assets:raise ValueError("Ducking requires a background bed")
         total=timeline["total_frames"]+sum(assets[r][1]["frames"] for r in ("intro","outro") if r in assets)
-        if shutil.disk_usage(folder).free<total*(6 if target_lufs is not None else 2)+sum(len(v[0]) for v in assets.values())+1024**2:
+        if shutil.disk_usage(folder).free<total*(8 if auto_peak_correction else 6 if target_lufs is not None else 2)+sum(len(v[0]) for v in assets.values())+1024**2:
             raise ValueError("Insufficient private disk space")
         with tempfile.TemporaryDirectory(prefix="v4-mix-",dir=folder) as tmp:
             if target_lufs is not None:staged,pcm_sha=_stage_normalized(dest,timeline,assets,settings,target_lufs,Path(tmp))
             else:
                 staged=Path(tmp)/WAV
                 pcm_sha=_write_wav(staged,_mix_blocks(dest,timeline,assets,settings))
-            if "peak_guard" in settings:settings["peak_guard_check"]=_guard_check(staged,total)
+            if auto_peak_correction:
+                from . import peak_correction,audio_diagnostics
+                staged,pcm_sha,settings["peak_correction"]=peak_correction.run(staged,Path(tmp),total,pcm_sha,audio_diagnostics.measure)
+            if "peak_guard" in settings:
+                settings["peak_guard_check"]=_guard_check(staged,total)
+                if auto_peak_correction and settings["peak_correction"]["attempts"][-1]["measured_true_peak_dbtp"]!=settings["peak_guard_check"]["measured_true_peak_dbtp"]:
+                    raise ValueError("Peak correction final measurement differs")
+                # Check staged bytes and full frame coverage before creating immutable output.
+                h=hashlib.sha256();count=0
+                with wave.open(str(staged),"rb") as candidate:
+                    if (candidate.getnchannels(),candidate.getsampwidth(),candidate.getframerate(),candidate.getcomptype(),candidate.getnframes())!=(1,2,audio.RATE,"NONE",total):
+                        raise ValueError("Guarded candidate format or duration differs")
+                    while True:
+                        block=candidate.readframes(BLOCK)
+                        if not block:break
+                        count+=len(block)//2;h.update(block)
+                if count!=total or h.hexdigest()!=pcm_sha:raise ValueError("Guarded staged PCM changed")
             if _ctx(root,pid)[2:]!=(binding,timeline,receipt):raise ValueError("Original master changed")
             out.mkdir()
             for role,(raw,info,samples) in assets.items():
