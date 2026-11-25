@@ -21,6 +21,7 @@ RATE=16000
 
 
 def _context(root,pid,*,allow_fixture=False):
+    if type(allow_fixture) is not bool:raise ValueError("Fixture export override must be boolean")
     folder,dest,binding,rows,targets=neural._context(root,pid)
     done=neural._scan(dest,binding,rows)
     if len(done)!=len(rows):raise ValueError("Complete every verified neural chunk before export")

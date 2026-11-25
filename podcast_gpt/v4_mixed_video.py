@@ -37,6 +37,10 @@ def _mix_context(root,pid):
 
 
 def _review_value(receipt,timeline,kind):
+    if kind not in ("mix","video","studio"):raise ValueError("Unknown review kind")
+    ids=[r["turn_id"] for r in timeline["rows"]]
+    if not ids or any(type(k) is not str or not k for k in ids) or len(set(ids))!=len(ids):
+        raise ValueError("Invalid review turn set")
     return {"schema":1,"kind":kind,"candidate_sha256":source.json_digest(receipt),
             "turns":{r["turn_id"]:("UNREVIEWED" if kind=="mix" else {k:"UNREVIEWED" for k in VIDEO_CRITERIA}) for r in timeline["rows"]},
             "criteria":{k:"UNREVIEWED" for k in (AUDIO_CRITERIA if kind=="mix" else GLOBAL)}}
@@ -44,7 +48,7 @@ def _review_value(receipt,timeline,kind):
 
 def _validate(value,receipt,timeline,kind):
     expected=_review_value(receipt,timeline,kind)
-    if not isinstance(value,dict) or set(value)!=set(expected) or any(value[k]!=expected[k] for k in ("schema","kind","candidate_sha256")):
+    if not isinstance(value,dict) or set(value)!=set(expected) or type(value["schema"]) is not int or any(value[k]!=expected[k] for k in ("schema","kind","candidate_sha256")):
         raise ValueError("Review candidate binding differs")
     if not isinstance(value["turns"],dict) or set(value["turns"])!=set(expected["turns"]):
         raise ValueError("Review all turns")
