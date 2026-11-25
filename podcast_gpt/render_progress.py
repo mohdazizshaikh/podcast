@@ -8,7 +8,11 @@ class RenderStopped(RuntimeError):
 
 
 class RenderProgress:
-    def __init__(self, plan, report=None, should_stop=None, *, clock=time.monotonic):
+    def __init__(self, plan, report=None, should_stop=None, *, clock=time.monotonic, label="studio", estimate_segments=True):
+        if label not in ("studio","mixed") or type(estimate_segments) is not bool:
+            raise ValueError("Invalid render progress mode")
+        self.label=label
+        self.estimate_segments=estimate_segments
         self.frames=tuple(row['frames'] for row in plan)
         if not self.frames or any(type(n) is not int or n<1 for n in self.frames):
             raise ValueError('Invalid render progress frame plan')
@@ -23,16 +27,16 @@ class RenderProgress:
 
     def checkpoint(self):
         if self.should_stop is not None and self.should_stop():
-            raise RenderStopped('Studio render stopped at a verified checkpoint before saving candidate')
+            raise RenderStopped('Render stopped at a verified checkpoint before saving candidate')
 
     def _emit(self, action, *, stop_allowed=True):
         if self.report is None:return
         elapsed=max(0,self.clock()-self.start)
         remaining=None
-        if self.stage==0 and len(self.done)>=2 and elapsed>=0.5 and 0<self.count<self.total:
+        if self.estimate_segments and self.stage==0 and len(self.done)>=2 and elapsed>=0.5 and 0<self.count<self.total:
             estimate=elapsed*(self.total-self.count)/self.count
             if math.isfinite(estimate) and estimate<=86400:remaining=round(estimate,1)
-        self.report({'action':action,'completed_actions':len(self.done)+self.stage,
+        self.report({'action':self.label+action.removeprefix('studio'),'completed_actions':len(self.done)+self.stage,
                      'action_limit':len(self.frames)+3,'verified_frames':self.count,
                      'total_frames':self.total,'segment_eta_seconds':remaining,
                      'stop_allowed':stop_allowed})
@@ -61,3 +65,13 @@ class RenderProgress:
     def finished(self):
         if self.stage!=2:raise ValueError('Studio commit not started')
         self.stage=3;self._emit('studio-audit-complete',stop_allowed=False)
+
+
+def mixed_scenes(plan):
+    """Ordered, nonempty scenes with exact validated frame coverage."""
+    rows=tuple((kind,plan[kind+"_frames"]) for kind in ("intro","speech","outro"))
+    total=plan["total_video_frames"]
+    if (any(type(n) is not int or n<0 for _,n in rows) or rows[1][1]<1
+            or type(total) is not int or total!=sum(n for _,n in rows)):
+        raise ValueError("Invalid mixed render scene coverage")
+    return tuple((kind,n) for kind,n in rows if n)

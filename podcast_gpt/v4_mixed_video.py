@@ -9,6 +9,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from . import projects, source, characters, media, v4_post_audio as mix
 from . import v4_export as export, v4_preview as preview
+from .render_progress import RenderProgress,RenderStopped,mixed_scenes
 
 FOLDER="mixed-export"
 VIDEO="episode-mixed.mp4"
@@ -156,9 +157,10 @@ def _card(path,size,label):
     im.save(path,"PNG")
 
 
-def compose(root,pid,*,allow_fixture=False,studio=False):
+def compose(root,pid,*,allow_fixture=False,studio=False,progress=None,should_stop=None):
     folder=projects.project(root,pid)
     with projects.exclusive(folder):
+        if should_stop is not None and should_stop():raise RenderStopped("Mixed render stopped before candidate preparation")
         ctx=_context(root,pid,allow_fixture=allow_fixture,studio=studio)
         _,dest,timeline,turns,record,plan,seal=ctx
         out=dest/(STUDIO_FOLDER if studio else FOLDER)
@@ -166,13 +168,21 @@ def compose(root,pid,*,allow_fixture=False,studio=False):
             from . import studio_neural as sn
             base_path=dest/sn.FOLDER/sn.VIDEO
         else:base_path=dest/export.FOLDER/export.VIDEO
-        if out.exists() or out.is_symlink():return {"project_id":pid,"export":_audit(dest,timeline,turns,record,plan,seal)}
+        if out.exists() or out.is_symlink():
+            if progress is not None:progress({"action":"mixed-existing-audit","completed_actions":0,"action_limit":1,"stop_allowed":False})
+            if should_stop is not None and should_stop():raise RenderStopped("Mixed audit stopped before existing candidate verification")
+            result={"project_id":pid,"export":_audit(dest,timeline,turns,record,plan,seal)}
+            if progress is not None:progress({"action":"mixed-audit-complete","completed_actions":1,"action_limit":1,"stop_allowed":False})
+            return result
+        scenes=mixed_scenes(plan)
+        tracker=RenderProgress([{"frames":n} for _,n in scenes],progress,should_stop,label="mixed",estimate_segments=False) if progress is not None or should_stop is not None else None
         seconds=record["total_frames"]/export.RATE
         if shutil.disk_usage(folder).free<max(100*1024**2,int(seconds*2_000_000)):raise ValueError("Insufficient private disk space")
+        if tracker is not None:tracker.begin()
         with tempfile.TemporaryDirectory(prefix="v4-mixed-",dir=folder) as tmp:
             temp=Path(tmp);segments=[]
-            for kind,count in (("intro",plan["intro_frames"]),("speech",plan["speech_frames"]),("outro",plan["outro_frames"])):
-                if not count:continue
+            for index,(kind,count) in enumerate(scenes):
+                if tracker is not None:tracker.checkpoint()
                 target=temp/(kind+".mp4")
                 if kind=="speech":inputs=["-i",str(base_path)]
                 else:
@@ -184,18 +194,24 @@ def compose(root,pid,*,allow_fixture=False,studio=False):
                     timeout=max(120,count*2))
                 if export._video_frames(target)!=count:raise ValueError("Mixed scene frame coverage differs")
                 segments.append(target.name)
+                if tracker is not None:tracker.segment(index)
+            if tracker is not None:tracker.checkpoint()
             listing=temp/"scenes.ffconcat";listing.write_text("ffconcat version 1.0\n"+"".join("file "+p+"\n" for p in segments),encoding="ascii")
             staged=temp/VIDEO
             media.cmd(["ffmpeg","-nostdin","-hide_banner","-v","error","-f","concat","-safe","1","-i",str(listing),
                        "-i",str(dest/mix.FOLDER/mix.WAV),"-map","0:v:0","-map","1:a:0","-c:v","copy",
                        "-c:a","aac","-ar","48000","-b:a","160k","-movflags","+faststart",str(staged)],timeout=max(300,int(seconds*8)))
             streams=_decode(staged,record,plan,seal)
+            if tracker is not None:tracker.muxed()
             if _context(root,pid,allow_fixture=allow_fixture,studio=studio)!=ctx:raise ValueError("Mixed inputs changed during export")
+            if tracker is not None:tracker.committing()
             out.mkdir()
             with staged.open("rb") as inp,(out/VIDEO).open("xb") as handle:shutil.copyfileobj(inp,handle)
             with (out/SRT).open("xb") as handle:handle.write(shifted_subtitles(timeline,turns,plan["speech_offset_samples"]))
             source.atomic_json(out/RECEIPT,_receipt(out,plan,seal,streams),new=True)
-        return {"project_id":pid,"export":_audit(dest,timeline,turns,record,plan,seal)}
+        result={"project_id":pid,"export":_audit(dest,timeline,turns,record,plan,seal)}
+        if tracker is not None:tracker.finished()
+        return result
 
 
 def inspect(root,pid,*,allow_fixture=False,studio=False):

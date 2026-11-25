@@ -34,4 +34,5 @@ def run(root,pid,action,*,acknowledgment,progress=None,should_stop=None):
     if action=="project-neural-studio-compose":
         if progress is None and should_stop is None:return studio_neural.compose(root,pid)
         return studio_neural.compose(root,pid,progress=progress,should_stop=should_stop)
-    return v4_mixed_video.compose(root,pid,studio=True)
+    if progress is None and should_stop is None:return v4_mixed_video.compose(root,pid,studio=True)
+    return v4_mixed_video.compose(root,pid,studio=True,progress=progress,should_stop=should_stop)

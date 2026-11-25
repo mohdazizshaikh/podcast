@@ -269,7 +269,7 @@ async function refresh(){
  if(pollTimer!==null){clearTimeout(pollTimer);pollTimer=null}
  let r=await fetch('/api/status',{cache:'no-store'});let status=await r.json();
  out.textContent=JSON.stringify(status,null,2);showResult(status);
- currentTask=status.task_id;document.getElementById("v4StopTask").disabled=!(status.phase==="running"&&["author-local-inference","author-edge-generate","project-neural-studio-compose"].includes(status.command)&&!status.stop_requested&&status.progress?.stop_allowed!==false);
+ currentTask=status.task_id;document.getElementById("v4StopTask").disabled=!(status.phase==="running"&&["author-local-inference","author-edge-generate","project-neural-studio-compose","project-mixed-studio-compose"].includes(status.command)&&!status.stop_requested&&status.progress?.stop_allowed!==false);
  const progress=status.progress;document.getElementById('v4TaskProgress').textContent=status.phase+' | '+(status.command||'No task')+' | elapsed '+(status.elapsed_seconds??0)+' s'+(status.stop_requested?' | stop requested at next checkpoint':'')+(progress?' | '+progress.action+' | verified actions '+progress.completed_actions+'/'+progress.action_limit+(Number.isInteger(progress.verified_frames)?' | frames '+progress.verified_frames+'/'+progress.total_frames:'')+(Number.isFinite(progress.segment_eta_seconds)?' | estimated remaining segment time '+progress.segment_eta_seconds+' s':'')+(progress.stop_allowed===false?' | final audit/commit: stop unavailable':''):'');
  if(status.phase==='running')pollTimer=setTimeout(()=>refresh().catch(e=>out.textContent='BLOCKED: '+e.message),1100);
 }
@@ -465,7 +465,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
             if url.path=="/api/stop":
                 if size!=0:return self._json(400,{"error":"Stop body must be empty"})
                 with state_lock:
-                    if status["phase"]!="running" or status["command"] not in ("author-local-inference","author-edge-generate","project-neural-studio-compose") or (status["progress"] or {}).get("stop_allowed") is False or query.get("task_id",[""])[0]!=status.get("task_id") or active_stop is None:
+                    if status["phase"]!="running" or status["command"] not in ("author-local-inference","author-edge-generate","project-neural-studio-compose","project-mixed-studio-compose") or (status["progress"] or {}).get("stop_allowed") is False or query.get("task_id",[""])[0]!=status.get("task_id") or active_stop is None:
                         accepted=False
                     else:
                         active_stop.set();status["stop_requested"]=True;accepted=True
@@ -539,7 +539,7 @@ def serve(root:Path,port:int=7860,*,open_browser:bool=False):
                     pid=query.get("project_id",[""])[0]
                     if not ID_RE.fullmatch(pid):return self._json(400,{"error":"Invalid V4 project ID"})
                     if query.get("consent",[""])[0]!="YES":return self._json(403,{"error":"Explicit local processing consent required"})
-                    if command=="project-neural-studio-compose":
+                    if command in ("project-neural-studio-compose","project-mixed-studio-compose"):
                         def report(value):
                             with state_lock:status["progress"]=dict(value)
                         selected=lambda:dashboard_actions.run(root,pid,command,acknowledgment=dashboard_actions.ACK,progress=report,should_stop=stop_event.is_set)
