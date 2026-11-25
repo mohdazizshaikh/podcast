@@ -5,10 +5,12 @@ import tempfile
 from pathlib import Path
 from . import projects, characters, portrait_brief, ingestion, model_config, research, research_discovery, dashboard_inference, dashboard_review, manual_script, continuity, studio_preview, v4_audio, dashboard_cloud, voice_preflight, device_acceptance, audio_diagnostics, research_coverage, portrait_local, dashboard_portrait, japanese_resources, video_audio_check, v4_edge, edge_inventory
 
+from . import studio_cache_admin
+
 JSON_LIMIT=32768
-READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","japanese-resources","portrait-candidates","video-audio-check","edge-plan")
+READ_ONLY=("character-list","character-show","cast-status","cast-choices","model-status","research-status","continuity-status","studio-status","studio-cache-inventory","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","japanese-resources","portrait-candidates","video-audio-check","edge-plan")
 ACTIONS=("character-list","character-show","character-create","cast-assign","cast-status","cast-choices",
-         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","cloud-draft","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","portrait-generate","portrait-candidate-attach","japanese-resources","portrait-candidates","video-audio-check","edge-plan","edge-generate","edge-inventory")
+         "source-url","model-configure","model-status","research-status","research-discover","research-capture","local-inference","review-template","manual-script","continuity-enable","continuity-status","studio-configure","studio-status","studio-cache-inventory","studio-cache-delete","cloud-draft","voice-preflight","device-acceptance","turn-diagnostics","research-coverage","portrait-brief","portrait-preflight","portrait-candidate","portrait-generate","portrait-candidate-attach","japanese-resources","portrait-candidates","video-audio-check","edge-plan","edge-generate","edge-inventory")
 UPLOADS={"portrait":characters.MAX_PORTRAIT,"source":ingestion.MAX_FILE,"audio-turn":v4_audio.MAX_WAV,"studio-background":characters.MAX_PORTRAIT}
 ACK="I_AUTHORIZE_THIS_LOCAL_AUTHORING_ACTION"
 
@@ -76,6 +78,9 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
     if action=="research-status":
         _keys(data,("project_id",))
         return research.inspect(root,data["project_id"])
+    if action=="studio-cache-inventory":
+        _keys(data,("project_id",))
+        return studio_cache_admin.inspect(root,data["project_id"])
     if action in ("continuity-status","studio-status"):
         _keys(data,("project_id",))
         return continuity.inspect(root,data["project_id"]) if action=="continuity-status" else studio_preview.inspect_settings(root,data["project_id"])
@@ -86,6 +91,10 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
         if action=="device-acceptance":return device_acceptance.inspect(root,pid)
         return audio_diagnostics.inspect(root,pid,kind="master",per_turn=True)
     if acknowledgment!=ACK:raise ValueError("Explicit local authoring consent required")
+    if action=="studio-cache-delete":
+        _keys(data,("project_id","namespace","snapshot_sha256","stopped_processes_and_delete"))
+        if data["stopped_processes_and_delete"] is not True:raise ValueError("Explicit stopped-process cache deletion consent required")
+        return studio_cache_admin.remove(root,data["project_id"],data["namespace"],data["snapshot_sha256"],acknowledgment=studio_cache_admin.ACK)
     if action=="edge-generate":
         _keys(data,("project_id","max_new","network_consent"))
         if data["network_consent"] is not True:raise ValueError("Explicit online dialogue transfer consent required")

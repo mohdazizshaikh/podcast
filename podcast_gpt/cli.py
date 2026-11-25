@@ -285,6 +285,13 @@ def parse(argv=None):
     attach.add_argument("--character-id",required=True)
     attach.add_argument("--portrait",type=Path,required=True)
     attach.add_argument("--acknowledgment",required=True)
+    cache_inventory=subs.add_parser("project-studio-cache-inventory")
+    cache_inventory.add_argument("--project-id",required=True)
+    cache_delete=subs.add_parser("project-studio-cache-delete")
+    cache_delete.add_argument("--project-id",required=True)
+    cache_delete.add_argument("--namespace",required=True)
+    cache_delete.add_argument("--snapshot-sha256",required=True)
+    cache_delete.add_argument("--acknowledgment",required=True)
     for name in ("project-neural-studio-compose","project-neural-studio-resume","project-neural-studio-audit","project-neural-studio-review-template",
                  "project-neural-studio-review-record","project-neural-studio-review-status"):
         ns=subs.add_parser(name)
@@ -653,6 +660,11 @@ def execute(a)->dict:
     if action=="character-portrait-attach":
         from . import portrait_brief
         return portrait_brief.attach(a.workspace.expanduser().absolute(),a.character_id,portrait=a.portrait,acknowledgment=a.acknowledgment)
+    if action in ("project-studio-cache-inventory","project-studio-cache-delete"):
+        from . import studio_cache_admin
+        private=a.workspace.expanduser().absolute()
+        if action=="project-studio-cache-inventory":return studio_cache_admin.inspect(private,a.project_id)
+        return studio_cache_admin.remove(private,a.project_id,a.namespace,a.snapshot_sha256,acknowledgment=a.acknowledgment)
     if action in ("project-neural-studio-compose","project-neural-studio-resume","project-neural-studio-audit","project-neural-studio-review-template",
                   "project-neural-studio-review-record","project-neural-studio-review-status"):
         from . import studio_neural

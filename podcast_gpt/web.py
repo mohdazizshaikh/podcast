@@ -168,6 +168,13 @@ def html_page(token:str)->str:
 <label>Optional local studio background PNG <input id="v4StudioBg" type="file" accept=".png"></label>
 <label><input id="v4StudioRights" type="checkbox"> I have rights to use the selected background</label>
 <button id="v4StudioSave">Save immutable studio settings</button><button id="v4StudioStatus">Inspect studio settings</button>
+<h3>Private studio render cache</h3>
+<p>Inspect cached segment pairs, logical bytes and namespace timestamps. Inventory does not verify video contents or decide which cache is obsolete. Delete only an explicitly chosen namespace using its latest snapshot; all render processes must be stopped.</p>
+<button id="v4CacheInventory">Inspect render cache</button>
+<label>Namespace SHA-256 <input id="v4CacheNamespace" maxlength="64"></label>
+<label>Inventory snapshot SHA-256 <input id="v4CacheSnapshot" maxlength="64"></label>
+<label><input id="v4CacheDeleteConsent" type="checkbox"> All render processes are stopped; permanently delete only this cached namespace</label>
+<button id="v4CacheDelete">Delete selected cache namespace</button>
 <h3>Selected prior-episode continuity</h3>
 <label>Prior reviewed project ID <input id="v4PriorId" maxlength="32"></label>
 <label>Prior turn IDs (1–8, comma separated) <input id="v4PriorTurns" maxlength="48"></label>
@@ -351,6 +358,8 @@ onAuthor('v4MixCompose',async()=>{
 onAuthor('v4TurnImport',()=>{if(!field('v4TurnRights').checked)throw new Error('Confirm matching dialogue and rights');field('v4TurnRights').checked=false;return authorFile('audio-turn',currentPid(),field('v4TurnWav').files[0],true,'&unit='+encodeURIComponent(val('v4TurnId').trim()))});
 onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout'),camera=val('v4StudioCamera'),listener_motion=val('v4StudioListeners'),transition=val('v4StudioTransition');if(!file)return author('studio-configure',{project_id:currentPid(),layout,camera,listener_motion,transition},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout)+'&camera='+encodeURIComponent(camera)+'&listener_motion='+encodeURIComponent(listener_motion)+'&transition='+encodeURIComponent(transition))});
 onAuthor('v4StudioStatus',()=>author('studio-status',{project_id:currentPid()}));
+onAuthor('v4CacheInventory',()=>author('studio-cache-inventory',{project_id:currentPid()}));
+onAuthor('v4CacheDelete',()=>{if(!field('v4CacheDeleteConsent').checked)throw new Error('Confirm all renders are stopped and selected cache deletion');const namespace=val('v4CacheNamespace').trim(),snapshot_sha256=val('v4CacheSnapshot').trim();if(!/^[a-f0-9]{64}$/.test(namespace)||!/^[a-f0-9]{64}$/.test(snapshot_sha256))throw new Error('Copy namespace and snapshot from inventory');field('v4CacheDeleteConsent').checked=false;field('v4CacheSnapshot').value='';return author('studio-cache-delete',{project_id:currentPid(),namespace,snapshot_sha256,stopped_processes_and_delete:true},true)});
 onAuthor('v4ContinuitySave',()=>{if(!field('v4ContinuityConsent').checked)throw new Error('Explicit local continuity consent required');field('v4ContinuityConsent').checked=false;return author('continuity-enable',{project_id:currentPid(),prior_project_id:val('v4PriorId').trim(),turn_ids:val('v4PriorTurns').split(',').map(s=>s.trim()),local_only_consent:true},true)});
 onAuthor('v4ContinuityStatus',()=>author('continuity-status',{project_id:currentPid()}));
 onAuthor('v4EdgePlan',()=>author('edge-plan',{project_id:currentPid(),max_new:Number(val('v4EdgeCount'))}));
