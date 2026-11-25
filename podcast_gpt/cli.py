@@ -285,6 +285,15 @@ def parse(argv=None):
     attach.add_argument("--character-id",required=True)
     attach.add_argument("--portrait",type=Path,required=True)
     attach.add_argument("--acknowledgment",required=True)
+    for name in ("project-studio-cache-prune-plan","project-studio-cache-prune"):
+        cp=subs.add_parser(name)
+        cp.add_argument("--project-id",required=True)
+        cp.add_argument("--max-mib",type=int,required=True)
+        cp.add_argument("--keep-newest",type=int,default=1)
+        cp.add_argument("--protect",action="append",default=[])
+        if name=="project-studio-cache-prune":
+            cp.add_argument("--plan-sha256",required=True)
+            cp.add_argument("--acknowledgment",required=True)
     cache_inventory=subs.add_parser("project-studio-cache-inventory")
     cache_inventory.add_argument("--project-id",required=True)
     cache_delete=subs.add_parser("project-studio-cache-delete")
@@ -661,6 +670,11 @@ def execute(a)->dict:
     if action=="character-portrait-attach":
         from . import portrait_brief
         return portrait_brief.attach(a.workspace.expanduser().absolute(),a.character_id,portrait=a.portrait,acknowledgment=a.acknowledgment)
+    if action in ("project-studio-cache-prune-plan","project-studio-cache-prune"):
+        from . import cache_retention
+        private=a.workspace.expanduser().absolute()
+        if action=="project-studio-cache-prune-plan":return cache_retention.inspect(private,a.project_id,a.max_mib,a.keep_newest,a.protect)
+        return cache_retention.prune(private,a.project_id,a.max_mib,a.keep_newest,a.protect,a.plan_sha256,acknowledgment=a.acknowledgment)
     if action in ("project-studio-cache-inventory","project-studio-cache-delete"):
         from . import studio_cache_admin
         private=a.workspace.expanduser().absolute()

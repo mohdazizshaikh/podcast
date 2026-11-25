@@ -175,6 +175,14 @@ def html_page(token:str)->str:
 <label>Inventory snapshot SHA-256 <input id="v4CacheSnapshot" maxlength="64"></label>
 <label><input id="v4CacheDeleteConsent" type="checkbox"> All render processes are stopped; permanently delete only this cached namespace</label>
 <button id="v4CacheDelete">Delete selected cache namespace</button>
+<p>Budget-based cleanup: oldest file modification times first, retain newest namespaces and any explicitly protected keys. This is a preview-and-authorize operation, never background pruning. A budget may remain unmet when protected caches exceed it.</p>
+<label>Cache budget (MiB) <input id="v4CacheBudget" type="number" min="0" max="1048576" step="1" value="2048"></label>
+<label>Keep newest namespaces <input id="v4CacheKeep" type="number" min="0" max="128" step="1" value="1"></label>
+<label>Protected namespace hashes (comma separated) <textarea id="v4CacheProtect" maxlength="8319"></textarea></label>
+<button id="v4CachePrunePlan">Preview cache budget cleanup</button>
+<label>Preview plan SHA-256 <input id="v4CachePruneHash" maxlength="64"></label>
+<label><input id="v4CachePruneConsent" type="checkbox"> All render processes are stopped; permanently delete the namespaces in this exact preview plan</label>
+<button id="v4CachePrune">Apply selected cleanup plan</button>
 <h3>Selected prior-episode continuity</h3>
 <label>Prior reviewed project ID <input id="v4PriorId" maxlength="32"></label>
 <label>Prior turn IDs (1–8, comma separated) <input id="v4PriorTurns" maxlength="48"></label>
@@ -359,6 +367,9 @@ onAuthor('v4TurnImport',()=>{if(!field('v4TurnRights').checked)throw new Error('
 onAuthor('v4StudioSave',()=>{const file=field('v4StudioBg').files[0],layout=val('v4StudioLayout'),camera=val('v4StudioCamera'),listener_motion=val('v4StudioListeners'),transition=val('v4StudioTransition');if(!file)return author('studio-configure',{project_id:currentPid(),layout,camera,listener_motion,transition},true);if(!field('v4StudioRights').checked)throw new Error('Confirm background rights');field('v4StudioRights').checked=false;return authorFile('studio-background',currentPid(),file,true,'&layout='+encodeURIComponent(layout)+'&camera='+encodeURIComponent(camera)+'&listener_motion='+encodeURIComponent(listener_motion)+'&transition='+encodeURIComponent(transition))});
 onAuthor('v4StudioStatus',()=>author('studio-status',{project_id:currentPid()}));
 onAuthor('v4CacheInventory',()=>author('studio-cache-inventory',{project_id:currentPid()}));
+function cachePruneRules(){const budget=val('v4CacheBudget').trim(),keep=val('v4CacheKeep').trim();if(!/^[0-9]+$/.test(budget)||!/^[0-9]+$/.test(keep))throw new Error('Enter whole numbers for budget and retention');return {project_id:currentPid(),max_mib:Number(budget),keep_newest:Number(keep),protected:val('v4CacheProtect').split(',').map(s=>s.trim()).filter(Boolean)}}
+onAuthor('v4CachePrunePlan',()=>{field('v4CachePruneHash').value='';field('v4CachePruneConsent').checked=false;return author('studio-cache-prune-plan',cachePruneRules())});
+onAuthor('v4CachePrune',()=>{if(!field('v4CachePruneConsent').checked)throw new Error('Confirm stopped processes and exact cleanup plan');const plan_sha256=val('v4CachePruneHash').trim();if(!/^[a-f0-9]{64}$/.test(plan_sha256))throw new Error('Copy the latest preview plan SHA-256');const rules=cachePruneRules();field('v4CachePruneConsent').checked=false;field('v4CachePruneHash').value='';return author('studio-cache-prune',{...rules,plan_sha256,stopped_processes_and_delete:true},true)});
 onAuthor('v4CacheDelete',()=>{if(!field('v4CacheDeleteConsent').checked)throw new Error('Confirm all renders are stopped and selected cache deletion');const namespace=val('v4CacheNamespace').trim(),snapshot_sha256=val('v4CacheSnapshot').trim();if(!/^[a-f0-9]{64}$/.test(namespace)||!/^[a-f0-9]{64}$/.test(snapshot_sha256))throw new Error('Copy namespace and snapshot from inventory');field('v4CacheDeleteConsent').checked=false;field('v4CacheSnapshot').value='';return author('studio-cache-delete',{project_id:currentPid(),namespace,snapshot_sha256,stopped_processes_and_delete:true},true)});
 onAuthor('v4ContinuitySave',()=>{if(!field('v4ContinuityConsent').checked)throw new Error('Explicit local continuity consent required');field('v4ContinuityConsent').checked=false;return author('continuity-enable',{project_id:currentPid(),prior_project_id:val('v4PriorId').trim(),turn_ids:val('v4PriorTurns').split(',').map(s=>s.trim()),local_only_consent:true},true)});
 onAuthor('v4ContinuityStatus',()=>author('continuity-status',{project_id:currentPid()}));
