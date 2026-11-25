@@ -10,7 +10,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageOps
-from . import projects, characters, source, media, studio_camera, studio_layout, studio_listeners, v4_preview as preview, v4_master as master
+from . import projects, characters, source, media, studio_camera, studio_layout, studio_listeners, studio_transition, v4_preview as preview, v4_master as master
 
 CONFIG="studio-settings"
 FOLDER="studio-preview"
@@ -25,11 +25,12 @@ def _read(folder):
     projects._plain(path/"settings.json",directory=False)
     data=source.read_json(path/"settings.json",32000)
     fields={"schema","layout","background","request_sha256"}
-    if not isinstance(data,dict) or not fields<=set(data) or not set(data)<=fields|{"camera","listener_motion"} or data["schema"]!=1 or data["layout"] not in LAYOUTS:
+    if not isinstance(data,dict) or not fields<=set(data) or not set(data)<=fields|{"camera","listener_motion","transition"} or data["schema"]!=1 or data["layout"] not in LAYOUTS:
         raise ValueError("Invalid studio settings")
     if "camera" in data and studio_camera.validate(data["camera"])=="fixed":raise ValueError("Fixed camera uses legacy studio settings")
     if "listener_motion" in data:
         if studio_listeners.validate(data["listener_motion"])=="static" or data["layout"]=="focus":raise ValueError("Invalid visible listener motion settings")
+    if "transition" in data and studio_transition.validate(data["transition"])=="cut":raise ValueError("Cut uses legacy studio settings")
     expected={"settings.json"}
     raw=None
     if data["background"] is not None:
@@ -40,9 +41,10 @@ def _read(folder):
     return data,raw
 
 
-def configure(root,pid,*,layout,background=None,camera="fixed",listener_motion="static",acknowledgment=None):
+def configure(root,pid,*,layout,background=None,camera="fixed",listener_motion="static",transition="cut",acknowledgment=None):
     studio_camera.validate(camera)
     studio_listeners.validate(listener_motion)
+    studio_transition.validate(transition)
     if listener_motion!="static" and layout=="focus":raise ValueError("Listener motion requires grid or spotlight layout")
     if layout not in LAYOUTS:raise ValueError("Choose focus, grid or spotlight studio layout")
     if background is not None and acknowledgment!=ACK:raise ValueError("Explicit background usage rights acknowledgment required")
@@ -58,6 +60,7 @@ def configure(root,pid,*,layout,background=None,camera="fixed",listener_motion="
         settings={"schema":1,"layout":layout,"background":info,"request_sha256":source.json_digest(req)}
         if camera!="fixed":settings["camera"]=camera
         if listener_motion!="static":settings["listener_motion"]=listener_motion
+        if transition!="cut":settings["transition"]=transition
         source.atomic_json(path/"settings.json",settings,new=True)
         return inspect_settings(root,pid)
 

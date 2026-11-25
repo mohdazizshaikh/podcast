@@ -110,8 +110,9 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
     if action=="studio-configure":
         if isinstance(data,dict) and set(data)=={"project_id","layout"}:data={**data,"camera":"fixed"}
         if isinstance(data,dict) and set(data)=={"project_id","layout","camera"}:data={**data,"listener_motion":"static"}
-        _keys(data,("project_id","layout","camera","listener_motion"))
-        return studio_preview.configure(root,data["project_id"],layout=data["layout"],camera=data["camera"],listener_motion=data["listener_motion"])
+        if isinstance(data,dict) and set(data)=={"project_id","layout","camera","listener_motion"}:data={**data,"transition":"cut"}
+        _keys(data,("project_id","layout","camera","listener_motion","transition"))
+        return studio_preview.configure(root,data["project_id"],layout=data["layout"],camera=data["camera"],listener_motion=data["listener_motion"],transition=data["transition"])
     if action=="cloud-draft":
         _keys(data,("project_id","cloud_consent","confirm_gemini_free_project"))
         if data["cloud_consent"] is not True:raise ValueError("Explicit cloud text consent required")
@@ -155,7 +156,7 @@ def run(root,action,data,*,acknowledgment=None,progress=None,should_stop=None):
     return model_config.save(root,engine,{k:_local_path(v) for k,v in data["paths"].items()},replace=data["replace"])
 
 
-def upload(root,kind,identifier,name,raw,*,acknowledgment=None,rights=False,unit=None,layout=None,camera="fixed",listener_motion="static"):
+def upload(root,kind,identifier,name,raw,*,acknowledgment=None,rights=False,unit=None,layout=None,camera="fixed",listener_motion="static",transition="cut"):
     if kind not in UPLOADS or not 1<=len(raw)<=UPLOADS[kind]:raise ValueError("Invalid local upload kind or size")
     if acknowledgment!=ACK:raise ValueError("Explicit local authoring consent required")
     if not isinstance(name,str) or not 1<=len(name)<=160 or not re.fullmatch(r"[\w .()-]+",name) or name in (".",".."):
@@ -182,7 +183,7 @@ def upload(root,kind,identifier,name,raw,*,acknowledgment=None,rights=False,unit
         with path.open("xb") as handle:handle.write(raw)
         if kind=="portrait":return portrait_brief.attach(root,identifier,portrait=path,acknowledgment=characters.ACK)
         if kind=="audio-turn":return v4_audio.import_turn(root,identifier,unit,path,acknowledgment=v4_audio.ACK)
-        if kind=="studio-background":return studio_preview.configure(root,identifier,layout=layout,background=path,camera=camera,listener_motion=listener_motion,acknowledgment=studio_preview.ACK)
+        if kind=="studio-background":return studio_preview.configure(root,identifier,layout=layout,background=path,camera=camera,listener_motion=listener_motion,transition=transition,acknowledgment=studio_preview.ACK)
         # Preserve the existing evidence locator naming convention.
         source_path=Path(tmp)/("source"+suffix);path.rename(source_path)
         return projects.import_source(root,identifier,path=source_path)

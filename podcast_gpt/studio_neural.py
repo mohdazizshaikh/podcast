@@ -6,7 +6,7 @@ portrait framing simulates movement, not facial reactions or lip sync.
 import shutil
 import tempfile
 from pathlib import Path
-from . import projects, source, characters, media, studio_camera, studio_listeners, studio_preview as studio
+from . import projects, source, characters, media, studio_camera, studio_listeners, studio_transition, studio_preview as studio
 from . import v4_export as export, v4_neural as neural, v4_preview as preview, v4_master as master
 from . import v4_final_review as review
 
@@ -26,6 +26,7 @@ def _context(root,pid,*,allow_fixture=False):
              "video_format":seal["video_format"],"test_fixture_only":bound["test_fixture_only"]}
     if settings.get("listener_motion","static")!="static" and len(cast["cast"])>1:
         binding["listener_motion"]=settings["listener_motion"]
+    if settings.get("transition","cut")!="cut":binding["transition"]=settings["transition"]
     return folder,dest,timeline,turns,cast,rows,done,binding,settings,background
 
 
@@ -44,16 +45,25 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
     size=preview.SIZES[binding["video_format"]]
     portraits,speakers=_portraits(root,cast);cards={};names=[]
     starts=list(studio_camera.offsets(plan))
-    for i,seg in enumerate(plan):
-        active=speakers[seg["speaker"]];pause=seg["kind"]=="pause"
+    transitions=studio_transition.schedule(plan,settings.get("transition","cut"))
+    def get_card(active,pause):
         key=(active,pause)
         if key not in cards:
             card=temp/f"card-{active:02}-{int(pause)}.png"
             studio.card(portraits,active,size,settings["layout"],background,neural=True,pause=pause,listener_motion=settings.get("listener_motion","static")!="static" and len(portraits)>1).save(card,"PNG")
             cards[key]=card
-        inputs=["-loop","1","-framerate","25","-i",str(cards[key])]
+        return cards[key]
+    for i,seg in enumerate(plan):
+        active=speakers[seg["speaker"]];pause=seg["kind"]=="pause"
+        inputs=["-loop","1","-framerate","25","-i",str(get_card(active,pause))]
         if pause:
-            filters=["-map","0:v:0","-vf","fps=25,setsar=1,format=yuv420p"]
+            if i in transitions:
+                spec=transitions[i]
+                incoming=get_card(speakers[spec["to"]],True)
+                inputs+=["-loop","1","-framerate","25","-i",str(incoming)]
+                vf=studio_transition.filter_graph(seg["frames"],spec["start"],spec["frames"])
+                filters=["-filter_complex_threads","1","-filter_complex",vf,"-map","[out]"]
+            else:filters=["-map","0:v:0","-vf","fps=25,setsar=1,format=yuv420p"]
         else:
             cid=seg["id"];clip=dest/neural.FOLDER/cid/"face.mp4"
             projects._plain(clip,directory=False)
@@ -88,10 +98,13 @@ def _decode(path,timeline,binding,plan):
 
 
 def _receipt(path,timeline,binding,plan,streams):
-    return {"schema":1,"binding":binding,"frame_plan_sha256":source.json_digest(plan),
+    result={"schema":1,"binding":binding,"frame_plan_sha256":source.json_digest(plan),
             "video_sha256":source.digest(path/VIDEO),"srt_sha256":source.digest(path/SRT),
             "streams":streams,"turn_count":len(timeline["rows"]),"test_fixture_only":binding["test_fixture_only"],
             "inactive_presenters_static":"listener_motion" not in binding,"human_lipsync_approved":False,"publication_approved":False}
+    if "transition" in binding:
+        result["pause_handoff_count"]=len(studio_transition.schedule(plan,binding["transition"]))
+    return result
 
 
 def _audit(dest,timeline,turns,binding,plan):
