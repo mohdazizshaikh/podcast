@@ -44,19 +44,20 @@ def _asset(path,role):
     return raw,info,_samples(pcm)
 
 
-def _speech_blocks(dest,timeline,cleanup,filters=None,adaptive=None):
+def _speech_blocks(dest,timeline,cleanup,filters=None,adaptive=None,spectral=None):
     from .speech_cleanup import centered
     from .speech_filter import apply
     from .adaptive_noise import apply as reduce_noise
+    from .spectral_noise import apply as reduce_spectrum
     for block in master._chunks(dest,timeline):
         samples=_samples(block)
         if cleanup and cleanup["remove_dc"]:samples=centered(samples)
-        yield reduce_noise(apply(samples,filters),adaptive)
+        yield reduce_noise(reduce_spectrum(apply(samples,filters),spectral),adaptive)
 
 
-def _master_peak(dest,timeline,cleanup=None,filters=None,adaptive=None):
+def _master_peak(dest,timeline,cleanup=None,filters=None,adaptive=None,spectral=None):
     peak=0
-    for samples in _speech_blocks(dest,timeline,cleanup,filters,adaptive):
+    for samples in _speech_blocks(dest,timeline,cleanup,filters,adaptive,spectral):
         peak=max(peak,max(map(abs,samples),default=0))
     if not peak:raise ValueError("Master has no nonzero PCM")
     return peak
@@ -71,7 +72,8 @@ def _unlimited_mix_blocks(dest,timeline,assets,settings):
     cleanup=settings.get("cleanup")
     filters=settings.get("speech_filter")
     adaptive=settings.get("adaptive_noise")
-    peak=_master_peak(dest,timeline,cleanup,filters,adaptive)
+    spectral=settings.get("spectral_noise")
+    peak=_master_peak(dest,timeline,cleanup,filters,adaptive,spectral)
     speech_target=settings["speech_peak"]
     bed_target=settings["bed_peak"]
     bed=assets.get("bed")
@@ -90,7 +92,7 @@ def _unlimited_mix_blocks(dest,timeline,assets,settings):
     from .speech_cleanup import step as gate_step
     gate=cleanup['gate_threshold_pcm'] if cleanup else 0
     gate_env=0;gate_level=10000
-    for samples in _speech_blocks(dest,timeline,cleanup,filters,adaptive):
+    for samples in _speech_blocks(dest,timeline,cleanup,filters,adaptive,spectral):
         mixed=array.array("h")
         for s in samples:
             voice=_scale(s,speech_target,peak)
@@ -141,7 +143,7 @@ def _guard_check(path,frames):
     return peak_guard.check(audio_diagnostics.measure(path,frames)["true_peak_dbtp"])
 
 
-def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,highpass_hz=0,hum_hz=0,lowpass_hz=0,true_peak_guard=False,auto_peak_correction=False,adaptive_noise="off"):
+def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,highpass_hz=0,hum_hz=0,lowpass_hz=0,true_peak_guard=False,auto_peak_correction=False,adaptive_noise="off",spectral_noise="off"):
     if type(speech_peak) is not int or not 8000<=speech_peak<=24000 or type(bed_peak) is not int or not 0<=bed_peak<=6000:
         raise ValueError("Speech peak must be 8000–24000 and bed peak 0–6000 PCM units")
     if type(duck_percent) is not int or not 0<=duck_percent<=90:raise ValueError("Duck percent must be 0–90")
@@ -167,6 +169,9 @@ def _settings(speech_peak,bed_peak,duck_percent=0,compress_ratio=1,compress_thre
     from .adaptive_noise import settings as noise_settings
     adaptive=noise_settings(adaptive_noise)
     if adaptive is not None:result["adaptive_noise"]=adaptive
+    from .spectral_noise import settings as spectrum_settings
+    spectral=spectrum_settings(spectral_noise)
+    if spectral is not None:result["spectral_noise"]=spectral
     return result
 
 
@@ -206,7 +211,9 @@ def _audit(dest,binding,timeline,receipt):
     if not isinstance(filters,dict):raise ValueError("Invalid speech filter settings")
     adaptive=settings.get("adaptive_noise",{})
     if not isinstance(adaptive,dict):raise ValueError("Invalid adaptive noise settings")
-    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000),cleanup.get("remove_dc",False),cleanup.get("gate_threshold_pcm",0),limiter.get("ceiling_pcm",0),filters.get("highpass_hz",0),filters.get("hum_hz",0),filters.get("lowpass_hz",0),"peak_guard" in settings,"peak_correction" in settings or combined,adaptive.get("mode","off"))
+    spectral=settings.get("spectral_noise",{})
+    if not isinstance(spectral,dict):raise ValueError("Invalid spectral noise settings")
+    base_settings=_settings(settings["speech_peak"],settings["bed_peak"],settings.get("duck_percent",0),comp.get("ratio",1),comp.get("threshold_pcm",12000),cleanup.get("remove_dc",False),cleanup.get("gate_threshold_pcm",0),limiter.get("ceiling_pcm",0),filters.get("highpass_hz",0),filters.get("hum_hz",0),filters.get("lowpass_hz",0),"peak_guard" in settings,"peak_correction" in settings or combined,adaptive.get("mode","off"),spectral.get("mode","off"))
     if "peak_guard" in settings:
         from . import peak_guard
         check=settings.get("peak_guard_check")
@@ -310,9 +317,9 @@ def _stage_normalized(dest,timeline,assets,settings,target_lufs,temp,*,auto_peak
     return candidate,pcm_sha
 
 
-def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,highpass_hz=0,hum_hz=0,lowpass_hz=0,true_peak_guard=False,auto_peak_correction=False,adaptive_noise="off",acknowledgment=None):
+def compose(root,pid,*,intro=None,bed=None,outro=None,speech_peak=22000,bed_peak=3000,duck_percent=0,target_lufs=None,compress_ratio=1,compress_threshold=12000,remove_dc=False,gate_threshold=0,limiter_ceiling=0,highpass_hz=0,hum_hz=0,lowpass_hz=0,true_peak_guard=False,auto_peak_correction=False,adaptive_noise="off",spectral_noise="off",acknowledgment=None):
     if acknowledgment!=ACK:raise ValueError("Explicit audio usage rights and mix acknowledgment required")
-    settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold,remove_dc,gate_threshold,limiter_ceiling,highpass_hz,hum_hz,lowpass_hz,true_peak_guard,auto_peak_correction,adaptive_noise)
+    settings=_settings(speech_peak,bed_peak,duck_percent,compress_ratio,compress_threshold,remove_dc,gate_threshold,limiter_ceiling,highpass_hz,hum_hz,lowpass_hz,true_peak_guard,auto_peak_correction,adaptive_noise,spectral_noise)
     if target_lufs is not None:
         from .loudness_gain import target
         target(target_lufs)
