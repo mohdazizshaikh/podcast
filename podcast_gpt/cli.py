@@ -275,7 +275,7 @@ def parse(argv=None):
     studio.add_argument("--layout",choices=("focus","grid","spotlight"),required=True)
     studio.add_argument("--camera",choices=("fixed","push-in","pull-out","smooth-push","pan-left","pan-right","continuous-drift","continuous-breathe"),default="fixed")
     studio.add_argument("--listener-motion",choices=("static","drift","breathe"),default="static",help="Simulated listener framing (grid/spotlight only)")
-    studio.add_argument("--transition",choices=("cut","quick","gentle"),default="cut",help="Pause-only speaker handoff crossfade")
+    studio.add_argument("--transition",choices=("cut","quick","gentle","match-quick","match-gentle"),default="cut",help="Pause-only speaker handoff: portraits or rendered endpoints")
     studio.add_argument("--background",type=Path)
     studio.add_argument("--acknowledgment")
     for name in ("project-studio-status","project-studio-render","project-studio-audit"):

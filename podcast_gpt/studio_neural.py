@@ -43,9 +43,14 @@ def _portraits(root,cast):
 
 def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
     size=preview.SIZES[binding["video_format"]]
-    portraits,speakers=_portraits(root,cast);cards={};names=[]
+    portraits,speakers=_portraits(root,cast);cards={}
+    names=[f"segment{i:05}.mp4" for i in range(len(plan))]
     starts=list(studio_camera.offsets(plan))
-    transitions=studio_transition.schedule(plan,settings.get("transition","cut"))
+    transition_mode=settings.get("transition","cut")
+    transitions=studio_transition.schedule(plan,transition_mode)
+    deferred=set(transitions) if transition_mode in studio_transition.MATCH_MODES else set()
+    # Render both neighboring speech segments before their endpoint-matched pause.
+    order=[i for i in range(len(plan)) if i not in deferred]+sorted(deferred)
     def get_card(active,pause):
         key=(active,pause)
         if key not in cards:
@@ -53,10 +58,16 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
             studio.card(portraits,active,size,settings["layout"],background,neural=True,pause=pause,listener_motion=settings.get("listener_motion","static")!="static" and len(portraits)>1).save(card,"PNG")
             cards[key]=card
         return cards[key]
-    for i,seg in enumerate(plan):
+    for i in order:
+        seg=plan[i]
         active=speakers[seg["speaker"]];pause=seg["kind"]=="pause"
-        inputs=["-loop","1","-framerate","25","-i",str(get_card(active,pause))]
-        if pause:
+        if i in deferred:
+            spec=transitions[i]
+            inputs=["-i",str(temp/names[i-1]),"-i",str(temp/names[i+1])]
+            vf=studio_transition.endpoint_graph(plan[i-1]["frames"],seg["frames"],spec["start"],spec["frames"])
+            filters=["-filter_complex_threads","1","-filter_complex",vf,"-map","[out]"]
+        elif pause:
+            inputs=["-loop","1","-framerate","25","-i",str(get_card(active,pause))]
             if i in transitions:
                 spec=transitions[i]
                 incoming=get_card(speakers[spec["to"]],True)
@@ -65,6 +76,7 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
                 filters=["-filter_complex_threads","1","-filter_complex",vf,"-map","[out]"]
             else:filters=["-map","0:v:0","-vf","fps=25,setsar=1,format=yuv420p"]
         else:
+            inputs=["-loop","1","-framerate","25","-i",str(get_card(active,pause))]
             cid=seg["id"];clip=dest/neural.FOLDER/cid/"face.mp4"
             projects._plain(clip,directory=False)
             if source.digest(clip)!=done[cid]["mp4_sha256"]:raise ValueError("Studio clip changed")
@@ -79,12 +91,11 @@ def _segments(root,dest,cast,done,binding,settings,background,plan,temp):
                 f"{base}[face]overlay={x}:{y}:shortest=1:repeatlast=0,format=yuv420p[out]")
             if layers:vf=";".join(layers+[vf])
             filters=["-filter_complex_threads","1","-filter_complex",vf,"-map","[out]"]
-        path=temp/f"segment{i:05}.mp4"
+        path=temp/names[i]
         media.cmd(["ffmpeg","-nostdin","-hide_banner","-v","error",*inputs,*filters,"-an",
                    "-frames:v",str(seg["frames"]),"-c:v","libx264","-threads","2","-preset","veryfast","-crf","23",str(path)],
                   timeout=max(120,seg["frames"]*2))
         if export._video_frames(path)!=seg["frames"]:raise ValueError("Studio segment frame count differs")
-        names.append(path.name)
     listing=temp/"segments.ffconcat"
     listing.write_text("ffconcat version 1.0\n"+"".join("file "+n+"\n" for n in names),encoding="ascii")
     return listing

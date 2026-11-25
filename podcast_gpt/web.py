@@ -162,7 +162,7 @@ def html_page(token:str)->str:
 <label>Neural speaker camera <select id="v4StudioCamera"><option value="fixed">Fixed</option><option value="push-in">Subtle push-in</option><option value="pull-out">Pull-out</option><option value="smooth-push">Smooth push-in</option><option value="pan-left">Pan left</option><option value="pan-right">Pan right</option><option value="continuous-drift">Continuous horizontal drift</option><option value="continuous-breathe">Continuous gentle zoom</option></select></label>
 <label>Simulated listener framing (grid/spotlight) <select id="v4StudioListeners"><option value="static">Static portraits</option><option value="drift">Gentle drift</option><option value="breathe">Gentle zoom</option></select></label>
 <p>Listener motion is a crop effect, not a generated facial reaction. Static previews and pauses remain still.</p>
-<label>Speaker handoff <select id="v4StudioTransition"><option value="cut">Hard cut</option><option value="quick">Quick pause crossfade</option><option value="gentle">Gentle pause crossfade</option></select></label>
+<label>Speaker handoff <select id="v4StudioTransition"><option value="cut">Hard cut</option><option value="quick">Quick pause crossfade</option><option value="gentle">Gentle pause crossfade</option><option value="match-quick">Quick rendered-endpoint crossfade</option><option value="match-gentle">Gentle rendered-endpoint crossfade</option></select></label>
 <p>Crossfades use only existing pauses of at least three video frames, with no changes to dialogue or subtitle timing.</p>
 <label>Optional local studio background PNG <input id="v4StudioBg" type="file" accept=".png"></label>
 <label><input id="v4StudioRights" type="checkbox"> I have rights to use the selected background</label>
