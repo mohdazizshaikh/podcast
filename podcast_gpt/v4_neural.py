@@ -94,7 +94,7 @@ def _scan(dest,binding,rows,*,cache=None):
         saved=source.read_json(child/"receipt.json",64000)
         row=expected[child.name];clip=child/"face.mp4"
         if (set(saved)!={"schema","binding","chunk","model_sha256","mp4_sha256","streams","test_fixture_only","human_lipsync_approved"}
-                or type(saved["schema"]) is not int or saved["schema"]!=1 or saved["binding"]!=binding or saved["chunk"]!=row
+                or type(saved["schema"]) is not int or saved["schema"]!=1 or source.json_digest(saved["binding"])!=source.json_digest(binding) or source.json_digest(saved["chunk"])!=source.json_digest(row)
                 or not _valid_hash(saved["model_sha256"]) or type(saved["test_fixture_only"]) is not bool
                 or saved["human_lipsync_approved"] is not False or saved["mp4_sha256"]!=source.digest(clip)):
             raise ValueError("Neural clip provenance or video hash differs")
@@ -104,7 +104,7 @@ def _scan(dest,binding,rows,*,cache=None):
             streams=_decode(clip,row)
             if source.digest(clip)!=saved["mp4_sha256"]:raise ValueError("Neural video changed during decode")
             if cache is not None:cache[key]=streams
-        if streams!=saved["streams"]:raise ValueError("Neural stream receipt differs")
+        if source.json_digest(streams)!=source.json_digest(saved["streams"]):raise ValueError("Neural stream receipt differs")
         done[child.name]=saved
     if len({r["model_sha256"] for r in done.values()})>1 or len({r["test_fixture_only"] for r in done.values()})>1:
         raise ValueError("Mixed model installations or fixture/production clips refused")
@@ -137,7 +137,7 @@ def _review(dest,binding,targets,done):
     projects._plain(path,directory=False)
     saved=source.read_json(path,300000)
     if (set(saved)!={"schema","binding","observations","acknowledgment","observations_sha256"}
-            or type(saved["schema"]) is not int or saved["schema"]!=1 or saved["binding"]!=_pilot_binding(binding,targets,done)
+            or type(saved["schema"]) is not int or saved["schema"]!=1 or source.json_digest(saved["binding"])!=source.json_digest(_pilot_binding(binding,targets,done))
             or saved["acknowledgment"]!=REVIEW_ACK):
         raise ValueError("Stale or invalid pilot review")
     obs=_validate_observations(saved["observations"],targets)
@@ -198,7 +198,7 @@ def record(root,pid,*,acknowledgment,input_file=None):
             from .visual_media_review import read_input
             data=read_input(input_file,300000)
         value=data
-        if set(value)!={"schema","binding","observations"} or type(value["schema"]) is not int or value["schema"]!=1 or value["binding"]!=bound:
+        if set(value)!={"schema","binding","observations"} or type(value["schema"]) is not int or value["schema"]!=1 or source.json_digest(value["binding"])!=source.json_digest(bound):
             raise ValueError("Pilot review template is stale")
         obs=_validate_observations(value["observations"],targets)
         source.atomic_json(dest/FOLDER/REVIEW,{**value,"observations_sha256":source.json_digest(obs),
